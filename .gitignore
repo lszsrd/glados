@@ -1,0 +1,8 @@
+.vs*
+.cache
+compile_commands.json
+.DS_Store
+glados
+*.o
+*.exe
+html
