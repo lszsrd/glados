@@ -1,0 +1,60 @@
+name: CI
+run-name: "`${{ github.actor }}` triggered workflow from a ${{ github.event_name }} on `${{ github.head_ref || github.ref_name }}` : ${{ github.event.head_commit.message || github.event.workflow_run.head_commit.message }}"
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - src/**
+      - .github/workflows/**
+
+env:
+  TARGET: glados
+
+jobs:
+  check-coding-style:
+    name: Checking coding style
+    runs-on: ubuntu-latest
+    container: ghcr.io/epitech/coding-style-checker:latest
+
+    steps:
+    - name: Cloning repository
+      uses: actions/checkout@v4
+      timeout-minutes: 2
+
+    - name: Running bannana-checker
+      uses: lszsrd/ci-composite-actions/coding-style-checker@v1
+      timeout-minutes: 2
+
+  check-compilation:
+    if: github.repository == 'lszsrd/r-type'
+    name: Checking build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15]
+        cxx: [g++, clang++]
+        include:
+          - os: windows-2022
+            cxx: msvc
+
+    steps:
+      - name: Cloning repository
+        uses: actions/checkout@v4
+        timeout-minutes: 2
+
+      - name: Building `${{ env.TARGET }}` binary
+        run: |
+          make
+        timeout-minutes: 10
+
+      - name: Checking -x permission
+        if: matrix.os != 'windows-2022'
+        run: |
+          if [ ! -x ./build/bin/${{ env.TARGET }} ]; then
+            echo "::error::Binary ${{ env.TARGET }} does not has -x permission"
+            exit 1
+          fi
+        timeout-minutes: 2
