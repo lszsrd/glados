@@ -1,64 +1,27 @@
-cabal-version: 2.2
+cabal-version:      3.0
+name:               glados
+version:            0.1.0.0
+synopsis:           Generic Language And Data Operand Syntax
+-- description:
+homepage:           https://github.com/lszsrd/glados.git
+license:            MIT
+license-file:       LICENSE.md
+author:             lszsrd
+maintainer:         laszlo.serdet@epitech.eu
+-- copyright:
+category:           Language
+build-type:         Simple
+extra-doc-files:    CONTRIBUTING.md, CODE_OF_CONDUCT.md
+-- extra-source-files:
 
-name:           glados
-version:        0.1.0.0
-description:    Please see the README on GitHub at <https://github.com/lszsrd/glados#README.md>
-homepage:       https://github.com/lszsrd/glados#README.md
-bug-reports:    https://github.com/lszsrd/glados/issues
-author:         Author name here
-maintainer:     laszlo.serdet@epitech.eu
-copyright:      2025 lszsrd
-license:        MIT
-license-file:   LICENSE.md
-build-type:     Simple
-extra-source-files:
-    README.md
-    CODE_OF_CONDUCT.md
-    CONTRIBUTING.md
-
-source-repository head
-  type: git
-  location: https://github.com/lszsrd/glados
-
-library
-  exposed-modules:
-      Lib
-  other-modules:
-      Paths_glados
-  autogen-modules:
-      Paths_glados
-  hs-source-dirs:
-      src
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
-  build-depends:
-      base >=4.7 && <5
-  default-language: Haskell2010
+common warnings
+    ghc-options: -Wall -Wextra
 
 executable glados
-  main-is: Main.hs
-  other-modules:
-      Paths_glados
-  autogen-modules:
-      Paths_glados
-  hs-source-dirs:
-      app
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
-  build-depends:
-      base >=4.7 && <5
-    , glados
-  default-language: Haskell2010
-
-test-suite unit_tests
-  type: exitcode-stdio-1.0
-  main-is: Spec.hs
-  other-modules:
-      Paths_glados
-  autogen-modules:
-      Paths_glados
-  hs-source-dirs:
-      tests
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
-  build-depends:
-      base >=4.7 && <5
-    , glados
-  default-language: Haskell2010
+    import:           warnings
+    main-is:          Main.hs
+    -- other-modules:
+    -- other-extensions:
+    build-depends:    base ^>=4.18.3.0
+    hs-source-dirs:   src
+    default-language: Haskell2010

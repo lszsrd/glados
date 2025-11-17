@@ -1,9 +1,7 @@
 .vs*
 .cache
 .DS_Store
-.stack-work/
-compile_commands*
 *~
-*.o
-*.exe
+compile_commands*
+dist-newstyle
 glados

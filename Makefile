@@ -5,23 +5,23 @@
 ## Makefile
 ##
 
-TARGET		:=	glados
+TARGET	:=	glados
 
 all: $(TARGET)
 
 $(TARGET):
-	stack build
-	cp $(shell stack path --local-install-root)/bin/$(TARGET) .
+	cabal build
+	cp $(shell cabal list-bin glados) .
 
 clean:
-	$(RM) -rf .stack-work
+	cabal clean
 
-fclean:
+fclean: clean
 	$(RM) $(TARGET)
 
 re: fclean all
 
-run_tests:
-	stack test
+tests_run:
+	cabal test
 
 .PHONY: all clean fclean re
