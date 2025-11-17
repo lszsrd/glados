@@ -1,8 +1,9 @@
 .vs*
 .cache
-compile_commands.json
 .DS_Store
-glados
+.stack-work/
+compile_commands*
+*~
 *.o
 *.exe
-html
+glados

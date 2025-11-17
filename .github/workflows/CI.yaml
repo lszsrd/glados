@@ -28,17 +28,13 @@ jobs:
       timeout-minutes: 2
 
   check-compilation:
-    if: github.repository == 'lszsrd/r-type'
     name: Checking build
     runs-on: ${{ matrix.os }}
+
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-15]
-        cxx: [g++, clang++]
-        include:
-          - os: windows-2022
-            cxx: msvc
+        os: [ubuntu-24.04, macos-15, windows-2022]
 
     steps:
       - name: Cloning repository
@@ -48,13 +44,27 @@ jobs:
       - name: Building `${{ env.TARGET }}` binary
         run: |
           make
-        timeout-minutes: 10
+        timeout-minutes: 2
 
       - name: Checking -x permission
         if: matrix.os != 'windows-2022'
         run: |
-          if [ ! -x ./build/bin/${{ env.TARGET }} ]; then
+          if [ ! -x ./${{ env.TARGET }} ]; then
             echo "::error::Binary ${{ env.TARGET }} does not has -x permission"
             exit 1
           fi
+        timeout-minutes: 2
+
+  run-unit-tests:
+    name: Running unit tests
+    runs-on: ubuntu-latest
+    container: ghcr.io/epitech/coding-style-checker:latest
+
+    steps:
+      - name: Cloning repository
+        uses: actions/checkout@v4
+
+      - name: Testing `${{ env.TARGET }}`
+        run: |
+          make run_tests
         timeout-minutes: 2
