@@ -17,6 +17,7 @@ clean:
 	cabal clean
 
 fclean: clean
+	$(RM) -rf dist-newstyle
 	$(RM) $(TARGET)
 
 re: fclean all
