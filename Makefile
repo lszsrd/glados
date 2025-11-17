@@ -4,7 +4,7 @@
 ## File description:
 ## Makefile
 ##
- 
+
 TARGET		:=	glados
 
 all: $(TARGET)
@@ -12,13 +12,13 @@ all: $(TARGET)
 $(TARGET):
 	stack build
 	cp $(shell stack path --local-install-root)/bin/$(TARGET) .
- 
+
 clean:
 	$(RM) -rf .stack-work
 
 fclean:
 	$(RM) $(TARGET)
- 
+
 re: fclean all
 
 run_tests:
