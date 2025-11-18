@@ -34,7 +34,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, tc35883ps, windows-2022]
+        os: [ubuntu-24.04, self-hosted, windows-2022]
 
     steps:
       - name: Cloning repository

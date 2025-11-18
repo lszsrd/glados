@@ -9,14 +9,12 @@ module Main where
 
 import System.Environment (getArgs)
 import System.IO (hPutStrLn, stderr)
-import System.Exit (exitFailure, exitSuccess)
+import System.Exit (exitSuccess)
 
 main :: IO ()
 main = do
     args <- getArgs
 
     if null args
-        then do
-            hPutStrLn stderr "USAGE: ./glados [LISP file to interpret]"
-            exitFailure
+        then hPutStrLn stderr "USAGE: ./glados [LISP file to interpret]"
         else exitSuccess
