@@ -67,5 +67,6 @@ jobs:
 
       - name: Testing `${{ env.TARGET }}`
         run: |
+          cabal update
           make tests_run
         timeout-minutes: 2

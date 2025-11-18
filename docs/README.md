@@ -19,6 +19,10 @@ Implementing a programming language of our own design, in Haskell
 
 ## ✅ Requirements
 
+- **git** to build from sources
+- **GNU make** to build from sources (if you do not want to install it only for this project, you can simply execute Makefile's command to build GLaDOS binary)
+- **haskell** and **cabal** which can both be installed via [GHCup](https://www.haskell.org/ghcup/)
+
 ## 🛠️ Building
 
 - Cloning this repository:
@@ -31,9 +35,15 @@ cd glados
 - Building from the repository's root:
 
 ```bash
+cabal update
+make
 ```
 
 ## 🔦 Usage
+
+```bash
+./glados [LISP file to interpret]
+```
 
 
 ## 📃 Doxygen documentation
@@ -42,8 +52,8 @@ cd glados
 
 ## ✍️ Authors
 
-- **Laszlo Serdet**  - [GitHub](https://github.com/lszsrd)
-- **Hugo Duda**      - [Github](https://github.com/hugoduda)
-- **Maxence Pierre** - [Github](https://github.com/Anexoms)
-- **Nathan Flachat** - [Github](https://github.com/NathanFlachat)
-- **Florian GRAVE**  - [Github](https://github.com/Flogrv)
+- [Hugo DUDA](https://github.com/hugoduda) - Product Owner
+- [Maxence PIERRE](https://github.com/Anexoms) - Lead Developper & Scrum Master
+- [Nathan FLACHAT](https://github.com/NathanFlachat) - Developper
+- [Florian GRAVE](https://github.com/Flogrv) - Developper
+- [Laszlo SERDET](https://github.com/lszsrd) - Developper
