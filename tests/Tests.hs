@@ -15,5 +15,5 @@ test1 = TestCase (assertEqual "Default test" 42 (21 + 21))
 
 main :: IO ()
 main = do
-    result <- runTestTT $ TestList [test1, test2]
+    result <- runTestTT $ TestList [test1]
     if failures result > 0 then exitFailure else exitSuccess

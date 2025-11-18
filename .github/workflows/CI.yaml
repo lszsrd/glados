@@ -43,6 +43,7 @@ jobs:
 
       - name: Building `${{ env.TARGET }}` binary
         run: |
+          cabal update
           make
         timeout-minutes: 10
 
