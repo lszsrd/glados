@@ -3,11 +3,11 @@ run-name: "`${{ github.actor }}` triggered workflow from a ${{ github.event_name
 
 on:
   push:
-    # branches:
-    #   - main
-    # paths:
-    #   - src/**
-    #   - .github/workflows/**
+    branches:
+      - main
+    paths:
+      - src/**
+      - .github/workflows/**
 
 env:
   TARGET: glados
@@ -60,6 +60,7 @@ jobs:
     name: Running unit tests
     runs-on: ubuntu-latest
     container: epitechcontent/epitest-docker:latest
+    needs: check-compilation
 
     steps:
       - name: Cloning repository
