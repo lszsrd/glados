@@ -5,9 +5,9 @@ on:
   push:
     branches:
       - main
-    # paths:
-    #   - src/**
-    #   - .github/workflows/**
+    paths:
+      - src/**
+      - .github/workflows/**
 
 env:
   TARGET: glados
@@ -34,7 +34,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-15, windows-2022]
+        os: [ubuntu-24.04, self-hosted, windows-2022]
 
     steps:
       - name: Cloning repository
@@ -43,6 +43,7 @@ jobs:
 
       - name: Building `${{ env.TARGET }}` binary
         run: |
+          cabal update
           make
         timeout-minutes: 10
 
@@ -58,7 +59,8 @@ jobs:
   run-unit-tests:
     name: Running unit tests
     runs-on: ubuntu-latest
-    container: ghcr.io/epitech/coding-style-checker:latest
+    container: epitechcontent/epitest-docker:latest
+    needs: check-compilation
 
     steps:
       - name: Cloning repository
@@ -66,5 +68,6 @@ jobs:
 
       - name: Testing `${{ env.TARGET }}`
         run: |
+          cabal update
           make tests_run
         timeout-minutes: 2

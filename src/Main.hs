@@ -7,5 +7,14 @@
 
 module Main where
 
+import System.Environment (getArgs)
+import System.IO (hPutStrLn, stderr)
+import System.Exit (exitSuccess)
+
 main :: IO ()
-main = putStrLn "Hello, Haskell!"
+main = do
+    args <- getArgs
+
+    if null args
+        then hPutStrLn stderr "USAGE: ./glados [LISP file to interpret]"
+        else exitSuccess

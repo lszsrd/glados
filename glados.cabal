@@ -1,27 +1,28 @@
-cabal-version:      3.0
-name:               glados
-version:            0.1.0.0
-synopsis:           Generic Language And Data Operand Syntax
--- description:
-homepage:           https://github.com/lszsrd/glados.git
-license:            MIT
-license-file:       LICENSE.md
-author:             lszsrd
-maintainer:         laszlo.serdet@epitech.eu
--- copyright:
-category:           Language
-build-type:         Simple
-extra-doc-files:    CONTRIBUTING.md, CODE_OF_CONDUCT.md
--- extra-source-files:
+cabal-version:          3.0
+name:                   glados
+version:                0.1.0.0
+synopsis:               Generic Language And Data Operand Syntax
 
-common warnings
-    ghc-options: -Wall -Wextra
+homepage:               https://github.com/lszsrd/glados.git
+license:                MIT
+license-file:           docs/LICENSE.md
+author:                 lszsrd
+maintainer:             laszlo.serdet@epitech.eu
+
+category:               Language
+build-type:             Simple
+extra-doc-files:        docs/CONTRIBUTING.md, docs/CODE_OF_CONDUCT.md
 
 executable glados
-    import:           warnings
-    main-is:          Main.hs
-    -- other-modules:
-    -- other-extensions:
-    build-depends:    base >= 4.7 && < 5
-    hs-source-dirs:   src
-    default-language: Haskell2010
+    default-language:   Haskell2010
+    ghc-options:        -Wall -Wextra
+    main-is:            Main.hs
+    hs-source-dirs:     src
+    build-depends:      base
+
+test-suite unit_tests
+    default-language:   Haskell2010
+    type:               exitcode-stdio-1.0
+    main-is:            Tests.hs
+    hs-source-dirs:     tests
+    build-depends:      base, HUnit
