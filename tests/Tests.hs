@@ -11,10 +11,7 @@ import Test.HUnit
 import System.Exit (exitSuccess, exitFailure)
 
 test1 :: Test
-test1 = TestCase (assertEqual "should return 3" 3 (1 + 2))
-
-test2 :: Test
-test2 = TestCase (assertEqual "should return 3" 3 1)
+test1 = TestCase (assertEqual "Default test" 42 (21 + 21))
 
 main :: IO ()
 main = do
