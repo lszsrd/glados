@@ -3,8 +3,8 @@ run-name: "`${{ github.actor }}` triggered workflow from a ${{ github.event_name
 
 on:
   push:
-    branches:
-      - main
+    # branches:
+    #   - main
     # paths:
     #   - src/**
     #   - .github/workflows/**
@@ -34,7 +34,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, macos-15, windows-2022]
+        os: [ubuntu-24.04, tc35883ps, windows-2022]
 
     steps:
       - name: Cloning repository
@@ -58,7 +58,7 @@ jobs:
   run-unit-tests:
     name: Running unit tests
     runs-on: ubuntu-latest
-    container: ghcr.io/epitech/coding-style-checker:latest
+    container: epitechcontent/epitest-docker:latest
 
     steps:
       - name: Cloning repository
