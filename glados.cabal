@@ -18,6 +18,11 @@ executable glados
     ghc-options:        -Wall -Wextra
     main-is:            Main.hs
     hs-source-dirs:     src
+    other-modules:
+        Error
+        Lexer
+        Parser
+        Interpretor
     build-depends:      base
 
 test-suite unit_tests

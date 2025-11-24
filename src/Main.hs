@@ -8,13 +8,25 @@
 module Main where
 
 import System.Environment (getArgs)
-import System.IO (hPutStrLn, stderr)
 import System.Exit (exitSuccess)
 
+import Lexer (getTokenList)
+import Parser (getAST)
+import Interpretor (interpretResult)
+
+-- get the buffer, if args, then try file, else read stdin
+getBuffer :: [String] -> IO String
+getBuffer [] = getContents
+getBuffer (x:_) = return ("Not yet implemented + " ++ x)
+
+-- Entrypoint of the program, Coordinate every parts
 main :: IO ()
 main = do
     args <- getArgs
-
-    if null args
-        then hPutStrLn stderr "USAGE: ./glados [LISP file to interpret]"
-        else exitSuccess
+    buffer <- getBuffer args
+    -- putStrLn buffer
+    tokenList <- getTokenList buffer
+    ast <- getAST tokenList
+    res <- interpretResult ast
+    putStr (show res)
+    exitSuccess
