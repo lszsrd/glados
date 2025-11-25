@@ -5,7 +5,7 @@ synopsis:               Generic Language And Data Operand Syntax
 
 homepage:               https://github.com/lszsrd/glados.git
 license:                MIT
-license-file:           docs/LICENSE.md
+license-file:           LICENSE.md
 author:                 lszsrd
 maintainer:             laszlo.serdet@epitech.eu
 
