@@ -34,7 +34,7 @@ type Lexeme                 = String
 type Lexemes                = [Lexeme]
 
 data Token
-    = Keyword               Lexeme  -- define, if
+    = Keyword               Lexeme  -- define, lambda, if
     | Identifier            Lexeme  -- variable and/or function names
     | Operator              Lexeme  -- +, -, *, /, eq? => auto bound functions
     | Delimiter             Lexeme  -- (, )
@@ -42,23 +42,24 @@ data Token
     deriving (Show)
 
 keywords :: Lexemes
-keywords = ["define", "if"]
-
+keywords                    = ["define", "lambda", "if"]
 operators :: Lexemes
-operators   = ["+", "-", "*", "/", ">", "<", "eq?"]
-
+operators                   = ["+", "-", "*", "/", ">", "<", "eq?"]
 delimiters :: Lexemes
-delimiters  = ["(", ")"]
+delimiters                  = ["(", ")"]
 
-containsAnyToken :: Stream -> Maybe (Token, Stream)
-containsAnyToken []         = Nothing
-containsAnyToken stream     = case stream `parseToken` delimiters of
+
+-- Checks if current stream starts with **ANY** token
+hasAnyToken :: Stream -> Maybe (Token, Stream)
+hasAnyToken []              = Nothing
+hasAnyToken stream          = case stream `parseToken` delimiters of
     Nothing                     -> case stream `parseToken` operators of
         Nothing                     -> case stream `parseToken` keywords of
             Nothing                     -> Nothing
             Just (lexeme, strip)        -> Just (Keyword lexeme, strip)
         Just (lexeme, strip)        -> Just (Operator lexeme, strip)
     Just (lexeme, strip)        -> Just (Delimiter lexeme, strip)
+
 
 -- Checks if a given String starts with on of the given Lexemes
 parseToken :: Stream -> Lexemes -> Maybe (Lexeme, Stream)
@@ -67,14 +68,20 @@ parseToken string (x: xs)
     | x `isPrefixOf` string = Just (x, drop (length x) string)
     | otherwise             = parseToken string xs
 
-parseUInteger :: Stream -> Maybe (String, Stream)
-parseUInteger []            = Nothing
-parseUInteger (x: xs)
-    | isDigit x             = case parseUInteger xs of
-        Nothing                     -> Just ([x], xs)
-        Just (y, strip)             -> Just (x: y, strip)
-    | otherwise             = Nothing
 
+-- Try to parse an Token::Identifier
+parseIdentifier :: Stream -> Maybe (Lexeme, Stream)
+parseIdentifier []          = Nothing
+parseIdentifier stream@(x: xs)
+    | isSpace x             = Nothing
+    | otherwise             = case hasAnyToken stream of
+        Nothing                 -> case parseIdentifier xs of
+            Nothing                 -> Just ([x], xs)
+            Just (lexeme, strip)    -> Just (x: lexeme, strip)
+        _                       -> Nothing
+
+
+-- Try to parse a Token::Constant
 parseConstant :: Stream -> Maybe (Token, Stream)
 parseConstant []            = Nothing
 parseConstant ('#': x: xs)
@@ -89,21 +96,22 @@ parseConstant stream@(x: _)
         Just (integer, string)  -> Just (Constant (read integer :: Integer), string)
     | otherwise             = Nothing
 
-parseIdentifier :: Stream -> Maybe (Lexeme, Stream)
-parseIdentifier []          = Nothing
-parseIdentifier stream@(x: xs)
-    | isSpace x             = Nothing
-    | otherwise             = case containsAnyToken stream of
-        Nothing                 -> case parseIdentifier xs of
-            Nothing                 -> Just ([x], xs)
-            Just (lexeme, strip)    -> Just (x: lexeme, strip)
-        _                       -> Nothing
+
+-- Try to parse an UNSIGNED Integer
+parseUInteger :: Stream -> Maybe (String, Stream)
+parseUInteger []            = Nothing
+parseUInteger (x: xs)
+    | isDigit x             = case parseUInteger xs of
+        Nothing                     -> Just ([x], xs)
+        Just (y, strip)             -> Just (x: y, strip)
+    | otherwise             = Nothing
+
 
 -- Translates a String to a list of Token
 lexer :: Stream -> [Token]
 lexer []                    = []
 lexer (';': stream)         = lexer $ dropWhile (/= '\n') stream
-lexer stream@(_: xs)        = case containsAnyToken stream of
+lexer stream@(_: xs)        = case hasAnyToken stream of
     Nothing                     -> case parseIdentifier stream of
         Nothing                     -> lexer xs
         Just (lexeme, strip)        -> case parseConstant stream of
