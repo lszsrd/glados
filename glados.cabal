@@ -5,7 +5,7 @@ synopsis:               Generic Language And Data Operand Syntax
 
 homepage:               https://github.com/lszsrd/glados.git
 license:                MIT
-license-file:           docs/LICENSE.md
+license-file:           LICENSE.md
 author:                 lszsrd
 maintainer:             laszlo.serdet@epitech.eu
 
@@ -15,9 +15,9 @@ extra-doc-files:        docs/CONTRIBUTING.md, docs/CODE_OF_CONDUCT.md
 
 executable glados
     default-language:   Haskell2010
-    ghc-options:        -Wall -Wextra
+    ghc-options:        
     main-is:            Main.hs
-    hs-source-dirs:     src
+    hs-source-dirs:     src, src/lexer
     other-modules:
         Error
         Lexer

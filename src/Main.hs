@@ -10,7 +10,7 @@ module Main where
 import System.Environment (getArgs)
 import System.Exit (exitSuccess)
 
-import Lexer (getTokenList)
+import Lexer (lexer)
 import Parser (getAST)
 import Interpretor (interpretResult)
 
@@ -24,8 +24,9 @@ main :: IO ()
 main = do
     args <- getArgs
     buffer <- getBuffer args
-    -- putStrLn buffer
-    tokenList <- getTokenList buffer
+    putStrLn buffer
+    let tokenList = lexer buffer
+    print tokenList
     ast <- getAST tokenList
     res <- interpretResult ast
     putStr (show res)
