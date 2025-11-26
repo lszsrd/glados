@@ -11,8 +11,17 @@ import Lexer (Token(..))
 import Control.Exception (try, SomeException, evaluate)
 import Error
 
-data Ast = MT String
-    | TODO Int
+type Identifier             = String
+
+
+data Ast = Define Identifier Ast
+    | FunctionCall Identifier [Ast]
+    | IF Ast Ast Ast -- if expr then expr2 else expr3
+    | Lambda [Ast] Ast
+    | Cond [Ast] -- cond has a list of cond and execute until one is true
+    | Variable Identifier
+    | Constant Integer
+    | Boolean Bool
     deriving Show
 
 -- Parse and create the AST with the given TokenList 
