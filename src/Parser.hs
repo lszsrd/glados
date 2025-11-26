@@ -16,7 +16,7 @@ data Ast = MT String
     deriving Show
 
 -- Parse and create the AST with the given TokenList 
-parsor :: [Token] -> Ast
+parsor :: [Lexer.Token] -> Ast
 parsor [] = throwErr $ Error.ErrorT { location = 0, message = "No input" } 
 parsor _ = MT "passed"
 

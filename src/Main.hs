@@ -25,10 +25,9 @@ main = do
     args <- getArgs
     buffer <- getBuffer args
     putStrLn buffer
-    print $ lexer buffer
-    -- Token list SHOULD be IO free
-    {- show tokenList
+    let tokenList = lexer buffer
+    print tokenList
     ast <- getAST tokenList
     res <- interpretResult ast
-    putStr (show res) -}
+    putStr (show res)
     exitSuccess

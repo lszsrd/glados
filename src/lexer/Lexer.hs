@@ -1,128 +1,200 @@
 {- 
 -- EPITECH PROJECT, 2025
--- GENERIC LANGUAGE AND DATA OPERAND SYNTAX
+-- Generic Language And Data Operand Syntax
 -- File description:
--- src/Lexer.hs
+-- src/lexer/Lexer.hs
 -}
 
-{-|
-Module      : Lexer
-Description : Transforms a String to a list of Tokens
-License     : MIT
-Maintainer  : laszlo.serdet@epitech.eu
+-------------------------------------------------------------------------------
+-- |
+-- Module      : Lexer
+-- Description : Generates a list of Token from a given stream of bytes
+-- License     : MIT
+-- Maintainer  : laszlo.serdet@epitech.eu
+--
+-- Takes a stream of bytes and performs some checkups to extract every
+-- __@'Token'@__ from it, based on pre-defined __@'Lexemes'@__.
+--
+-- * __@'Token'@__ is a way to break down a series of bytes into an individual,
+-- small piece that represent something in the global context of the parsed
+-- stream.
+--
+-- * __@'Lexemes'@__, however, are a list of predetermined @'Lexeme'@ that help
+-- to determine a tokens among a bytes stream.
+-------------------------------------------------------------------------------
 
-Takes a String (also known as a `stream` of bytes) and performs some checkups
-to pop off Tokens from it.
-Tokens are a way to break down a full series of bytes into individual small
-pieces that each represent something.
-This lexer is designed to "lexe" LISP language and thus, it decomposes into
-groups:
-    - Keyword       => a reserved word of the language
-    - Identifier    => a variable or function name
-    - Operator      => a default bounded function, mostly arithmetic ones
-    - Delimiter     => since LISP heavely uses parenthesis, it only represents
-                       opening and closing ones
-    - Constant      => a value bounded to an Identifier
--}
-module Lexer (Token (..), lexer) where
+module Lexer (
+    -- * Basic types
+      Stream
+    , Lexeme
+    , Lexemes
+    , Token
 
-import Data.Char (isSpace, isNumber, isDigit)
+    -- * Lexemes
+    , keywords
+    , operators
+    , delimiters
+
+    -- * Parsing
+    , parseAnyToken
+    , parseToken
+    , parseIdentifier
+    , parseConstant
+    , parseUInteger
+
+    -- * Lexing
+    , lexer
+) where
+
+import Data.Char (isSpace, isDigit)
 import Data.List (isPrefixOf)
 
+-- | Defines @'Stream'@ type as a string which represents a finite byte stream.
 type Stream                 = String
+
+-- | Defines @'Lexeme'@ type as a string representing a way to identify a
+-- specific @'Token'@.
 type Lexeme                 = String
+
+-- | Defines @'Lexemes'@ type as a list of @'Lexeme'@, covering a set of
+-- patterns to match for a @'Token'@ identification.
+
 type Lexemes                = [Lexeme]
 
+-- | Defines a @'Token'@ which is bound by its corresponding representation in
+-- the bytes @'Stream'@.
+--
+-- It can only be of one type and serves as a way to represent a series
+-- of bytes in a more abstract way.
 data Token
-    = Keyword               Lexeme  -- define, lambda, if
-    | Identifier            Lexeme  -- variable and/or function names
-    | Operator              Lexeme  -- +, -, *, /, eq? => auto bound functions
-    | Delimiter             Lexeme  -- (, )
-    | Constant              Integer -- Signed Integer but as String
+    = Keyword               Lexeme
+    -- ^ @'Keyword'@ is any lexeme defined in the @'keywords'@ list. It
+    -- represents a reserved word used by LISP language.
+    | Identifier            Lexeme
+    -- ^ @'Identifier'@ is a variable, function or lambda name built when no
+    -- other @'Token'@ can be built from current @'Stream'@ and that is not
+    -- a @'Constant'@ nor a @'Boolean'@.
+    | Operator              Lexeme
+    -- ^ @'Operator'@ is any lexeme defined in the @operators@ list. It
+    -- represents auto-bound functions used for arithmetic and comparison
+    -- operations.
+    | Delimiter             Lexeme
+    -- ^ @'Delimiter'@ is any lexeme defined in @delimiters@ list. It represents
+    -- a character used to separate some other tokens.
+    | Constant              Integer
+    -- ^ @'Constant'@ is any signed integerer representing a constant value.
+    | Boolean               Bool
+    -- ^ @'Boolean'@ is either @'True'@ or @'False'@ and is represented by
+    -- either '#t' for @'True'@ and '#f' for @'False'@ values.
     deriving (Show)
 
+
+-- | Defines @'keywords'@ as @'define'@, @'lambda'@ and @'if'@ patterns.
 keywords :: Lexemes
 keywords                    = ["define", "lambda", "if"]
+
+-- | Defines @'operators'@ as @'+'@, @'-'@, @'*'@, @'/'@, @'<'@, @'>'@ and
+-- @'eq?'@ patterns.
 operators :: Lexemes
 operators                   = ["+", "-", "*", "/", ">", "<", "eq?"]
+
+-- | Defines @'delimiters'@ as @'('@ and @')'@ patterns.
 delimiters :: Lexemes
 delimiters                  = ["(", ")"]
 
 
--- Checks if current stream starts with **ANY** token
-hasAnyToken :: Stream -> Maybe (Token, Stream)
-hasAnyToken []              = Nothing
-hasAnyToken stream          = case stream `parseToken` delimiters of
-    Nothing                     -> case stream `parseToken` operators of
-        Nothing                     -> case stream `parseToken` keywords of
-            Nothing                     -> Nothing
-            Just (lexeme, strip)        -> Just (Keyword lexeme, strip)
-        Just (lexeme, strip)        -> Just (Operator lexeme, strip)
-    Just (lexeme, strip)        -> Just (Delimiter lexeme, strip)
+-- | Takes a @'Stream'@ as parameter and returns a __Maybe__ (@'Token'@,
+-- @'Stream'@).
+--
+-- This function __tries__ to parse any @'Token'@ from the current @'Stream'@
+-- (either from @'keywords'@, @'operators'@ or @'delimiters'@) and returns
+-- Nothing if no valid @'Token'@ is found.
+parseAnyToken :: Stream -> Maybe (Token, Stream)
+parseAnyToken [] = Nothing
+parseAnyToken stream = case stream `parseToken` delimiters of
+    Nothing -> case stream `parseToken` operators of
+        Nothing -> case stream `parseToken` keywords of
+            Nothing -> Nothing
+            Just (lexeme, strip) -> Just (Keyword lexeme, strip)
+        Just (lexeme, strip) -> Just (Operator lexeme, strip)
+    Just (lexeme, strip) -> Just (Delimiter lexeme, strip)
+    
 
-
--- Checks if a given String starts with on of the given Lexemes
+-- | Takes a @'Stream'@ and @'Lexemes'@ as parameters and returns a __Maybe__
+-- (@'Lexeme'@, @'Stream'@).
+--
+-- This function takes a @'Lexemes'@ and checks if any of its @'Lexeme'@
+-- match the first bytes of the given @'Stream'@. If none of the @'Lexemes'@
+-- were found at the __beginning__ of the stream, returns Nothing.
 parseToken :: Stream -> Lexemes -> Maybe (Lexeme, Stream)
-parseToken _ []             = Nothing
+parseToken _ [] = Nothing
 parseToken string (x: xs)
     | x `isPrefixOf` string = Just (x, drop (length x) string)
-    | otherwise             = parseToken string xs
+    | otherwise = parseToken string xs
 
 
--- Try to parse an Token::Identifier
+-- | Takes a @'Stream'@ as parameter and returns a __Maybe__ (@'Lexeme'@,
+-- @'Stream'@).
+--
+-- This functions takes a @'Stream'@ and __tries__ to parses it as a
+-- @'Token'@ @Identifier@ and returns Nothing if it fails.
 parseIdentifier :: Stream -> Maybe (Lexeme, Stream)
-parseIdentifier []          = Nothing
+parseIdentifier [] = Nothing
 parseIdentifier stream@(x: xs)
-    | isSpace x             = Nothing
-    | otherwise             = case hasAnyToken stream of
-        Nothing                 -> case parseIdentifier xs of
-            Nothing                 -> Just ([x], xs)
-            Just (lexeme, strip)    -> Just (x: lexeme, strip)
-        _                       -> Nothing
+    | isSpace x = Nothing
+    | otherwise = case parseAnyToken stream of
+        Nothing -> case parseIdentifier xs of
+            Nothing -> Just ([x], xs)
+            Just (lexeme, strip) -> Just (x: lexeme, strip)
+        _ -> Nothing
 
 
--- Try to parse a Token::Constant
+-- | Takes a @'Stream'@ as parameter and returns a __Maybe__ (@'Token@,
+-- @'Stream'@).
+--
+-- This functions takes a @'Stream'@ and __tries__ to parses it either a
+-- @'Token'@ @Constant@ or @Boolean@ and returns Nothing if it fails.
 parseConstant :: Stream -> Maybe (Token, Stream)
-parseConstant []            = Nothing
-parseConstant ('#': x: xs)
-    | x == 't'              = Just (Constant 1, xs)
-    | x == 'f'              = Just (Constant 0, xs)
-parseConstant ('-': x)      = case parseUInteger x of
-    Nothing                     -> Nothing
-    Just (integer, stream)      -> Just (Constant (-read integer :: Integer), stream)
-parseConstant stream@(x: _)
-    | isNumber x            = case parseUInteger stream of
-        Nothing                 -> Nothing
-        Just (integer, string)  -> Just (Constant (read integer :: Integer), string)
-    | otherwise             = Nothing
+parseConstant [] = Nothing
+parseConstant ('#': 't': x) = Just (Boolean True, x)
+parseConstant ('#': 'f': x) = Just (Boolean False, x)
+parseConstant ('-': x) = case parseUInteger x of
+    Nothing -> Nothing
+    Just (string, strip) -> Just (Constant (-read string :: Integer), strip)
+parseConstant stream = case parseUInteger stream of
+    Nothing -> Nothing
+    Just (string, strip) -> Just (Constant (read string :: Integer), strip)
 
-
--- Try to parse an UNSIGNED Integer
+-- | Takes a @'Stream'@ as parameter and returns a __Maybe__ (String,
+-- @'Stream'@).
+--
+-- This functions takes a @'Stream'@ and __tries__ to extracts a valid signed
+-- Integer and returns Nothing if it fails.
 parseUInteger :: Stream -> Maybe (String, Stream)
-parseUInteger []            = Nothing
+parseUInteger [] = Nothing
 parseUInteger (x: xs)
-    | isDigit x             = case parseUInteger xs of
-        Nothing                     -> Just ([x], xs)
-        Just (y, strip)             -> Just (x: y, strip)
-    | otherwise             = Nothing
+    | isDigit x = case parseUInteger xs of
+        Nothing -> Just ([x], xs)
+        Just (y, strip) -> Just (x: y, strip)
+    | otherwise = Nothing
 
 
--- Translates a String to a list of Token
+-- | Takes a @'Stream'@ as parameter and returns a list of @'Token'@.
+--
+-- This functions parses the given stream and extracts every tokens to a list
+-- that is returned.
+--
+-- A special case, not covered by lexemes, are comments, starting with a @'\\n'@
+-- that let a user define a comment in its code that should be ignored. However,
+-- @'Lexemes'@ from @'keywords'@, @'operators'@ or @'delimiters'@ are used to
+-- generate the list of @'Token'@.
 lexer :: Stream -> [Token]
-lexer []                    = []
-lexer (';': stream)         = lexer $ dropWhile (/= '\n') stream
-lexer stream@(_: xs)        = case hasAnyToken stream of
-    Nothing                     -> case parseIdentifier stream of
-        Nothing                     -> lexer xs
-        Just (lexeme, strip)        -> case parseConstant stream of
-            Nothing                     -> Identifier lexeme: lexer strip
-            Just (token, string)        -> token: lexer string
-    Just (token, strip)         -> token: lexer strip
-
-{- getTokenList :: String -> IO [Token]
-getTokenList buffer = do
-    evalLexer <- try (evaluate (lexer buffer))
-        :: IO (Either SomeException [Token])
-    case evalLexer of
-        Left err -> printError (show err)
-        Right tokenList -> return tokenList -}
+lexer [] = []
+lexer (';': stream) = lexer $ dropWhile (/= '\n') stream
+lexer stream@(_: xs) = case parseAnyToken stream of
+    Nothing -> case parseIdentifier stream of
+        Nothing -> lexer xs
+        Just (lexeme, strip) -> case parseConstant stream of
+            Nothing -> Identifier lexeme: lexer strip
+            Just (token, string) -> token: lexer string
+    Just (token, strip) -> token: lexer strip
