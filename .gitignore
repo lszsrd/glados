@@ -1,8 +1,0 @@
-.vs*
-.cache
-.DS_Store
-.config
-*~
-compile_commands*
-dist-newstyle
-glados
