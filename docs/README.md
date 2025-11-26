@@ -46,7 +46,7 @@ make
 ```
 
 
-## 📃 Doxygen documentation
+## 📃 Documentation
 
 [https://lszsrd.github.io/glados/](https://lszsrd.github.io/glados/)
 
