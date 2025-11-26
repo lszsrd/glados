@@ -40,9 +40,6 @@ jobs:
       timeout-minutes: 2
 
     - name: Generating Haddock documentation
-      with:
-          doxyfile-path: 'docs/Doxyfile'
-          enable-latex: false
       run: |
         echo "DOC_PATH="`cabal haddock --haddock-all | grep "Documentation created" -A1 | grep -v "Documentation created"` >> $GITHUB_ENV
       timeout-minutes: 2
