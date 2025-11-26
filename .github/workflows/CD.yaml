@@ -43,7 +43,7 @@ jobs:
     - name: Generating Haddock documentation
       run: |
         cabal update
-        echo "HADDOCK_PATH="`cabal haddock --haddock-all | grep "Documentation" -A1 | grep -v '/'` >> $GITHUB_ENV
+        echo "HADDOCK_PATH="`cabal haddock --haddock-all | grep "Documentation created" -A1 | grep '/'` >> $GITHUB_ENV
       timeout-minutes: 2
 
     - name: Deploy documentation
