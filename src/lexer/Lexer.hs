@@ -8,7 +8,7 @@
 -------------------------------------------------------------------------------
 -- |
 -- Module      : Lexer
--- Description : Generates a list of Token from a given stream of bytes
+-- Description : Generates a list of tokens from a given stream of bytes.
 -- License     : MIT
 -- Maintainer  : laszlo.serdet@epitech.eu
 --

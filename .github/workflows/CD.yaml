@@ -27,3 +27,30 @@ jobs:
         ssh_private_key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
         target_repo_url: ${{ secrets.MIRROR_URL }}
       timeout-minutes: 2
+  
+  build-haddock-documentation:
+    name: Generating documentation
+    runs-on: ubuntu-24.04
+
+    steps:
+    - name: Cloning repository
+      uses: actions/checkout@v4
+      with:
+        submodules: 'true'
+      timeout-minutes: 2
+
+    - name: Generating Haddock documentation
+      with:
+          doxyfile-path: 'docs/Doxyfile'
+          enable-latex: false
+      run: |
+        echo "DOC_PATH="`cabal haddock --haddock-all | grep "Documentation created" -A1 | grep -v "Documentation created"` >> $GITHUB_ENV
+      timeout-minutes: 2
+
+    - name: Deploy documentation
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ${{ env.DOC_PATH }}
+          publish_branch: documentation
+      timeout-minutes: 2
