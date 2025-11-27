@@ -166,10 +166,10 @@ parseConstant ('#': 'f': x) = Just (Boolean False, x)
 parseConstant stream@(x: xs)
     | x == '-' = case parseUInteger xs of
         Nothing -> Nothing
-        Just (string, strip) -> Just (Constant (-read string :: Integer), strip)
+        Just (str, strip) -> Just (Constant (-read str :: Integer), strip)
     | otherwise = case parseUInteger stream of
         Nothing -> Nothing
-        Just (string, strip) -> Just (Constant (read string :: Integer), strip)
+        Just (str, strip) -> Just (Constant (read str :: Integer), strip)
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__ (String,
 -- @'Stream'@).
