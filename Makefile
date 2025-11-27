@@ -22,6 +22,6 @@ fclean: clean
 re: fclean all
 
 tests_run:
-	@cabal test
+	@cabal test --enable-coverage
 
 .PHONY: all clean fclean re $(TARGET)

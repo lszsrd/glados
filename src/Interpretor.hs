@@ -13,8 +13,8 @@ import Error
 
 -- Ram through the AST and interpret it  
 interpret :: Parser.Ast -> String
-interpret (TODO _) = throwErr $ Error.ErrorT
-    { location = 0, message = "No input" } 
+{- interpret (TODO _) = throwErr $ Error.ErrorT
+    { location = 0, message = "No input" }  -}
 interpret _ = "passed"
 
 interpretResult :: Ast -> IO String

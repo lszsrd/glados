@@ -22,13 +22,12 @@
 -- * __@'Lexemes'@__, however, are a list of predetermined @'Lexeme'@ that help
 -- to determine a tokens among a bytes stream.
 -------------------------------------------------------------------------------
-
 module Lexer (
     -- * Basic types
-      Stream
+    Stream
     , Lexeme
     , Lexemes
-    , Token
+    , Token (..) -- '(..)' exports constructors
 
     -- * Lexemes
     , keywords
@@ -50,16 +49,16 @@ import Data.Char (isSpace, isDigit)
 import Data.List (isPrefixOf)
 
 -- | Defines @'Stream'@ type as a string which represents a finite byte stream.
-type Stream                 = String
+type Stream = String
 
 -- | Defines @'Lexeme'@ type as a string representing a way to identify a
 -- specific @'Token'@.
-type Lexeme                 = String
+type Lexeme = String
 
 -- | Defines @'Lexemes'@ type as a list of @'Lexeme'@, covering a set of
 -- patterns to match for a @'Token'@ identification.
 
-type Lexemes                = [Lexeme]
+type Lexemes = [Lexeme]
 
 -- | Defines a @'Token'@ which is bound by its corresponding representation in
 -- the bytes @'Stream'@.
@@ -67,40 +66,47 @@ type Lexemes                = [Lexeme]
 -- It can only be of one type and serves as a way to represent a series
 -- of bytes in a more abstract way.
 data Token
-    = Keyword               Lexeme
+    = Keyword Lexeme
     -- ^ @'Keyword'@ is any lexeme defined in the @'keywords'@ list. It
     -- represents a reserved word used by LISP language.
-    | Identifier            Lexeme
+    | Identifier Lexeme
     -- ^ @'Identifier'@ is a variable, function or lambda name built when no
     -- other @'Token'@ can be built from current @'Stream'@ and that is not
     -- a @'Constant'@ nor a @'Boolean'@.
-    | Operator              Lexeme
+    | Operator Lexeme
     -- ^ @'Operator'@ is any lexeme defined in the @operators@ list. It
     -- represents auto-bound functions used for arithmetic and comparison
     -- operations.
-    | Delimiter             Lexeme
+    | Delimiter Lexeme
     -- ^ @'Delimiter'@ is any lexeme defined in @delimiters@ list. It represents
     -- a character used to separate some other tokens.
-    | Constant              Integer
+    | Constant Integer
     -- ^ @'Constant'@ is any signed integerer representing a constant value.
-    | Boolean               Bool
+    | Boolean Bool
     -- ^ @'Boolean'@ is either @'True'@ or @'False'@ and is represented by
     -- either '#t' for @'True'@ and '#f' for @'False'@ values.
-    deriving (Show)
+    deriving (
+        Show
+        -- ^ Allows tokens to be displayed on standard/error outputs.
+        , Eq
+        -- ^ Allows tokens to be compared, needed for unit tests.
+    )
 
 
--- | Defines @'keywords'@ as @'define'@, @'lambda'@ and @'if'@ patterns.
+-- | Defines @'keywords'@ as @define@, @lambda@ and @if@ patterns. Note that an
+-- @'Identifier'@ __can__ start with any keyword as long as their are no spaces
+-- between the keyword and the identifier.
 keywords :: Lexemes
-keywords                    = ["define", "lambda", "if"]
+keywords = ["define ", "lambda ", "if "]
 
--- | Defines @'operators'@ as @'+'@, @'-'@, @'*'@, @'/'@, @'<'@, @'>'@ and
--- @'eq?'@ patterns.
+-- | Defines @'operators'@ as @+@, @-@, @*@, @/@, @<@, @>@ and
+-- @eq?@ patterns.
 operators :: Lexemes
-operators                   = ["+", "-", "*", "/", ">", "<", "eq?"]
+operators = ["+", "-", "*", "/", ">", "<", "eq?"]
 
--- | Defines @'delimiters'@ as @'('@ and @')'@ patterns.
+-- | Defines @'delimiters'@ as @(@ and @)@ patterns.
 delimiters :: Lexemes
-delimiters                  = ["(", ")"]
+delimiters = ["(", ")"]
 
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__ (@'Token'@,
@@ -119,7 +125,6 @@ parseAnyToken stream = case stream `parseToken` delimiters of
         Just (lexeme, strip) -> Just (Operator lexeme, strip)
     Just (lexeme, strip) -> Just (Delimiter lexeme, strip)
     
-
 -- | Takes a @'Stream'@ and @'Lexemes'@ as parameters and returns a __Maybe__
 -- (@'Lexeme'@, @'Stream'@).
 --
@@ -132,7 +137,6 @@ parseToken string (x: xs)
     | x `isPrefixOf` string = Just (x, drop (length x) string)
     | otherwise = parseToken string xs
 
-
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__ (@'Lexeme'@,
 -- @'Stream'@).
 --
@@ -142,12 +146,13 @@ parseIdentifier :: Stream -> Maybe (Lexeme, Stream)
 parseIdentifier [] = Nothing
 parseIdentifier stream@(x: xs)
     | isSpace x = Nothing
+    | isDigit x = Nothing   -- prevents variables starting with a digit to be
+                            -- parsed as an Identifier
     | otherwise = case parseAnyToken stream of
         Nothing -> case parseIdentifier xs of
             Nothing -> Just ([x], xs)
             Just (lexeme, strip) -> Just (x: lexeme, strip)
         _ -> Nothing
-
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__ (@'Token@,
 -- @'Stream'@).
@@ -158,12 +163,13 @@ parseConstant :: Stream -> Maybe (Token, Stream)
 parseConstant [] = Nothing
 parseConstant ('#': 't': x) = Just (Boolean True, x)
 parseConstant ('#': 'f': x) = Just (Boolean False, x)
-parseConstant ('-': x) = case parseUInteger x of
-    Nothing -> Nothing
-    Just (string, strip) -> Just (Constant (-read string :: Integer), strip)
-parseConstant stream = case parseUInteger stream of
-    Nothing -> Nothing
-    Just (string, strip) -> Just (Constant (read string :: Integer), strip)
+parseConstant stream@(x: xs)
+    | x == '-' = case parseUInteger xs of
+        Nothing -> Nothing
+        Just (string, strip) -> Just (Constant (-read string :: Integer), strip)
+    | otherwise = case parseUInteger stream of
+        Nothing -> Nothing
+        Just (string, strip) -> Just (Constant (read string :: Integer), strip)
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__ (String,
 -- @'Stream'@).
@@ -177,7 +183,6 @@ parseUInteger (x: xs)
         Nothing -> Just ([x], xs)
         Just (y, strip) -> Just (x: y, strip)
     | otherwise = Nothing
-
 
 -- | Takes a @'Stream'@ as parameter and returns a list of @'Token'@.
 --
