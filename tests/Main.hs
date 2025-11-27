@@ -9,11 +9,9 @@ module Main where
 
 import Test.HUnit
 import System.Exit (exitSuccess, exitFailure)
-
-test1 :: Test
-test1 = TestCase (assertEqual "Default test" 42 (21 + 21))
+import LexerTests (lexerTestsIdentifier, lexerTestsUInteger, lexerTestsConstant)
 
 main :: IO ()
 main = do
-    result <- runTestTT $ TestList [test1]
+    result <- runTestTT $ TestList [lexerTestsIdentifier, lexerTestsConstant, lexerTestsUInteger]
     if failures result > 0 then exitFailure else exitSuccess
