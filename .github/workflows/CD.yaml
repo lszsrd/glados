@@ -42,14 +42,13 @@ jobs:
 
     - name: Generating Haddock documentation
       run: |
-        cabal update
-        echo "HADDOCK_PATH="`cabal haddock | grep "Documentation created" -A1 | grep '/'` >> $GITHUB_ENV
+        echo "DOC_PATH="`cabal haddock --haddock-all | grep "Documentation created" -A1 | grep -v "Documentation created"` >> $GITHUB_ENV
       timeout-minutes: 2
 
     - name: Deploy documentation
       uses: peaceiris/actions-gh-pages@v3
       with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ${{ env.HADDOCK_PATH }}
+          publish_dir: ${{ env.DOC_PATH }}
           publish_branch: documentation
       timeout-minutes: 2
