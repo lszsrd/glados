@@ -16,7 +16,7 @@ env:
 jobs:
   check-coding-style:
     name: Checking coding style
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     container: ghcr.io/epitech/coding-style-checker:latest
 
     steps:
@@ -59,7 +59,7 @@ jobs:
 
   run-unit-tests:
     name: Running unit tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     # container: epitechcontent/epitest-docker:latest
     needs: check-compilation
 
