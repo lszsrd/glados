@@ -97,7 +97,7 @@ data Token
 -- @'Identifier'@ __can__ start with any keyword as long as their are no spaces
 -- between the keyword and the identifier.
 keywords :: Lexemes
-keywords = ["define ", "lambda ", "if "]
+keywords = ["define", "lambda", "if"]
 
 -- | Defines @'operators'@ as @+@, @-@, @*@, @/@, @<@, @>@ and
 -- @eq?@ patterns.
@@ -117,9 +117,9 @@ delimiters = ["(", ")"]
 -- Nothing if no valid @'Token'@ is found.
 parseAnyToken :: Stream -> Maybe (Token, Stream)
 parseAnyToken [] = Nothing
-parseAnyToken stream = case stream `parseToken` delimiters of
-    Nothing -> case stream `parseToken` operators of
-        Nothing -> case stream `parseToken` keywords of
+parseAnyToken stream = case parseToken stream delimiters of
+    Nothing -> case parseToken stream operators of
+        Nothing -> case parseToken stream keywords of
             Nothing -> Nothing
             Just (lexeme, strip) -> Just (Keyword lexeme, strip)
         Just (lexeme, strip) -> Just (Operator lexeme, strip)
@@ -146,8 +146,6 @@ parseIdentifier :: Stream -> Maybe (Lexeme, Stream)
 parseIdentifier [] = Nothing
 parseIdentifier stream@(x: xs)
     | isSpace x = Nothing
-    | isDigit x = Nothing   -- prevents variables starting with a digit to be
-                            -- parsed as an Identifier
     | otherwise = case parseAnyToken stream of
         Nothing -> case parseIdentifier xs of
             Nothing -> Just ([x], xs)
