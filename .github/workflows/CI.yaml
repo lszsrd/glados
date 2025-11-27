@@ -6,8 +6,9 @@ on:
     branches:
       - main
     paths:
-      - src/**
       - .github/workflows/**
+      - lib/**
+      - src/**
 
 env:
   TARGET: glados
