@@ -6,13 +6,18 @@
 -}
 
 module LexerTests (
-    lexerTestsIdentifier
+    lexerTestsToken
+    , lexerTestsIdentifier
     , lexerTestsConstant
     , lexerTestsUInteger
 ) where
 
 import Test.HUnit
 import Lexer
+
+lexerTestsToken :: Test
+lexerTestsToken = TestList      [
+                                ]
 
 lexerTestsIdentifier :: Test
 lexerTestsIdentifier = TestList [
