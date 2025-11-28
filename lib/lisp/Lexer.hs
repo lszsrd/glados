@@ -191,13 +191,14 @@ parseUInteger (x: xs)
 -- that let a user define a comment in its code that should be ignored. However,
 -- @'Lexemes'@ from @'keywords'@, @'operators'@ or @'delimiters'@ are used to
 -- generate the list of @'Token'@.
+-- #TODO: Handle case where 'definefoo' should return just an Identifier
 lexer :: Stream -> [Token]
 lexer [] = []
 lexer (';': stream) = lexer $ dropWhile (/= '\n') stream
-lexer stream@(_: xs) = case parseAnyToken stream of
-    Nothing -> case parseIdentifier stream of
-        Nothing -> lexer xs
-        Just (lexeme, strip) -> case parseConstant stream of
-            Nothing -> Identifier lexeme: lexer strip
-            Just (token, string) -> token: lexer string
-    Just (token, strip) -> token: lexer strip
+lexer stream@(_: xs) = case parseConstant stream of
+    Nothing -> case parseAnyToken stream of
+        Nothing -> case parseIdentifier stream of
+            Nothing -> lexer xs
+            Just (identifier, strip) -> Identifier identifier: lexer strip
+        Just (token, strip) -> token: lexer strip
+    Just (constant, strip) -> constant: lexer strip

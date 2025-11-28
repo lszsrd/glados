@@ -27,7 +27,7 @@ main = do
     putStrLn buffer
     let tokenList = lexer buffer
     print tokenList
-    ast <- getAST tokenList
+    {- ast <- getAST tokenList
     res <- interpretResult ast
-    putStr (show res)
+    putStr (show res) -}
     exitSuccess

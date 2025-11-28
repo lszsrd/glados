@@ -37,6 +37,7 @@ lexerTestsLexer = TestList      [
     , lexerSimpleDefine
     , lexerSimpleIf
     , lexerSimpleOperator
+    , lexerNegativeConstant
                                 ]
 
 lexerEmptyString = TestCase (assertEqual "lexer \"\"" [] (lexer ""))
@@ -45,6 +46,7 @@ lexerCommentedString = TestCase (assertEqual "lexer \"; foo bar baz\n\"" [] (lex
 lexerSimpleDefine = TestCase (assertEqual "lexer \"(define foo 42)\"" [Delimiter "(", Keyword "define", Identifier "foo", Constant 42, Delimiter ")"] (lexer "(define foo 42)"))
 lexerSimpleIf = TestCase (assertEqual "lexer \"(if #t 4 2)\"" [Delimiter "(", Keyword "if", Boolean True, Constant 4, Constant 2, Delimiter ")"] (lexer "(if #t 4 2)"))
 lexerSimpleOperator = TestCase (assertEqual "lexer \"(eq? (*2 5) (- 11 1))\"" [Delimiter "(", Operator "eq?", Delimiter "(", Operator "*", Constant 2, Constant 5, Delimiter ")", Delimiter "(", Operator "-", Constant 11, Constant 1, Delimiter ")", Delimiter ")"] (lexer "(eq? (*2 5) (- 11 1))"))
+lexerNegativeConstant = TestCase (assertEqual "lexer \"(-42)\"" [Delimiter "(", Constant (-42), Delimiter ")"] (lexer "(-42)"))
 
 -- Testing `parseAnyToken` function from Lexer module
 lexerTestsAnyToken = TestList   [
