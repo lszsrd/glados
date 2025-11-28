@@ -70,6 +70,20 @@ sexprToAST (SExprSymbol "#t") = Just (ExprBool True)
 sexprToAST (SExprSymbol "#f") = Just (ExprBool False)
 sexprToAST (SExprSymbol s) = Just (ExprVar s)
 sexprToAST (SExprList []) = Nothing
+sexprToAST (SExprList [SExprSymbol "define", SExprSymbol name, value]) =
+    case sexprToAST value of
+        Nothing -> Nothing
+        Just ast -> Just (ExprDefine name ast)
+sexprToAST (SExprList (SExprSymbol "define" : _)) = Nothing
+sexprToAST (SExprList [SExprSymbol "if", cond, thenExpr, elseExpr]) =
+    case sexprToAST cond of
+        Nothing -> Nothing
+        Just condAst -> case sexprToAST thenExpr of
+            Nothing -> Nothing
+            Just thenAst -> case sexprToAST elseExpr of
+                Nothing -> Nothing
+                Just elseAst -> Just (ExprIf condAst thenAst elseAst)
+sexprToAST (SExprList (SExprSymbol "if" : _)) = Nothing
 sexprToAST (SExprList (SExprSymbol funcName : argsSExpr)) =
     case convertAllArguments argsSExpr of
         Nothing -> Nothing
