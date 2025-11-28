@@ -119,9 +119,12 @@ parseAnyToken :: Stream -> Maybe (Token, Stream)
 parseAnyToken [] = Nothing
 parseAnyToken stream = case parseToken stream delimiters of
     Nothing -> case parseToken stream operators of
-        Nothing -> case parseToken stream keywords of
-            Nothing -> Nothing
-            Just (lexeme, strip) -> Just (Keyword lexeme, strip)
+        Nothing -> do
+            (lexeme, strip) <- parseToken stream keywords
+            if null strip || isSpace (head strip)
+                then Just (Keyword lexeme, strip) else do
+                    _ <- parseAnyToken strip
+                    Just (Keyword lexeme, strip)
         Just (lexeme, strip) -> Just (Operator lexeme, strip)
     Just (lexeme, strip) -> Just (Delimiter lexeme, strip)
     
@@ -191,7 +194,6 @@ parseUInteger (x: xs)
 -- that let a user define a comment in its code that should be ignored. However,
 -- @'Lexemes'@ from @'keywords'@, @'operators'@ or @'delimiters'@ are used to
 -- generate the list of @'Token'@.
--- #TODO: Handle case where 'definefoo' should return just an Identifier
 lexer :: Stream -> [Token]
 lexer [] = []
 lexer (';': stream) = lexer $ dropWhile (/= '\n') stream
