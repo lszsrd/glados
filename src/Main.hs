@@ -12,7 +12,7 @@ import System.Exit (exitSuccess)
 
 import Lexer (lexer)
 import Parser (getAST)
-import Interpretor (interpretResult)
+-- import Interpretor (interpretResult)
 
 -- get the buffer, if args, then try file, else read stdin
 getBuffer :: [String] -> IO String

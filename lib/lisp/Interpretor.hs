@@ -5,37 +5,49 @@
 -- src/Parser.hs
 -}
 
-module Interpretor (interpretResult) where
+module Interpretor (interpret) where
 
 -- import Parser (Ast(..))
-import Control.Exception (try, SomeException, evaluate)
-import Error
+-- import Control.Exception (try, SomeException, evaluate)
 
 type Identifier     = String
-type Operator       = Identifier
 type Args           = [Identifier]
-data FunCall        = FunCall Operator Args Ast deriving Show
+data FunCall        = FunCall Identifier Args Ast deriving Show
 
-data Ast = Define   Identifier Ast
-    |      Lambda   Identifier Args Ast
+data Ast = Define   Identifier Args Ast
     |      If       FunCall Ast Ast
     |      Var      Identifier
     |      Bool     Bool
     |      Integer  Integer
-    |      Call     FunCall
+    |      Call     Identifier Args 
     deriving Show
 
--- Ram through the AST and interpret it  
-interpret :: Ast -> Ast
-{- interpret (TODO _) = throwErr $ Error.ErrorT
-    { location = 0, message = "No input" }  -}
-interpret (Var x) = Var x
-interpret _ = Var "Nothing"
+data Env = Variable String
+    | Function FunCall
+    deriving Show
 
-interpretResult :: Ast -> IO Ast
-interpretResult ast = do
-    evalParser <- try (evaluate (interpret ast))
-        :: IO (Either SomeException Ast)
-    case evalParser of
-        Left err -> printError (show err)
-        Right str -> return str
+searchInEnv :: [Env] -> Ast -> Bool
+searchInEnv [] _ = False
+searchInEnv (Function(FunCall i1 args1 ast1):xs) fCall@(Call i2 args2) =
+    (i1 == i2) || searchInEnv xs fCall
+    -- TODO Need to verify types of args
+searchInEnv (_:xs) f = searchInEnv xs f
+
+
+-- Ram through the AST and interpret it  
+interpret :: [Ast] -> [Env] -> Maybe Ast
+interpret [] _ = Nothing
+interpret (Define i ag bd: ast) env =
+    interpret ast (env ++ [Function (FunCall i ag bd)])
+interpret (call@(Call f args): ast) env = if searchInEnv env call
+    then Just $ Var ("Call to " ++ show f ++ " Sucess")
+    else Just $ Var ("Call to " ++ show f ++ " Failed")
+
+-- interpretResult :: [Ast] -> IO Ast
+-- interpretResult ast = do
+--     evalParser <- try (evaluate (interpret ast []))
+--         :: IO (Either SomeException Ast)
+--     case evalParser of
+--         Left err -> printError (show err)
+--         Right str -> return str
+-- [(Define "foo" ["a", "b"] (Call "+" ["a", "b"]))]
