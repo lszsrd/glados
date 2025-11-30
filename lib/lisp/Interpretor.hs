@@ -56,7 +56,7 @@ interpret (call@(Call f args): ast) env = if searchInEnv env call
 
 -- BUILTINS
 
-applyBuiltin :: String -> [Integer] -> (Either Integer Bool)
+applyBuiltin :: String -> [Integer] -> Maybe (Either Integer Bool)
 
 applyBuiltin _ _ = Nothing
 
