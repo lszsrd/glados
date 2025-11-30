@@ -60,19 +60,18 @@ applyBuiltin :: String -> [Integer] -> (Either Integer Bool)
 
 applyBuiltin _ _ = Nothing
 
-applyBuiltin "+" n = Just $ sum n
+applyBuiltin "+" n = Just $ Left $ sum n
 
 applyBuiltin "-" n = case n of
     []  -> Nothing
-    [x] -> Just (-x)
-    (x:xs) -> Just $ x - sum xs
+    [x] -> Just $ Left $ (-x)
+    (x:xs) -> Just $ Left $ x - sum xs
 
-applyBuiltin "*" n = Just $ product n
+applyBuiltin "*" n = Just $ Left $ product n
 
 applyBuiltin "div" n = case n of
-    [a,b] -> if b == 0 then Nothing else Just (a `div` b)
+    [a,b] -> if b == 0 then Nothing else Just $ Left (a `div` b)
     _ -> Nothing
-
 
 applyBuiltin "mod" n = case n of
     [a,b] -> if b == 0 then Nothing else Just $ Left (a `mod` b)
