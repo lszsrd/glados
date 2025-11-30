@@ -108,7 +108,6 @@ operators = ["+", "-", "*", "/", ">", "<", "eq?"]
 delimiters :: Lexemes
 delimiters = ["(", ")"]
 
-
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__ (@'Token'@,
 -- @'Stream'@).
 --
@@ -122,9 +121,10 @@ parseAnyToken stream = case parseToken stream delimiters of
         Nothing -> do
             (lexeme, strip) <- parseToken stream keywords
             if null strip || isSpace (head strip)
-                then Just (Keyword lexeme, strip) else do
-                    _ <- parseAnyToken strip
-                    Just (Keyword lexeme, strip)
+                then Just (Keyword lexeme, strip)
+                else case parseToken strip delimiters of
+                    Nothing -> Nothing
+                    _ -> Just (Keyword lexeme, strip)
         Just (lexeme, strip) -> Just (Operator lexeme, strip)
     Just (lexeme, strip) -> Just (Delimiter lexeme, strip)
     
@@ -136,9 +136,9 @@ parseAnyToken stream = case parseToken stream delimiters of
 -- were found at the __beginning__ of the stream, returns Nothing.
 parseToken :: Stream -> Lexemes -> Maybe (Lexeme, Stream)
 parseToken _ [] = Nothing
-parseToken string (x: xs)
-    | x `isPrefixOf` string = Just (x, drop (length x) string)
-    | otherwise = parseToken string xs
+parseToken stream (x: xs)
+    | x `isPrefixOf` stream = Just (x, drop (length x) stream)
+    | otherwise = parseToken stream xs
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__ (@'Lexeme'@,
 -- @'Stream'@).
@@ -153,7 +153,9 @@ parseIdentifier stream@(x: xs)
         Nothing -> case parseIdentifier xs of
             Nothing -> Just ([x], xs)
             Just (lexeme, strip) -> Just (x: lexeme, strip)
-        _ -> Nothing
+        _ -> do
+            (lexeme, strip) <- parseToken stream keywords
+            Just (lexeme, strip)
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__ (@'Token@,
 -- @'Stream'@).

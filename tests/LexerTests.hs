@@ -47,6 +47,13 @@ lexerSimpleDefine = TestCase (assertEqual "lexer \"(define foo 42)\"" [Delimiter
 lexerSimpleIf = TestCase (assertEqual "lexer \"(if #t 4 2)\"" [Delimiter "(", Keyword "if", Boolean True, Constant 4, Constant 2, Delimiter ")"] (lexer "(if #t 4 2)"))
 lexerSimpleOperator = TestCase (assertEqual "lexer \"(eq? (*2 5) (- 11 1))\"" [Delimiter "(", Operator "eq?", Delimiter "(", Operator "*", Constant 2, Constant 5, Delimiter ")", Delimiter "(", Operator "-", Constant 11, Constant 1, Delimiter ")", Delimiter ")"] (lexer "(eq? (*2 5) (- 11 1))"))
 lexerNegativeConstant = TestCase (assertEqual "lexer \"(-42)\"" [Delimiter "(", Constant (-42), Delimiter ")"] (lexer "(-42)"))
+lexerAdvancedIdentifier1 = TestCase (assertEqual "lexer \"if\"" [Keyword "if"] (lexer "if"))
+lexerAdvancedIdentifier2 = TestCase (assertEqual "lexer \"if()\"" [Keyword "if", Delimiter "(", Delimiter ")"] (lexer "if()"))
+lexerAdvancedIdentifier3 = TestCase (assertEqual "lexer \"if ()\"" [Keyword "if", Delimiter "(", Delimiter ")"] (lexer "if ()"))
+lexerAdvancedIdentifier4 = TestCase (assertEqual "lexer \"ifif\"" [Identifier "ifif"] (lexer "ifif"))
+lexerAdvancedIdentifier5 = TestCase (assertEqual "lexer \"ifif ()\"" [Identifier "ifif", Delimiter "(", Delimiter ")"] (lexer "ifif ()"))
+lexerAdvancedIdentifier6 = TestCase (assertEqual "lexer \"ifif()\"" [Identifier "ifif", Delimiter "(", Delimiter ")"] (lexer "ifif()"))
+lexerAdvancedIdentifier7 = TestCase (assertEqual "lexer \"iffoo\"" [Identifier "iffoo"] (lexer "iffoo"))
 
 -- Testing `parseAnyToken` function from Lexer module
 lexerTestsAnyToken = TestList   [
@@ -65,6 +72,8 @@ lexerTestsAnyToken = TestList   [
     , parseAnyTokenKeyword1
     , parseAnyTokenKeyword2
     , parseAnyTokenKeyword3
+    , parseAnyTokenDoubleKeyword
+    , parseAnyTokenKeywordSpecial
     , parseAnyTokenInvalidKeyword
                                 ]
 
@@ -82,7 +91,9 @@ parseAnyTokenOperator7 = TestCase (assertEqual "parseAnyToken \"eq? bar\"" (Just
 parseAnyTokenInvalidOperator = TestCase (assertEqual "parseAnyToken \"bar\"" Nothing (parseAnyToken "bar"))
 parseAnyTokenKeyword1 = TestCase (assertEqual "parseAnyToken \"define baz\"" (Just (Keyword "define", " baz")) (parseAnyToken "define baz"))
 parseAnyTokenKeyword2 = TestCase (assertEqual "parseAnyToken \"lambda   baz\"" (Just (Keyword "lambda", "   baz")) (parseAnyToken "lambda   baz"))
-parseAnyTokenKeyword3 = TestCase (assertEqual "parseAnyToken \"if \"" (Just (Keyword "if", "")) (parseAnyToken "if"))
+parseAnyTokenKeyword3 = TestCase (assertEqual "parseAnyToken \"if \"" (Just (Keyword "if", " ")) (parseAnyToken "if "))
+parseAnyTokenDoubleKeyword = TestCase (assertEqual "parseAnyToken \"ifif\"" Nothing (parseAnyToken "ifif"))
+parseAnyTokenKeywordSpecial = TestCase (assertEqual "parseAnyToken \"definefoo\"" Nothing (parseAnyToken "definefoo"))
 parseAnyTokenInvalidKeyword = TestCase (assertEqual "parseAnyToken \"baz\"" Nothing (parseAnyToken "baz"))
 
 -- Testing `parseToken` function from Lexer module
