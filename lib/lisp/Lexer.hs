@@ -93,18 +93,20 @@ data Token
     )
 
 
--- | Defines @'keywords'@ as @define@, @lambda@ and @if@ patterns. Note that an
--- @'Identifier'@ __can__ start with any keyword as long as their are no spaces
--- between the keyword and the identifier.
+-- | Defines @'keywords'@ as @"define"@, @"lambda"@ and @"if"@ patterns.
+--
+-- Note that an @'Identifier'@ __can__ start with any keyword as long as their
+-- are no spaces between the @'Keyword'@ and the other bytes composing the
+-- @'Identifier'@.
 keywords :: Lexemes
 keywords = ["define", "lambda", "if"]
 
--- | Defines @'operators'@ as @+@, @-@, @*@, @/@, @<@, @>@ and
--- @eq?@ patterns.
+-- | Defines @'operators'@ as @"+"@", @"-"@, @"*"@, @"/"@, @"<"@, @">"@ and
+-- @"eq?"@ patterns.
 operators :: Lexemes
 operators = ["+", "-", "*", "/", ">", "<", "eq?"]
 
--- | Defines @'delimiters'@ as @(@ and @)@ patterns.
+-- | Defines @'delimiters'@ as @"("@ and @")"@ patterns.
 delimiters :: Lexemes
 delimiters = ["(", ")"]
 
@@ -114,6 +116,9 @@ delimiters = ["(", ")"]
 -- This function __tries__ to parse any @'Token'@ from the current @'Stream'@
 -- (either from @'keywords'@, @'operators'@ or @'delimiters'@) and returns
 -- Nothing if no valid @'Token'@ is found.
+--
+-- Note that a token's strip that start with anything but a delimiter is not a
+-- valid token.
 parseAnyToken :: Stream -> Maybe (Token, Stream)
 parseAnyToken [] = Nothing
 parseAnyToken stream = case parseToken stream delimiters of
