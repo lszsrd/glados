@@ -22,8 +22,10 @@ data Ast = Define   Identifier Args Ast
     |      Call     Identifier Args 
     deriving Show
 
-data Env = Variable String
-    | Function FunCall
+type Value = String
+
+data Env = Variable String Value
+    |      Function FunCall
     deriving Show
 
 searchInEnv :: [Env] -> Ast -> Bool
@@ -33,15 +35,26 @@ searchInEnv (Function(FunCall i1 args1 ast1):xs) fCall@(Call i2 args2) =
     -- TODO Need to verify types of args
 searchInEnv (_:xs) f = searchInEnv xs f
 
+eval :: Ast -> Maybe Ast
+eval _ = Just $ Bool True
+
+evalFunc :: FunCall -> Maybe Bool
+evalFunc _ = Just False
 
 -- Ram through the AST and interpret it  
 interpret :: [Ast] -> [Env] -> Maybe Ast
 interpret [] _ = Nothing
+
 interpret (Define i ag bd: ast) env =
     interpret ast (env ++ [Function (FunCall i ag bd)])
+
+interpret (If cond th el: ast) env = do
+    condEval <- evalFunc cond
+    if condEval then eval th else eval el
+
 interpret (call@(Call f args): ast) env = if searchInEnv env call
     then Just $ Var ("Call to " ++ show f ++ " Sucess")
-    else Just $ Var ("Call to " ++ show f ++ " Failed")
+    else Nothing
 
 -- interpretResult :: [Ast] -> IO Ast
 -- interpretResult ast = do
