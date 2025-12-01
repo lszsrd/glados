@@ -43,7 +43,10 @@ parseList :: [Lexer.Token] -> [SExpr] -> Maybe (SExpr, [Lexer.Token])
 parseList (Delimiter ")" : rest) elements =
     Just (SExprList elements, rest)
 parseList [] elements =
-    Nothing
+    throwErr $ ErrorT {
+        location = 0,
+        message = "Exception: missing closing parenthesis"
+    }
 parseList tokens elements =
     case parseOne tokens of
         Nothing -> Nothing
@@ -53,6 +56,11 @@ parseList tokens elements =
 tokensToSExpr :: [Lexer.Token] -> Maybe SExpr
 tokensToSExpr tokens = case parseOne tokens of
     Just (sexpr, []) -> Just sexpr
+    Just (_, (Delimiter ")" : _)) ->
+        throwErr $ ErrorT {
+            location = 0,
+            message = "Exception: unexpected closing parenthesis"
+        }
     _ -> Nothing
 
 convertAllArguments :: [SExpr] -> Maybe [Ast]
@@ -69,7 +77,11 @@ sexprToAST (SExprInt n) = Just (ExprInteger n)
 sexprToAST (SExprSymbol "#t") = Just (ExprBool True)
 sexprToAST (SExprSymbol "#f") = Just (ExprBool False)
 sexprToAST (SExprSymbol s) = Just (ExprVar s)
-sexprToAST (SExprList []) = Nothing
+sexprToAST (SExprList []) =
+    throwErr $ ErrorT {
+        location = 0,
+        message = "Exception: invalid syntax empty list"
+    }
 sexprToAST (SExprList [SExprSymbol "define", SExprSymbol name, value]) =
     case sexprToAST value of
         Nothing -> Nothing
@@ -83,7 +95,13 @@ sexprToAST (SExprList [SExprSymbol "if", cond, thenExpr, elseExpr]) =
             Just thenAst -> case sexprToAST elseExpr of
                 Nothing -> Nothing
                 Just elseAst -> Just (ExprIf condAst thenAst elseAst)
-sexprToAST (SExprList (SExprSymbol "if" : _)) = Nothing
+sexprToAST (SExprList (SExprSymbol "if" : args))
+    | length args /= 3 =
+        throwErr $ ErrorT {
+            location = 0,
+            message = "Exception: incorrect args numbers"
+        }
+    | otherwise = Nothing
 sexprToAST (SExprList (SExprSymbol funcName : argsSExpr)) =
     case convertAllArguments argsSExpr of
         Nothing -> Nothing
