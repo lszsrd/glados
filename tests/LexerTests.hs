@@ -38,6 +38,13 @@ lexerTestsLexer = TestList      [
     , lexerSimpleIf
     , lexerSimpleOperator
     , lexerNegativeConstant
+    , lexerAdvancedIdentifier1
+    , lexerAdvancedIdentifier2
+    , lexerAdvancedIdentifier3
+    , lexerAdvancedIdentifier4
+    , lexerAdvancedIdentifier5
+    , lexerAdvancedIdentifier6
+    , lexerAdvancedIdentifier7
                                 ]
 
 lexerEmptyString = TestCase (assertEqual "lexer \"\"" [] (lexer ""))
