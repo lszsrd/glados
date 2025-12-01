@@ -102,7 +102,7 @@ keywords :: Lexemes
 keywords = ["define", "lambda", "if"]
 
 -- | Defines @'operators'@ as @"+"@", @"-"@, @"*"@, @"/"@, @"<"@, @">"@ and
--- @"eq?"@ patterns.
+-- @"eq?@ patterns.
 operators :: Lexemes
 operators = ["+", "-", "*", "/", ">", "<", "eq?"]
 
@@ -120,7 +120,6 @@ delimiters = ["(", ")"]
 -- Note that a token's strip that start with anything but a delimiter is not a
 -- valid token.
 parseAnyToken :: Stream -> Maybe (Token, Stream)
-parseAnyToken [] = Nothing
 parseAnyToken stream = case parseToken stream delimiters of
     Nothing -> case parseToken stream operators of
         Nothing -> do
