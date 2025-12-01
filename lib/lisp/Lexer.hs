@@ -125,9 +125,9 @@ parseAnyToken stream = case parseToken stream delimiters of
         Nothing -> do
             (lexeme, str) <- parseToken stream keywords
             if null str || isSpace (head str) then Just (Keyword lexeme, str)
-                else case parseToken str delimiters of
-                    Nothing -> Nothing
-                    _ -> Just (Keyword lexeme, str)
+            else case parseToken str delimiters of
+                Nothing -> Nothing
+                _ -> Just (Keyword lexeme, str)
         Just (lexeme, strip) -> Just (Operator lexeme, strip)
     Just (lexeme, strip) -> Just (Delimiter lexeme, strip)
 
