@@ -93,21 +93,22 @@ data Token
     )
 
 
--- | Defines @'keywords'@ as @define@, @lambda@ and @if@ patterns. Note that an
--- @'Identifier'@ __can__ start with any keyword as long as their are no spaces
--- between the keyword and the identifier.
+-- | Defines @'keywords'@ as @"define"@, @"lambda"@ and @"if"@ patterns.
+--
+-- Note that an @'Identifier'@ __can__ start with any keyword as long as their
+-- are no spaces between the @'Keyword'@ and the other bytes composing the
+-- @'Identifier'@.
 keywords :: Lexemes
 keywords = ["define", "lambda", "if"]
 
--- | Defines @'operators'@ as @+@, @-@, @*@, @/@, @<@, @>@ and
--- @eq?@ patterns.
+-- | Defines @'operators'@ as @"+"@", @"-"@, @"*"@, @"/"@, @"<"@, @">"@ and
+-- @"eq?"@ patterns.
 operators :: Lexemes
 operators = ["+", "-", "*", "/", ">", "<", "eq?"]
 
--- | Defines @'delimiters'@ as @(@ and @)@ patterns.
+-- | Defines @'delimiters'@ as @"("@ and @")"@ patterns.
 delimiters :: Lexemes
 delimiters = ["(", ")"]
-
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__ (@'Token'@,
 -- @'Stream'@).
@@ -115,13 +116,20 @@ delimiters = ["(", ")"]
 -- This function __tries__ to parse any @'Token'@ from the current @'Stream'@
 -- (either from @'keywords'@, @'operators'@ or @'delimiters'@) and returns
 -- Nothing if no valid @'Token'@ is found.
+--
+-- Note that a token's strip that start with anything but a delimiter is not a
+-- valid token.
 parseAnyToken :: Stream -> Maybe (Token, Stream)
 parseAnyToken [] = Nothing
 parseAnyToken stream = case parseToken stream delimiters of
     Nothing -> case parseToken stream operators of
-        Nothing -> case parseToken stream keywords of
-            Nothing -> Nothing
-            Just (lexeme, strip) -> Just (Keyword lexeme, strip)
+        Nothing -> do
+            (lexeme, strip) <- parseToken stream keywords
+            if null strip || isSpace (head strip)
+                then Just (Keyword lexeme, strip)
+                else case parseToken strip delimiters of
+                    Nothing -> Nothing
+                    _ -> Just (Keyword lexeme, strip)
         Just (lexeme, strip) -> Just (Operator lexeme, strip)
     Just (lexeme, strip) -> Just (Delimiter lexeme, strip)
     
@@ -133,9 +141,9 @@ parseAnyToken stream = case parseToken stream delimiters of
 -- were found at the __beginning__ of the stream, returns Nothing.
 parseToken :: Stream -> Lexemes -> Maybe (Lexeme, Stream)
 parseToken _ [] = Nothing
-parseToken string (x: xs)
-    | x `isPrefixOf` string = Just (x, drop (length x) string)
-    | otherwise = parseToken string xs
+parseToken stream (x: xs)
+    | x `isPrefixOf` stream = Just (x, drop (length x) stream)
+    | otherwise = parseToken stream xs
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__ (@'Lexeme'@,
 -- @'Stream'@).
@@ -150,7 +158,9 @@ parseIdentifier stream@(x: xs)
         Nothing -> case parseIdentifier xs of
             Nothing -> Just ([x], xs)
             Just (lexeme, strip) -> Just (x: lexeme, strip)
-        _ -> Nothing
+        _ -> do
+            (lexeme, strip) <- parseToken stream keywords
+            Just (lexeme, strip)
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__ (@'Token@,
 -- @'Stream'@).
@@ -194,10 +204,10 @@ parseUInteger (x: xs)
 lexer :: Stream -> [Token]
 lexer [] = []
 lexer (';': stream) = lexer $ dropWhile (/= '\n') stream
-lexer stream@(_: xs) = case parseAnyToken stream of
-    Nothing -> case parseIdentifier stream of
-        Nothing -> lexer xs
-        Just (lexeme, strip) -> case parseConstant stream of
-            Nothing -> Identifier lexeme: lexer strip
-            Just (token, string) -> token: lexer string
-    Just (token, strip) -> token: lexer strip
+lexer stream@(_: xs) = case parseConstant stream of
+    Nothing -> case parseAnyToken stream of
+        Nothing -> case parseIdentifier stream of
+            Nothing -> lexer xs
+            Just (identifier, strip) -> Identifier identifier: lexer strip
+        Just (token, strip) -> token: lexer strip
+    Just (constant, strip) -> constant: lexer strip

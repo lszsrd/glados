@@ -14,7 +14,7 @@ import Error
 type Identifier    = String
 
 data Ast = ExprDefine  Identifier Ast
-    |      ExprLambda  Identifier [Ast]   
+    |      ExprLambda  Identifier [Ast]
     |      ExprIf      Ast Ast Ast
     |      ExprVar     Identifier
     |      ExprBool    Bool
