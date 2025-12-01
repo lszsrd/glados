@@ -123,15 +123,14 @@ parseAnyToken :: Stream -> Maybe (Token, Stream)
 parseAnyToken stream = case parseToken stream delimiters of
     Nothing -> case parseToken stream operators of
         Nothing -> do
-            (lexeme, strip) <- parseToken stream keywords
-            if null strip || isSpace (head strip)
-                then Just (Keyword lexeme, strip)
-                else case parseToken strip delimiters of
+            (lexeme, str) <- parseToken stream keywords
+            if null str || isSpace (head str) then Just (Keyword lexeme, str)
+                else case parseToken str delimiters of
                     Nothing -> Nothing
-                    _ -> Just (Keyword lexeme, strip)
+                    _ -> Just (Keyword lexeme, str)
         Just (lexeme, strip) -> Just (Operator lexeme, strip)
     Just (lexeme, strip) -> Just (Delimiter lexeme, strip)
-    
+
 -- | Takes a @'Stream'@ and @'Lexemes'@ as parameters and returns a __Maybe__
 -- (@'Lexeme'@, @'Stream'@).
 --
