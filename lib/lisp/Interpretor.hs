@@ -12,36 +12,92 @@ module Interpretor () where
 import Debug.Trace
 
 type Identifier     = String
-type Args           = [Identifier]
 
-data Value =    Number          Integer
-    |           Boolean         Bool
+data Expr = Lambda          [Identifier] Expr
+  |         If              Expr Expr Expr
+  |         Call            Expr [Expr]
+  |         Var             Identifier
+  |         Boolean         Bool
+  |         Int             Integer
+  deriving Show
+
+data Ast =  Define          Identifier Expr
+  |         Expression      Expr
+  deriving Show
+
+type List = [Ast]
+
+data Env =  DefinedExpr     Identifier Expr
     deriving Show
 
-data Expr =     Variable        Identifier
-    |           Lambda          Args Ast -- Args or [Expr]
-    |           FCall           Identifier [Expr]
-    deriving Show
+-- BUILTINS
+-- applyBuiltin :: String -> [Integer] -> Maybe Expr
+-- applyBuiltin "+" n = Just $ Int $ sum n
+-- applyBuiltin "-" n = case n of
+--     []  -> Nothing
+--     [x] -> Just $ Int (-x)
+--     (x:xs) -> Just $ Int $ x - sum xs
+-- applyBuiltin "*" n = Just $ Int $ product n
+-- applyBuiltin "div" n = case n of
+--     [a,b] -> if b == 0 then Nothing else Just $ Int (a `div` b)
+--     _ -> Nothing
+-- applyBuiltin "mod" n = case n of
+--     [a,b] -> if b == 0 then Nothing else Just $ Int (a `mod` b)
+--     _ -> Nothing
+-- applyBuiltin "<" n = case n of
+--     [a,b] -> Just $ Boolean (a < b)
+--     _ -> Nothing
+-- applyBuiltin ">" n = case n of
+--     [a,b] -> Just $ Boolean (a > b)
+--     _ -> Nothing
+-- applyBuiltin "eq?" n = case n of
+--     [a,b] -> Just $ Boolean (a == b)
+--     _ -> Nothing
 
-data Cond =     ExpressionCond  Expr
-    |           IfCond          Cond Ast Ast
-    deriving Show
+builtinToken :: [Identifier]
+builtinToken = [ "+", "-", "*", "div", "mod"]
 
-data Ast =      Define          Expr Ast
-    |           Expression      Expr
-    |           If              Cond Ast Ast
-    |           Constant        Value
-    deriving Show
+builtinComparisonToken :: [Identifier]
+builtinComparisonToken = [ ">", "<", "eq?"]
 
--- searchInEnv :: [Env] -> Ast -> Maybe FunCall
--- searchInEnv [] _ = Nothing
--- searchInEnv (Function f1@(FunCall i1 _ _):xs) fCall@(Call i2 _) =
---     if i1 == i2
---         then Just f1
---         else searchInEnv xs fCall
---     -- TODO Need to verify types of args
--- searchInEnv (_:xs) f = searchInEnv xs f
---
+checkCallToken :: Expr -> [Identifier] -> Maybe Identifier
+checkCallToken fcall@(Call (Var id) _) (x:xs)
+    | id == x = Just id
+    | otherwise = checkCallToken fcall xs
+checkCallToken _ [] = Nothing
+
+searchInEnv :: [Env] -> Expr -> Maybe Expr
+searchInEnv [] _ = Nothing
+searchInEnv ((DefinedExpr i1 _):xs) fCall@(Call (Var i2) _) =
+    if i1 == i2
+        then Just fCall
+        else searchInEnv xs fCall
+    -- TODO Need to verify types of args
+searchInEnv (_:xs) f = searchInEnv xs f
+
+eval :: Expr -> [Env] -> Maybe Expr
+eval call@(Call (Lambda id bdy) ag) globEnv = Nothing
+eval call@(Call (Var id) ag) globEnv = 
+    case searchInEnv globEnv call of
+        Nothing -> do
+            builtin <- checkCallToken call builtinToken
+            -- applyBuiltin builtin ag
+            Nothing
+        Just f -> Nothing
+eval _ _ = Nothing
+
+-- Ram through the AST and interpret it  
+interpret :: [Ast] -> [Env] -> Maybe Ast
+
+interpret (Define ex body: ast) env = interpret ast (DefinedExpr ex body: env)
+interpret ((Expression f1@(Call id args)): ast) env = do
+    expr <- eval f1 env
+    interpret ast env
+interpret (Expression (Lambda args bdy): ast) env = Nothing -- Scan env to find FunctionCall and evalualte it with given args
+interpret (Expression (If cond th el): ast) env = Nothing -- Eval cond, if true, exec th else el
+interpret _ _ = Nothing
+
+
 -- checkArgs :: Args -> Args -> Args -> Maybe Args
 -- checkArgs [] (x:xs) _ = Nothing
 -- checkArgs _ _ [] = Nothing
@@ -53,59 +109,7 @@ data Ast =      Define          Expr Ast
 --         Just (found ++ rest)
 -- checkArgs _ _ _ = Just []
 --
--- checkBuiltin :: Ast -> Maybe Identifier
--- checkBuiltin (Call "+" _) = Just "+"
--- checkBuiltin (Call "-" _) = Just "-"
--- checkBuiltin _ = Nothing
 --
--- -- BUILTINS
--- applyBuiltin :: String -> [Integer] -> Maybe Ast
--- applyBuiltin "+" n = Just $ Integer $ sum n
--- applyBuiltin "-" n = case n of
---     []  -> Nothing
---     [x] -> Just $ Integer (-x)
---     (x:xs) -> Just $ Integer $ x - sum xs
--- applyBuiltin "*" n = Just $ Integer $ product n
--- applyBuiltin "div" n = case n of
---     [a,b] -> if b == 0 then Nothing else Just $ Integer (a `div` b)
---     _ -> Nothing
--- applyBuiltin "mod" n = case n of
---     [a,b] -> if b == 0 then Nothing else Just $ Integer (a `mod` b)
---     _ -> Nothing
--- applyBuiltin "<" n = case n of
---     [a,b] -> Just $ Bool (a < b)
---     _ -> Nothing
--- applyBuiltin ">" n = case n of
---     [a,b] -> Just $ Bool (a > b)
---     _ -> Nothing
--- applyBuiltin "eq?" n = case n of
---     [a,b] -> Just $ Bool (a == b)
---     _ -> Nothing
---
--- -- Define func (a b ) (+ a b)
--- eval :: Args -> Ast -> Args -> [Env] -> Maybe Ast
--- eval expecAg call@(Call id ag) givenAg globEnv = 
---     case searchInEnv globEnv call of
---         Nothing -> do
---             builtin <- checkBuiltin call
---             agList <- checkArgs expecAg ag givenAg
---             applyBuiltin builtin (map (read::String->Integer) agList)
---         Just f -> do
---             agList <- checkArgs expecAg ag givenAg
---             Nothing
--- eval _ _ _ _ = Nothing
---
--- -- Ram through the AST and interpret it  
--- interpret :: [Ast] -> [Env] -> Maybe Ast
---
--- interpret (Define i ag bd: ast) env =
---     interpret ast (env ++ [Function (FunCall i ag bd)])
---
--- interpret (call@(Call f args): ast) env = case searchInEnv env call of
---     Just (FunCall _ expectedArgs body) -> eval expectedArgs body args env
---     Nothing -> Nothing
---
--- interpret _ _ = Nothing
 
 -- interpretResult :: [Ast] -> IO Ast
 -- interpretResult ast = do
