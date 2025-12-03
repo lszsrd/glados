@@ -25,17 +25,20 @@ data Expr = Lambda [Identifier] Expr
 
 data Ast = Define Identifier Expr
   | Expression    Expr
+  | LexerToken    Token
   deriving Show
 
 defineHandler :: Parser Ast
 defineHandler (Lexer.Identifier name : xs) = do
-    (expression, expressions) <- parseExpression xs
-    case expressions of
-        Lexer.Delimiter ")" : xs -> Right (Ast.Define name expression, xs)
+    (astExpr, rest) <- parseExpression xs
+    case (astExpr, rest) of
+        (Expression expr, Lexer.Delimiter ")" : remaining) -> Right (Define name expr, remaining)
         _ -> Left $ ErrorT {location = 0, message = "Missing ')'"}
 defineHandler _ = Left $ ErrorT {location = 0, message = "Invalid define"}
 
 lambdaHandler :: Parser Ast
+
+
 lambdaHandler _ = Left $ ErrorT {location = 0, message = "Invalid lambda"}
 
 isIdentifierOrConstant :: Token -> Maybe Token
@@ -56,12 +59,13 @@ parseKeywordExpression (Lexer.Keyword "if" : xs)                    = ifHandler 
 parseKeywordExpression expression                                   = callHandler expression
 
 parseExpression :: Parser Ast
-parseExpression (Lexer.Constant c : xs)    = Right (Ast.Expression.Int c, xs)
-parseExpression (Lexer.Boolean b : xs)     = Right (Ast.Expression.Boolean b, xs)
-parseExpression (Lexer.Identifier i : xs)  = Right (Ast.Expression.Var i, xs)
-parseExpression (Lexer.Operator o : xs)    = Right (Ast.Expression.Var o, xs)
+parseExpression (Lexer.Constant c : xs)    = Right (Expression (Int c), xs)
+parseExpression (Lexer.Boolean b : xs)     = Right (Expression (Parser.Boolean b), xs)
+parseExpression (Lexer.Identifier i : xs)  = Right (Expression (Var i), xs)
+parseExpression (Lexer.Operator o : xs)    = Right (Expression (Var o), xs)
 parseExpression (Lexer.Delimiter "(" : xs) = parseKeywordExpression xs
-parseExpression (Lexer.Delimiter ")" : xs) = Right (Lexer.Delimiter ")", xs)
+parseExpression (Lexer.Delimiter ")" : xs) = Right (LexerToken (Lexer.Delimiter ")"), xs)
+
 
 parseList :: Parser List
 parseList [] = Right ([], [])
