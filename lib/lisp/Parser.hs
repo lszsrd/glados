@@ -28,7 +28,7 @@ data Ast = Define Identifier Expr
   deriving Show
 
 defineHandler :: Parser Ast
-defineHandler (Lexer.Identifier name : Ast.Expression xs) = do
+defineHandler (Lexer.Identifier name : xs) = do
     (expression, expressions) <- parseExpression xs
     case expressions of
         Lexer.Delimiter ")" : xs -> Right (Ast.Define name expression, xs)
@@ -44,13 +44,6 @@ isIdentifierOrConstant (Lexer.Constant x)   = Just(Lexer.Constant x)
 isIdentifierOrConstant _                    = Nothing
 
 ifHandler :: Parser Ast
-ifHandler (Lexer.Operator o : a : b : xs) =
-    case isIdentifierOrConstant a of
-        Just(Lexer.Identifier) ->
-            case isIdentifierOrConstant b of
-                Just(Lexer.Identifier) -> Right ()
-                Nothing -> Left $ ErrorT {location = 0, message = "Second argument need to be identifier or constant"}
-        Nothing -> Left $ ErrorT {location = 0, message = "First argument need to be identifier or constant"}
 ifHandler _ = Left $ ErrorT {location = 0, message = "Invalid if Operator"}
 
 callHandler :: Parser Ast
