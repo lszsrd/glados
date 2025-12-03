@@ -29,10 +29,10 @@ data Ast = Define Identifier Expr
   deriving Show
 
 defineHandler :: Parser Ast
-defineHandler (Lexer.Identifier name : xs) = do
+defineHandler (LexerToken (Lexer.Identifier name) : xs) = do
     (astExpr, rest) <- parseExpression xs
     case (astExpr, rest) of
-        (Expression expr, Lexer.Delimiter ")" : remaining) -> Right (Define name expr, remaining)
+        (Expression expr, LexerToken (Lexer.Delimiter ")") : remaining) -> Right (Define name expr, remaining)
         _ -> Left $ ErrorT {location = 0, message = "Missing ')'"}
 defineHandler _ = Left $ ErrorT {location = 0, message = "Invalid define"}
 
@@ -41,22 +41,26 @@ lambdaHandler :: Parser Ast
 
 lambdaHandler _ = Left $ ErrorT {location = 0, message = "Invalid lambda"}
 
-isIdentifierOrConstant :: Token -> Maybe Token
-isIdentifierOrConstant (Lexer.Identifier x) = Just(Lexer.Identifier x)
-isIdentifierOrConstant (Lexer.Constant x)   = Just(Lexer.Constant x)
-isIdentifierOrConstant _                    = Nothing
-
 ifHandler :: Parser Ast
+ifHandler (LexerToken (Lexer.Delimiter "(") : xs) = do
+    (cond, remaining) <- parseExpression xs
+    case (cond, remaining) of
+        (Lexer.Keyword "define", remaining) -> Left $ ErrorT {location = 0, message = "Invalid condition"} 
+        _ -> parseExpression remaining >>= \(th, remaining2) -> case (th, remaining2) of
+            (Lexer.Keyword "define", remaining2) -> Left $ ErrorT {location = 0, message = "Invalid then"}
+            _ -> parseExpression remaining2 >>= \(el, remaining3) -> case (el, remaining3) of
+                (Lexer.Keyword "define", el) -> Left $ ErrorT {location = 0, message = "Invalid else"}
+                _ -> Right ((Parser.Expression (If cond)) (Parser.Expression (If th)) (Parser.Expression (If el)), remaining3)
 ifHandler _ = Left $ ErrorT {location = 0, message = "Invalid if Operator"}
 
 callHandler :: Parser Ast
 callHandler tokens = Left $ ErrorT {location = 0, message = "Invalid function call"}
 
 parseKeywordExpression :: Parser Ast
-parseKeywordExpression (Lexer.Keyword "define" : xs) = defineHandler xs
-parseKeywordExpression (Lexer.Keyword "lambda" : xs)                = lambdaHandler xs
-parseKeywordExpression (Lexer.Keyword "if" : xs)                    = ifHandler xs
-parseKeywordExpression expression                                   = callHandler expression
+parseKeywordExpression (LexerToken (Lexer.Keyword "define") : xs) = defineHandler xs
+parseKeywordExpression (LexerToken (Lexer.Keyword "lambda") : xs) = lambdaHandler xs
+parseKeywordExpression (LexerToken (Lexer.Keyword "if") : xs)     = ifHandler xs
+parseKeywordExpression expression                                 = callHandler expression
 
 parseExpression :: Parser Ast
 parseExpression (Lexer.Constant c : xs)    = Right (Expression (Int c), xs)
