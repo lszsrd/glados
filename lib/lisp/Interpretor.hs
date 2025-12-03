@@ -57,13 +57,12 @@ applyBuiltin _ _ = Nothing
 
 
 builtinToken :: [Identifier]
-builtinToken = [ "+", "-", "*", "div", "mod"]
+builtinToken = [ "+", "-", "*", "div", "mod" ]
 
 builtinComparisonToken :: [Identifier]
-builtinComparisonToken = [ ">", "<", "eq?"]
+builtinComparisonToken = [ "<", "eq?" ]
 
 lookupDefined :: [Env] -> Expr -> Maybe Expr
-lookupDefined [] _ = Nothing
 lookupDefined (Variable name value:xs) var@(Var key)
     | name == key   = case value of
         Left i -> Just $ Int i
@@ -72,23 +71,51 @@ lookupDefined (Variable name value:xs) var@(Var key)
 lookupDefined (DefinedExpr name body : xs) c@(Call (Var key) _)
     | name == key   = Just body
     | otherwise     = lookupDefined xs c
+lookupDefined _ _ = Nothing
+
+checkList :: Expr -> [Identifier] -> Maybe Identifier
+checkList fc@(Call (Var id) _) (x:xs)
+    | id == x = Just x
+    | otherwise = checkList fc xs
+checkList _ _ = Nothing
+
+expToInt :: [Expr] -> Maybe [Integer]
+expToInt (Int i: xs) = do
+    rest <- expToInt xs
+    Just $ i : rest
+expToInt [] = Just []
+expToInt _ = Nothing
+
+checkCallToken :: [Env] -> Expr -> [Expr] -> Maybe Expr
+checkCallToken e fc@(Call f _) args = case checkList fc builtinToken of
+    Nothing -> case checkList fc builtinComparisonToken of
+        Nothing -> lookupDefined e fc
+        (Just id) -> do
+            argList <- expToInt args
+            applyBuiltin id argList
+    (Just id) -> do
+            argList <- expToInt args
+            applyBuiltin id argList
+checkCallToken e v@(Var _) _ = lookupDefined e v
+checkCallToken _ _ _ = Nothing
 
 reduceExpr :: [Env] -> Expr -> Maybe Expr
 reduceExpr _ e@(Int _) = Just e
 reduceExpr _ e@(Boolean _) = Just e
-reduceExpr env v@(Var e) = lookupDefined env v
+reduceExpr env v@(Var e) = checkCallToken env v []
 reduceExpr env c@(Call f ag) = do
-    func <- lookupDefined env c
     agList <- mapM (reduceExpr env) ag
-    trace (show agList) Nothing
+    checkCallToken env c agList
 
 interpret :: [Ast] -> [Env] -> Maybe Ast
 interpret [] _ = Nothing
-interpret (Define ex body: ast) env = interpret ast (DefinedExpr ex body: env)
+interpret (Define ex body: ast) env = case body of
+    (Int i) -> interpret ast (Variable ex (Left i): env)
+    (Boolean i) -> interpret ast (Variable ex (Right i): env)
+    _ -> interpret ast (DefinedExpr ex body: env)
 interpret ((Expression f1@(Call _ _)): ast) env = do
     res <- reduceExpr env f1
     return (Expression res)
 interpret ((Expression expr): ast) env = do
     res <- reduceExpr env expr 
     return (Expression res)
-
