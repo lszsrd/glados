@@ -9,9 +9,80 @@ on:
     types: 
       - completed
 
+env:
+  GIT_REPO: lszsrd/glados
+  TARGET: glados
+
 jobs:
+  build-haddock-documentation:
+    if: github.repository == {{ env.GIT_REPO }} && github.event.workflow_run.conclusion == 'success'
+    name: Generating documentation
+    runs-on: ubuntu-24.04
+
+    steps:
+    - name: Cloning repository
+      uses: actions/checkout@v4
+      timeout-minutes: 2
+
+    - name: Generating Haddock documentation
+      run: |
+        echo "DOC_PATH="`cabal haddock --haddock-all | grep "Documentation created" -A1 | grep -v "Documentation created"` >> $GITHUB_ENV
+      timeout-minutes: 2
+
+    - name: Deploy documentation
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ${{ env.DOC_PATH }}
+          publish_branch: documentation
+      timeout-minutes: 2
+
+  build-github-release-assets:
+    if: github.repository == {{ env.GIT_REPO }} && github.event.workflow_run.conclusion == 'success'
+    name: Building Github release
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, self-hosted, windows-2022]
+
+    steps:
+      - name: Cloning repository
+        uses: actions/checkout@v4
+        timeout-minutes: 2
+
+      - name: Building `${{ env.TARGET }}` binary
+        run: |
+          mkdir -p binaries
+          cabal update
+          make
+          cp ${{ env.TARGET }} binaries/${{ env.TARGET }}-${{ matrix.os }}
+        # tar -czf c2dgl-${GITHUB_REF_NAME}-linux-x86_64.tar.gz -C package
+        timeout-minutes: 10
+
+    - name: Creating release
+      id: create_release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ github.ref_name }}
+        name: C2DGL ${{ github.ref_name }}
+        draft: false
+        prerelease: false
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Uploading release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ github.ref_name }}
+        files: |
+          c2dgl-${GITHUB_REF_NAME}-linux-x86_64.tar.gz
+      env:
+        GITHUB_TOKEN: ${{ github.ref_name }}
+
   push-to-mirror:
-    if: github.repository == 'lszsrd/glados' && github.event.workflow_run.conclusion == 'success'
+    if: github.repository == {{ env.GIT_REPO }} && github.event.workflow_run.conclusion == 'success'
     name: Pushing to Epitech repository
     runs-on: ubuntu-24.04
 
@@ -27,28 +98,4 @@ jobs:
       with:
         ssh_private_key: ${{ secrets.GIT_SSH_PRIVATE_KEY }}
         target_repo_url: ${{ secrets.MIRROR_URL }}
-      timeout-minutes: 2
-  
-  build-haddock-documentation:
-    name: Generating documentation
-    runs-on: ubuntu-24.04
-
-    steps:
-    - name: Cloning repository
-      uses: actions/checkout@v4
-      with:
-        submodules: 'true'
-      timeout-minutes: 2
-
-    - name: Generating Haddock documentation
-      run: |
-        echo "DOC_PATH="`cabal haddock --haddock-all | grep "Documentation created" -A1 | grep -v "Documentation created"` >> $GITHUB_ENV
-      timeout-minutes: 2
-
-    - name: Deploy documentation
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ${{ env.DOC_PATH }}
-          publish_branch: documentation
       timeout-minutes: 2
