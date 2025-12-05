@@ -29,13 +29,13 @@ jobs:
       timeout-minutes: 2
 
   check-compilation:
-    name: Checking compilation on Windows, MacOs and Linux
+    name: Checking compilation
     runs-on: ${{ matrix.os }}
 
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, self-hosted, windows-2022]
+        os: [ubuntu-24.04, windows-2022]
 
     steps:
       - name: Cloning repository
