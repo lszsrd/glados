@@ -7,6 +7,7 @@
 
 module InterpretorTests (
       interpretorTestsSimpleSubjet
+    , interpretorExtended
     , interpretorTestsBuiltins 
     , interpretorTestsEnv
 ) where
@@ -38,13 +39,13 @@ interpretEmptyList = TestCase (assertEqual "interpret []"
     (interpret [] []) )
 interpretSimpleInt = TestCase (assertEqual "interpret Int 2"
     (Just $ Expression (Int 2))
-    (interpret [Expression (Int 2)] []) )
+    (interpret [ Expression (Int 2)] []) )
 interpretDefineVar = TestCase (assertEqual "interpret Define foo 2"
     Nothing
     (interpret [ Define "foo" (Int 2) ] []) )
 interpretDefineNUse = TestCase (assertEqual "interpret Define foo 2, foo"
     (Just $ Expression (Int 2))
-    (interpret [Define "foo" (Int 2), Expression $ Var "foo"] []) )
+    (interpret [ Define "foo" (Int 2), Expression $ Var "foo"] []) )
 interpretCallBuiltin = TestCase (assertEqual "interpret Call + 2 4"
     (Just $ Expression (Int 6))
     (interpret [ Expression $ Call (Var "+") [Int 2, Int 4] ] []) )
@@ -78,9 +79,35 @@ interpretComplexIf = TestCase (assertEqual "interpret Define foo 42, If < foo 10
 (if (eq? x 1)
 1
 (* x (fact (- x 1)))))
-(fact 10)               -- Cannot implement with current parser 
+(fact 10)               -- Cannot implement with current ast 
 
 -}
+
+
+interpretorExtended = TestList          [
+      interpretDefineBoolean
+    , interpretDefineBooleanNUse
+    , interpretDefine2
+    , interpretLambdaWBools
+    , interpretLambdaNoParams
+                                        ]
+
+interpretDefineBoolean = TestCase (assertEqual "interpret [Define fef (Boolean True))]"
+    Nothing
+    (interpret [Define "foo" (Boolean True)] []) )
+interpretDefineBooleanNUse = TestCase (assertEqual "interpret [Define fef (Boolean True)), Var fef]"
+    (Just $ Expression (Boolean True))
+    (interpret [Define "foo" (Boolean True), Expression $ Var "foo"] []) )
+interpretDefine2 = TestCase (assertEqual "interpret [Define a .., Define fef .., Call +  a fef]"
+    Nothing
+    (interpret [Define "a" (Int 14), Define "foo" (Boolean True), Expression $ Call (Var "+") [Var "a", Var "fef"]] []) )
+interpretLambdaWBools = TestCase (assertEqual "interpret [Call Lamba (a) (if a b c) [true]]"
+    (Just (Expression (Int 2)))
+    (interpret [Expression $ Call (Lambda ["a"] (If (Var "a") (Int 2) (Boolean False))) [Boolean True] ] []) )
+interpretLambdaNoParams = TestCase (assertEqual "interpret [Call Lamba () (if a b c) []]"
+    (Just (Expression (Boolean False)))
+    (interpret [Expression $ Call (Lambda [] (If (Boolean False) (Int 2) (Boolean False))) [] ] []) )
+
 
 interpretorTestsBuiltins = TestList    [
       interpretDivisionNull
@@ -128,13 +155,18 @@ interpretNothing = TestCase (assertEqual "applyBuiltin feur (SHOULD NOT EVEN HAP
 
 
 interpretorTestsEnv = TestList    [
-    checkCallTokenWrong
+      checkCallTokenWrong
+    , interpretBoolDefined
+    , interpretNotDefined
                                         ]
 
 
 checkCallTokenWrong = TestCase (assertEqual "checkCallToken [] () []"
     Nothing
     (checkCallToken [] (If (Var "urmom") (Call (Var "thepolice") []) (Int 17) ) []) )
--- interpretBoolDefined = TestCase (assertEqual "checkCallToken [Var feur Bool] (Call feur) []"
-    -- (Just $ Expression (Boolean True))
-    -- (checkCallToken [] ) )
+interpretBoolDefined = TestCase (assertEqual "checkCallToken [Var feur Bool] (feur) []"
+    (Just $ Boolean True)
+    (checkCallToken [Variable "feur" (Right True)] ( Var "feur" ) [] ) )
+interpretNotDefined = TestCase (assertEqual "checkCallToken [Var bozo Bool] (feur) []"
+    Nothing
+    (checkCallToken [Variable "bozo" (Right True)] ( Var "feur" ) [] ) )
