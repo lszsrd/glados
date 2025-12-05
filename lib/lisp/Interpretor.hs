@@ -14,6 +14,7 @@ module Interpretor (
 
 import AbstractTree
 import EnvStoreRetrieve 
+import Debug.Trace
 
 createLocalEnv :: [Identifier] -> [Expr] -> Maybe [Env]
 createLocalEnv [] [] = Just []
@@ -38,10 +39,16 @@ reduceExpr env v@(Var e)                = do
     reduceExpr env expr
 reduceExpr env c@(Call f ag)            = do
     agList <- mapM (reduceExpr env) ag
-    expr <- checkCallToken env c agList
-    case reduceExpr env expr of
-        Nothing -> tryEvalLambda env expr agList
-        Just a -> Just a
+    case checkCallToken env c agList of
+        Nothing -> tryEvalLambda env f agList
+        Just expr -> case reduceExpr env expr of
+            Nothing -> tryEvalLambda env expr agList
+            Just a -> Just a
+reduceExpr env i@(If cond th el)        = do
+    case reduceExpr env cond of
+        Just (Boolean True) -> reduceExpr env th
+        Just (Boolean False) -> reduceExpr env el
+        _ -> Nothing
 reduceExpr _ _                          = Nothing 
 
 interpret :: [Ast] -> [Env] -> Maybe Ast

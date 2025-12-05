@@ -33,9 +33,6 @@ applyBuiltin "mod" n                    =  case n of
 applyBuiltin "<" n                      =  case n of
     [a,b] -> Just $ Boolean (a < b)
     _ -> Nothing
-applyBuiltin ">" n                      =  case n of
-    [a,b] -> Just $ Boolean (a > b)
-    _ -> Nothing
 applyBuiltin "eq?" n                    =  case n of
     [a,b] -> Just $ Boolean (a == b)
     _ -> Nothing
