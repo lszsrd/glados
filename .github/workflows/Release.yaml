@@ -47,7 +47,7 @@ jobs:
       - name: Downloading Windows binary
         uses: actions/download-artifact@v5
         with:
-          name: ${{ env.TARGET }}
+          name: ${{ env.TARGET }}-windows
         timeout-minutes: 2
 
       - name: Building {{ env.TARGET }}
