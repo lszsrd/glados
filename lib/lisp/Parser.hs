@@ -5,88 +5,140 @@
 -- src/Parser.hs
 -}
 
-module Parser (getAST, Ast(..)) where
+-------------------------------------------------------------------------------
+-- |
+-- Module      : Parser.hs
+-- Description : Parse a tokens list send by the Lexer
+--
+-- License     : MIT
+-- Maintainers : hugo.duda@epitech.eu, florian.grave@epitech.eu
+--
+-- Takes a List of __@'Token'@__ and tries to parse expressions and return it to a List.
+--
+-- * __@'Token'@__ is a way to break down a series of bytes into an individual,
+-- small piece that represent something in the global context of the parsed
+-- stream.
+--
+-- * __@'List'@__ is a list of Ast who is an abstract way to represent the whole code-base
+-- effectively making it easier to interpret and compute
+-- 
+-------------------------------------------------------------------------------
+
+module Parser(
+    -- * Main function
+    getAST,
+    -- * Subfunction
+    parsor,
+    parseTopLevel
+) where
 
 import Lexer (Token(..))
 import Control.Exception (try, SomeException, evaluate)
 import Error
+import AbstractTree
 
-type Identifier = String
-type List       = [Ast]
 type Parser a   = [Token] -> Either ErrorT (a, [Token])
 
-data Expr = Lambda [Identifier] Expr
-  | If             Expr Expr Expr
-  | Call           Expr [Expr]
-  | Var            Identifier
-  | Boolean        Bool
-  | Int            Integer
-  deriving Show
+-- | Helper function needed by contructor who have to parse a list of Identifier
+parseIdentifierList :: Parser [Identifier]
+parseIdentifierList rest@(Lexer.Delimiter ")" : _) = Right ([], rest)
+parseIdentifierList (Lexer.Identifier name : xs) = do
+    (names, rest) <- parseIdentifierList xs
+    Right (name : names, rest)
+parseIdentifierList [] =
+    Left $ ErrorT 0 "Unexpected end of input in lambda parameter list"
+parseIdentifierList (tok : _) =
+    Left $ ErrorT 0 ("Invalid token in lambda parameter list: " ++ show tok)
 
-data Ast = Define Identifier Expr
-  | Expression    Expr
-  | LexerToken    Token
-  deriving Show
+-- | Helper function needed by constructor who have to parse a list of Expr
+parseArgs :: Parser [Expr]
+parseArgs rest@(Lexer.Delimiter ")" : _) = Right ([], rest)
+parseArgs tokens = do
+    (arg, xs1) <- parseExpression tokens
+    (args, xs2) <- parseArgs xs1
+    Right (arg : args, xs2)
 
-defineHandler :: Parser Ast
-defineHandler (LexerToken (Lexer.Identifier name) : xs) = do
-    (astExpr, rest) <- parseExpression xs
-    case (astExpr, rest) of
-        (Expression expr, LexerToken (Lexer.Delimiter ")") : remaining) -> Right (Define name expr, remaining)
-        _ -> Left $ ErrorT {location = 0, message = "Missing ')'"}
-defineHandler _ = Left $ ErrorT {location = 0, message = "Invalid define"}
+-- | Parse the Define keyword into a Identifier and a Expression
+parseDefine :: Parser Ast
+parseDefine (Lexer.Identifier name : xs) = do
+    (expr, rest) <- parseExpression xs
+    case rest of
+        Lexer.Delimiter ")" : rest -> Right (Define name expr, rest)
+        _ -> Left $ ErrorT 0 "Missing ')' after define"
+parseDefine _ = Left $ ErrorT 0 "Invalid define"
 
-lambdaHandler :: Parser Ast
+-- | Parse the Lambda keyword into a list of Identifier and a Expr
+parseLambda :: Parser Expr
+parseLambda (Lexer.Delimiter "(" : tokens) = do
+    (ids, xs1) <- parseIdentifierList tokens
+    case xs1 of
+        (Lexer.Delimiter ")" : xs2) -> do
+            (body, xs3) <- parseExpression xs2
+            case xs3 of
+                Lexer.Delimiter ")" : rest -> Right (Lambda ids body, rest)
+                _ -> Left $ ErrorT 0 "Missing ')' after lamdba body"
+        _ -> Left $ ErrorT 0 "Missing ')' after lamdba param list"
 
+-- | Parse the If keyword into 3 Expr
+parseIf :: Parser Expr
+parseIf token = do
+    (cond, xs1) <- parseExpression token
+    (th, xs2) <- parseExpression xs1
+    (el, xs3) <- parseExpression xs2
+    case xs3 of
+        Lexer.Delimiter ")" : rest -> Right (If cond th el, rest)
+        _ -> Left $ ErrorT 0 "Missing ')' after if expression"
 
-lambdaHandler _ = Left $ ErrorT {location = 0, message = "Invalid lambda"}
+-- | Parse all Lisp application into a Expr and a list of Expr
+parseCall :: Parser Expr
+parseCall tokens = do
+    (expr, xs1) <- parseExpression tokens
+    (args, xs2) <- parseArgs xs1
+    case xs2 of
+        (Lexer.Delimiter ")" : rest) -> Right (Call expr args, rest)
+        _ -> Left $ ErrorT 0 "Missing ')' after call expression"
 
-ifHandler :: Parser Ast
-ifHandler (LexerToken (Lexer.Delimiter "(") : xs) = do
-    (cond, remaining) <- parseExpression xs
-    case (cond, remaining) of
-        (Lexer.Keyword "define", remaining) -> Left $ ErrorT {location = 0, message = "Invalid condition"} 
-        _ -> parseExpression remaining >>= \(th, remaining2) -> case (th, remaining2) of
-            (Lexer.Keyword "define", remaining2) -> Left $ ErrorT {location = 0, message = "Invalid then"}
-            _ -> parseExpression remaining2 >>= \(el, remaining3) -> case (el, remaining3) of
-                (Lexer.Keyword "define", el) -> Left $ ErrorT {location = 0, message = "Invalid else"}
-                _ -> Right ((Parser.Expression (If cond)) (Parser.Expression (If th)) (Parser.Expression (If el)), remaining3)
-ifHandler _ = Left $ ErrorT {location = 0, message = "Invalid if Operator"}
+-- | Parse all keyword except Define
+parseSExpression :: Parser Expr
+parseSExpression (Lexer.Keyword "lambda" : xs) = parseLambda xs
+parseSExpression (Lexer.Keyword "if" : xs) = parseIf xs
+parseSExpression expression = parseCall expression
 
-callHandler :: Parser Ast
-callHandler tokens = Left $ ErrorT {location = 0, message = "Invalid function call"}
+-- | Parse all tokens into a Expr
+parseExpression :: Parser Expr
+parseExpression (Lexer.Constant c : xs) = Right (Int c, xs)
+parseExpression (Lexer.Boolean b : xs) = Right (AbstractTree.Boolean b, xs)
+parseExpression (Lexer.Identifier i : xs) = Right (Var i, xs)
+parseExpression (Lexer.Operator o : xs) = Right (Var o, xs)
+parseExpression (Lexer.Delimiter "(" : xs) = parseSExpression xs
+parseExpression [] = Left $ ErrorT 0 "Unexpected end of input"
+parseExpression (tok : _) = Left $ ErrorT 0 ("Unexpected token: " ++ show tok)
 
-parseKeywordExpression :: Parser Ast
-parseKeywordExpression (LexerToken (Lexer.Keyword "define") : xs) = defineHandler xs
-parseKeywordExpression (LexerToken (Lexer.Keyword "lambda") : xs) = lambdaHandler xs
-parseKeywordExpression (LexerToken (Lexer.Keyword "if") : xs)     = ifHandler xs
-parseKeywordExpression expression                                 = callHandler expression
+-- | Parse all tokens into a Ast
+parseTopLevel :: Parser Ast
+parseTopLevel (Delimiter "(" : Keyword "define" : ts) = parseDefine ts
+parseTopLevel tokens = do
+    (e, rest) <- parseExpression tokens
+    pure (Expression e, rest)
 
-parseExpression :: Parser Ast
-parseExpression (Lexer.Constant c : xs)    = Right (Expression (Int c), xs)
-parseExpression (Lexer.Boolean b : xs)     = Right (Expression (Parser.Boolean b), xs)
-parseExpression (Lexer.Identifier i : xs)  = Right (Expression (Var i), xs)
-parseExpression (Lexer.Operator o : xs)    = Right (Expression (Var o), xs)
-parseExpression (Lexer.Delimiter "(" : xs) = parseKeywordExpression xs
-parseExpression (Lexer.Delimiter ")" : xs) = Right (LexerToken (Lexer.Delimiter ")"), xs)
-
-
+-- | Parse all tokens into a List
 parseList :: Parser List
 parseList [] = Right ([], [])
 parseList tokens = do
-    (expression, xs)       <- parseExpression tokens
-    (expressions, xsfinal) <- parseList       xs
-    Right (expression : expressions, xsfinal)
+    (top, xs)         <- parseTopLevel tokens
+    (tops, xsfinal)   <- parseList xs
+    Right (top : tops, xsfinal)
 
--- Parse and create the AST with the given TokenList
-parsor :: [Token] -> Either ErrorT List
+-- | Parse all tokens into a Either ErrorT List
+parsor :: [Lexer.Token] -> Either ErrorT List
 parsor tokens =
     case parseList tokens of
         Left err         -> Left err
         Right (list, []) -> Right list
-        Right (_, _)     -> Left $ ErrorT {location = 0, message = "Can't parse all tokens"}
+        Right (_, _)     -> Left $ ErrorT 0 "Can't parse all tokens"
 
-getAST :: [Token] -> IO List
+-- | Get a list of Ast by a list of Token
+getAST :: [Lexer.Token] -> IO List
 getAST tkList =
     case parsor tkList of
         Left err -> printError (show err)
