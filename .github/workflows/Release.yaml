@@ -58,17 +58,48 @@ jobs:
           zip --junk-paths ${{ env.TARGET }} ${{ env.TARGET }}-linux
         timeout-minutes: 10
 
-      - name: Uploading Windows binary
+      - name: Uploading Linux binary
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.TARGET }}-linux
           path: ${{ env.TARGET }}.zip
         timeout-minutes: 2
 
+  build-target-mac:
+    name: Building Macintosh target
+    runs-on: self-hosted
+    needs: build-target-linux
+
+    steps:
+      - name: Cloning repository
+        uses: actions/checkout@v4
+        timeout-minutes: 2
+
+      - name: Downloading Linux binary
+        uses: actions/download-artifact@v5
+        with:
+          name: ${{ env.TARGET }}-linux
+        timeout-minutes: 2
+
+      - name: Building {{ env.TARGET }}
+        run: |
+          cabal update
+          make
+          mv ${{ env.TARGET }} ${{ env.TARGET }}-macos
+          zip --junk-paths ${{ env.TARGET }} ${{ env.TARGET }}-macos
+        timeout-minutes: 10
+
+      - name: Uploading Macintosh binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.TARGET }}-macos
+          path: ${{ env.TARGET }}.zip
+        timeout-minutes: 2
+
   build-release:
     name: Building release for tag ${{ github.ref }}
     runs-on: ubuntu-24.04
-    needs: build-target-linux
+    needs: build-target-mac
 
     steps:
       - name: Cloning repository
@@ -78,7 +109,7 @@ jobs:
       - name: Downloading Windows and Linux binaries
         uses: actions/download-artifact@v5
         with:
-          name: ${{ env.TARGET }}-linux
+          name: ${{ env.TARGET }}-macos
         timeout-minutes: 2
 
       - name: Creating Release
