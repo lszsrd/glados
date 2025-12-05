@@ -10,12 +10,11 @@ on:
       - completed
 
 env:
-  GIT_REPO: lszsrd/glados
   TARGET: glados
 
 jobs:
   build-haddock-documentation:
-    if: github.repository == {{ env.GIT_REPO }} && github.event.workflow_run.conclusion == 'success'
+    if: github.repository == 'lszsrd/glados' && github.event.workflow_run.conclusion == 'success'
     name: Generating documentation
     runs-on: ubuntu-24.04
 
@@ -38,7 +37,7 @@ jobs:
       timeout-minutes: 2
 
   push-to-mirror:
-    if: github.repository == {{ env.GIT_REPO }} && github.event.workflow_run.conclusion == 'success'
+    if: github.repository == 'lszsrd/glados' && github.event.workflow_run.conclusion == 'success'
     name: Pushing to Epitech repository
     runs-on: ubuntu-24.04
 

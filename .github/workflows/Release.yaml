@@ -1,5 +1,5 @@
 name: Release
-run-name: "`${{ github.actor }}` created a release on `${{ github.head_ref || github.ref_name }}` : ${{ github.event.head_commit.message || github.event.workflow_run.head_commit.message }}"
+run-name: "`${{ github.actor }}` created tag `${{ github.ref_name }}`"
 
 on:
   push:
@@ -10,21 +10,70 @@ env:
   TARGET: glados
 
 jobs:
-  build:
-    name: Upload Release Asset
-    runs-on: ubuntu-latest
+  build-target-windows:
+    name: Building target ${{ env.TARGET }} for Windows
+    runs-on: windows-2022
 
     steps:
       - name: Cloning repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         timeout-minutes: 2
 
-        # TODO: add multi OS builds
       - name: Building {{ env.TARGET }}
         run: |
           cabal update
           make
-          zip --junk-paths ${{ env.TARGET }} ${{ env.TARGET }} LICENSE.md docs/README.md
+          mv ${{ env.TARGET }}.exe ${{ env.TARGET }}-windows.exe
+          zip --junk-paths ${{ env.TARGET }} ${{ env.TARGET }}-windows.exe LICENSE.md docs/README.md
+
+      - name: Uploading Windows binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.TARGET }}
+          path: ${{ env.TARGET }}.zip
+
+  build-target-linux:
+    name: Building target ${{ env.TARGET }} for Ubuntu 24.04
+    runs-on: ubuntu-24.04
+    needs: build-target-windows
+
+    steps:
+      - name: Cloning repository
+        uses: actions/checkout@v4
+        timeout-minutes: 2
+
+      - name: Downloading Windows binary
+        uses: actions/download-artifact@v5
+        with:
+          name: ${{ env.TARGET }}
+
+      - name: Building {{ env.TARGET }}
+        run: |
+          cabal update
+          make
+          mv ${{ env.TARGET }} ${{ env.TARGET }}-linux
+          zip --junk-paths ${{ env.TARGET }} ${{ env.TARGET }}-linux
+
+      - name: Uploading Windows binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.TARGET }}
+          path: ${{ env.TARGET }}.zip
+
+  build-release:
+    name: Building release for tag ${{ github.ref }}
+    runs-on: ubuntu-24.04
+    needs: build-target-linux
+
+    steps:
+      - name: Cloning repository
+        uses: actions/checkout@v4
+        timeout-minutes: 2
+
+      - name: Downloading Windows and Linux binaries
+        uses: actions/download-artifact@v5
+        with:
+          name: ${{ env.TARGET }}
 
       - name: Creating Release
         id: creating_release
@@ -37,7 +86,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload Release Asset
+      - name: Uploading release asset
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.creating_release.outputs.upload_url }}
