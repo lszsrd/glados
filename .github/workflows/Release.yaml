@@ -11,7 +11,7 @@ env:
 
 jobs:
   build-target-windows:
-    name: Building `${{ env.TARGET }}` binary on Windows
+    name: Building Windows target
     runs-on: windows-2022
 
     steps:
@@ -35,7 +35,7 @@ jobs:
         timeout-minutes: 2
 
   build-target-linux:
-    name: Building `${{ env.TARGET }}` binary on Linux
+    name: Building Linux target
     runs-on: ubuntu-24.04
     needs: build-target-windows
 
