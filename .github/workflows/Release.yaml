@@ -30,7 +30,7 @@ jobs:
       - name: Uploading Windows binary
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.TARGET }}
+          name: ${{ env.TARGET }}-windows
           path: ${{ env.TARGET }}.zip
         timeout-minutes: 2
 
@@ -61,7 +61,7 @@ jobs:
       - name: Uploading Windows binary
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.TARGET }}
+          name: ${{ env.TARGET }}-linux
           path: ${{ env.TARGET }}.zip
         timeout-minutes: 2
 
@@ -78,7 +78,7 @@ jobs:
       - name: Downloading Windows and Linux binaries
         uses: actions/download-artifact@v5
         with:
-          name: ${{ env.TARGET }}
+          name: ${{ env.TARGET }}-linux
         timeout-minutes: 2
 
       - name: Creating Release
