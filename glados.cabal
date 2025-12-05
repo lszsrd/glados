@@ -25,7 +25,6 @@ library lisp
         Builtins
         EnvStoreRetrieve
         Interpretor
-        UserDefined
 
         Error
     build-depends:      base
@@ -43,4 +42,5 @@ test-suite unit_tests
     hs-source-dirs:     tests
     other-modules:
         LexerTests
+        InterpretorTests
     build-depends:      base, lisp, HUnit

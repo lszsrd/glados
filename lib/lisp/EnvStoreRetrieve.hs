@@ -15,11 +15,23 @@ module EnvStoreRetrieve (
 
 import AbstractTree
 import Builtins
-import UserDefined
+import Debug.Trace
 
 data Env =  DefinedExpr     Identifier Expr
     |       Variable        Identifier (Either Integer Bool)
     deriving Show
+
+-- createLocalEnv :: [Expr] -> [Expr] -> Maybe [Env]
+-- createLocalEnv [] [] = Just []
+-- createLocalEnv ((Var x):xs) (y:ys) = do
+--     restEnv <- createLocalEnv xs ys
+--     case y of
+--         (Int i)     -> Just (Variable x (Left i):  restEnv)
+--         (Boolean i) -> Just (Variable x (Right i): restEnv)
+-- createLocalEnv _ _ = Nothing
+--
+-- applyUser :: Maybe Expr -> [Expr] -> Maybe Expr
+-- applyUser e f = trace (show e ++ "\n" ++ show f) Nothing
 
 getKey :: Expr -> Identifier
 getKey var@(Var key)                    = key
@@ -53,12 +65,12 @@ expToInt _                              = Nothing
 checkCallToken :: [Env] -> Expr -> [Expr] -> Maybe Expr
 checkCallToken e fc@(Call f _) args     = case checkList fc builtinToken of
     Nothing -> case checkList fc builtinComparisonToken of
-        Nothing -> applyUser (lookupDefined e fc) args
+        Nothing -> lookupDefined e fc
         (Just id) -> do
             argList <- expToInt args
             applyBuiltin id argList
     (Just id) -> do
             argList <- expToInt args
             applyBuiltin id argList
-checkCallToken e v@(Var _) args         = applyUser (lookupDefined e v) args
+checkCallToken e v@(Var _) args         = lookupDefined e v
 checkCallToken _ _ _                    = Nothing

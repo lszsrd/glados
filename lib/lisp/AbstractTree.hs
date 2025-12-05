@@ -19,10 +19,10 @@ data Expr = Lambda          [Identifier] Expr
   |         Var             Identifier
   |         Boolean         Bool
   |         Int             Integer
-  deriving Show
+  deriving (Show, Eq)
 
 data Ast =  Define          Identifier Expr
   |         Expression      Expr
-  deriving Show
+  deriving (Show, Eq) 
 
 type List = [Ast]

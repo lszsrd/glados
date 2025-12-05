@@ -11,8 +11,8 @@ import System.Environment (getArgs)
 import System.Exit (exitSuccess)
 
 import Lexer (lexer)
-import Parser (getAST)
--- import Interpretor (interpretResult)
+-- import Parser (getAST)
+import Interpretor (interpret)
 
 -- get the buffer, if args, then try file, else read stdin
 getBuffer :: [String] -> IO String
