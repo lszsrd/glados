@@ -1,5 +1,5 @@
 name: Release
-run-name: "`${{ github.actor }}` created tag `${{ github.ref_name }}`"
+run-name: "`${{ github.actor }}` triggered workflow from a `${{ github.event_name }}` on `${{ github.ref }}`"
 
 on:
   push:
