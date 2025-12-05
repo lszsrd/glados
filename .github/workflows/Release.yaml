@@ -1,0 +1,136 @@
+name: Release
+run-name: "`${{ github.actor }}` triggered workflow from a `${{ github.event_name }}` on `${{ github.ref }}`"
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  TARGET: glados
+
+jobs:
+  build-target-windows:
+    name: Building Windows target
+    runs-on: windows-2022
+
+    steps:
+      - name: Cloning repository
+        uses: actions/checkout@v4
+        timeout-minutes: 2
+
+      - name: Building {{ env.TARGET }}
+        run: |
+          cabal update
+          make
+          mv ${{ env.TARGET }}.exe ${{ env.TARGET }}-windows.exe
+          7z a ${{ env.TARGET }}.zip ${{ env.TARGET }}-windows.exe LICENSE.md docs/README.md
+        timeout-minutes: 10
+
+      - name: Uploading Windows binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.TARGET }}-windows
+          path: ${{ env.TARGET }}.zip
+        timeout-minutes: 2
+
+  build-target-linux:
+    name: Building Linux target
+    runs-on: ubuntu-24.04
+    needs: build-target-windows
+
+    steps:
+      - name: Cloning repository
+        uses: actions/checkout@v4
+        timeout-minutes: 2
+
+      - name: Downloading Windows binary
+        uses: actions/download-artifact@v5
+        with:
+          name: ${{ env.TARGET }}-windows
+        timeout-minutes: 2
+
+      - name: Building {{ env.TARGET }}
+        run: |
+          cabal update
+          make
+          mv ${{ env.TARGET }} ${{ env.TARGET }}-linux
+          zip --junk-paths ${{ env.TARGET }} ${{ env.TARGET }}-linux
+        timeout-minutes: 10
+
+      - name: Uploading Linux binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.TARGET }}-linux
+          path: ${{ env.TARGET }}.zip
+        timeout-minutes: 2
+
+  build-target-mac:
+    name: Building Macintosh target
+    runs-on: self-hosted
+    needs: build-target-linux
+
+    steps:
+      - name: Cloning repository
+        uses: actions/checkout@v4
+        timeout-minutes: 2
+
+      - name: Downloading Linux binary
+        uses: actions/download-artifact@v5
+        with:
+          name: ${{ env.TARGET }}-linux
+        timeout-minutes: 2
+
+      - name: Building {{ env.TARGET }}
+        run: |
+          cabal update
+          make
+          mv ${{ env.TARGET }} ${{ env.TARGET }}-macos
+          zip --junk-paths ${{ env.TARGET }} ${{ env.TARGET }}-macos
+        timeout-minutes: 10
+
+      - name: Uploading Macintosh binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.TARGET }}-macos
+          path: ${{ env.TARGET }}.zip
+        timeout-minutes: 2
+
+  build-release:
+    name: Building release for tag ${{ github.ref }}
+    runs-on: ubuntu-24.04
+    needs: build-target-mac
+
+    steps:
+      - name: Cloning repository
+        uses: actions/checkout@v4
+        timeout-minutes: 2
+
+      - name: Downloading Windows and Linux binaries
+        uses: actions/download-artifact@v5
+        with:
+          name: ${{ env.TARGET }}-macos
+        timeout-minutes: 2
+
+      - name: Creating Release
+        id: creating_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        timeout-minutes: 2
+
+      - name: Uploading release asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.creating_release.outputs.upload_url }}
+          asset_path: ./${{ env.TARGET }}.zip
+          asset_name: ${{ env.TARGET }}.zip
+          asset_content_type: application/zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        timeout-minutes: 2
