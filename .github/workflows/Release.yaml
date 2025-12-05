@@ -24,7 +24,7 @@ jobs:
           cabal update
           make
           mv ${{ env.TARGET }}.exe ${{ env.TARGET }}-windows.exe
-          zip --junk-paths ${{ env.TARGET }} ${{ env.TARGET }}-windows.exe LICENSE.md docs/README.md
+          7z a ${{ env.TARGET }}.zip ${{ env.TARGET }}-windows.exe LICENSE.md docs/README.md
         timeout-minutes: 10
 
       - name: Uploading Windows binary

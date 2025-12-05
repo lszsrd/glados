@@ -67,7 +67,7 @@ jobs:
       - name: Cloning repository
         uses: actions/checkout@v4
 
-      - name: Running unit tests fon `${{ env.TARGET }}`
+      - name: Running unit tests on `${{ env.TARGET }}`
         run: |
           cabal update
           make tests_run
