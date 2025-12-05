@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v4
         timeout-minutes: 2
 
-      - name: Building {{ env.TARGET }}
+      - name: Building ${{ env.TARGET }}
         run: |
           cabal update
           make
@@ -50,7 +50,7 @@ jobs:
           name: ${{ env.TARGET }}-windows
         timeout-minutes: 2
 
-      - name: Building {{ env.TARGET }}
+      - name: Building ${{ env.TARGET }}
         run: |
           cabal update
           make
@@ -81,7 +81,7 @@ jobs:
           name: ${{ env.TARGET }}-linux
         timeout-minutes: 2
 
-      - name: Building {{ env.TARGET }}
+      - name: Building ${{ env.TARGET }}
         run: |
           cabal update
           make
