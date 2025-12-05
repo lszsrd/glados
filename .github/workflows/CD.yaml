@@ -1,5 +1,5 @@
 name: CD
-run-name: "`${{ github.actor }}` triggered workflow from a `${{ github.event_name }}` on `${{ github.ref_name }}` => ${{ github.event.head_commit.message || github.event.workflow_run.head_commit.message }}"
+run-name: "`${{ github.actor }}` triggered workflow from a `${{ github.event_name }}` on `${{ github.ref_name }}` : ${{ github.event.head_commit.message || github.event.workflow_run.head_commit.message }}"
 
 on:
   workflow_run:
