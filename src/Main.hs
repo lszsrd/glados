@@ -49,6 +49,8 @@ main = do
     buffer <- getBuffer args
     let tokenList = lexer buffer
     ast <- getAST tokenList
-    let res = interpret ast []
-    printResult res
-    exitSuccess
+    res <- try (evaluate (interpret ast []))
+        :: IO (Either SomeException (Maybe Ast))
+    case res of
+        Left e -> print e >> exitWith (ExitFailure 84)
+        Right content -> printResult content >> exitSuccess

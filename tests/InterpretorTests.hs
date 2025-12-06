@@ -17,6 +17,16 @@ import AbstractTree
 import Interpretor
 import Builtins
 import EnvStoreRetrieve
+import Control.Exception (try, SomeException, evaluate)
+
+evalInterpret :: [Ast] -> [Env] -> IO (Maybe Ast) 
+evalInterpret a b = do
+    res <- try (evaluate $ interpret a b)
+        :: IO (Either SomeException (Maybe Ast))
+    case res of
+        Left _ -> return Nothing
+        Right content -> return content
+
 
 interpretorTestsSimpleSubjet = TestList    [
     interpretEmptyList
@@ -34,15 +44,15 @@ interpretorTestsSimpleSubjet = TestList    [
     , interpretComplexIf
                                         ]
 
-interpretEmptyList = TestCase (assertEqual "interpret []"
-    Nothing
-    (interpret [] []) )
+interpretEmptyList = TestCase $ do
+    res <- evalInterpret [] []
+    assertEqual "interpret []" Nothing res
 interpretSimpleInt = TestCase (assertEqual "interpret Int 2"
     (Just $ Expression (Int 2))
     (interpret [ Expression (Int 2)] []) )
-interpretDefineVar = TestCase (assertEqual "interpret Define foo 2"
-    Nothing
-    (interpret [ Define "foo" (Int 2) ] []) )
+interpretDefineVar = TestCase $ do
+    res <- evalInterpret [ Define "foo" (Int 2) ] [] 
+    assertEqual "interpret Define foo 2" Nothing res
 interpretDefineNUse = TestCase (assertEqual "interpret Define foo 2, foo"
     (Just $ Expression (Int 2))
     (interpret [ Define "foo" (Int 2), Expression $ Var "foo"] []) )
@@ -92,15 +102,15 @@ interpretorExtended = TestList          [
     , interpretLambdaNoParams
                                         ]
 
-interpretDefineBoolean = TestCase (assertEqual "interpret [Define fef (Boolean True))]"
-    Nothing
-    (interpret [Define "foo" (Boolean True)] []) )
+interpretDefineBoolean = TestCase $ do
+    res <- evalInterpret [Define "foo" (Boolean True)] []
+    assertEqual "interpret [Define fef (Boolean True))]" Nothing res
 interpretDefineBooleanNUse = TestCase (assertEqual "interpret [Define fef (Boolean True)), Var fef]"
     (Just $ Expression (Boolean True))
     (interpret [Define "foo" (Boolean True), Expression $ Var "foo"] []) )
-interpretDefine2 = TestCase (assertEqual "interpret [Define a .., Define fef .., Call +  a fef]"
-    Nothing
-    (interpret [Define "a" (Int 14), Define "foo" (Boolean True), Expression $ Call (Var "+") [Var "a", Var "fef"]] []) )
+interpretDefine2 = TestCase $ do
+    res <- evalInterpret [Define "a" (Int 14), Define "foo" (Boolean True), Expression $ Call (Var "+") [Var "a", Var "fef"]] []
+    assertEqual "interpret [Define a .., Define fef .., Call +  a fef]" Nothing res
 interpretLambdaWBools = TestCase (assertEqual "interpret [Call Lamba (a) (if a b c) [true]]"
     (Just (Expression (Int 2)))
     (interpret [Expression $ Call (Lambda ["a"] (If (Var "a") (Int 2) (Boolean False))) [Boolean True] ] []) )
@@ -122,30 +132,30 @@ interpretorTestsBuiltins = TestList    [
                                         ]
 
 
-interpretDivisionNull = TestCase (assertEqual "interpret div 42 0"
-    Nothing
-    (interpret [ Expression $ Call (Var "div") [Int 42, Int 0] ] []) )
-interpretModuloNull = TestCase (assertEqual "interpret mod 42 0"
-    Nothing
-    (interpret [ Expression $ Call (Var "mod") [Int 42, Int 0] ] []) )
-interpretWrongArgsMinus = TestCase (assertEqual "interpret -"
-    Nothing
-    (interpret [ Expression $ Call (Var "-") [] ] []) )
-interpretWrongArgsDiv = TestCase (assertEqual "interpret div 1"
-    Nothing
-    (interpret [ Expression $ Call (Var "div") [Int 1] ] []) )
-interpretWrongArgsMod = TestCase (assertEqual "interpret mod 1"
-    Nothing
-    (interpret [ Expression $ Call (Var "mod") [Int 1] ] []) )
-interpretWrongArgsInf = TestCase (assertEqual "interpret < 1"
-    Nothing
-    (interpret [ Expression $ Call (Var "<") [Int 1] ] []) )
-interpretWrongArgsEq = TestCase (assertEqual "interpret eq 1"
-    Nothing
-    (interpret [ Expression $ Call (Var "eq?") [Int 1] ] []) )
-interpretWrongArgsType = TestCase (assertEqual "interpret div 42 True"
-    Nothing
-    (interpret [ Expression $ Call (Var "div") [Int 42, Boolean True] ] []) )
+interpretDivisionNull = TestCase $ do
+    res <- evalInterpret [ Expression $ Call (Var "div") [Int 42, Int 0] ] []
+    assertEqual "interpret div 42 0" Nothing res
+interpretModuloNull = TestCase $ do
+    res <- evalInterpret [ Expression $ Call (Var "mod") [Int 42, Int 0] ] []
+    assertEqual "interpret mod 42 0" Nothing res
+interpretWrongArgsMinus = TestCase $ do
+    res <- evalInterpret [ Expression $ Call (Var "-") [] ] []
+    assertEqual "interpret -" Nothing res
+interpretWrongArgsDiv = TestCase $ do
+    res <- evalInterpret [ Expression $ Call (Var "div") [Int 1] ] []
+    assertEqual "interpret div 1" Nothing res
+interpretWrongArgsMod = TestCase $ do
+    res <- evalInterpret [ Expression $ Call (Var "mod") [Int 1] ] []
+    assertEqual "interpret mod 1" Nothing res
+interpretWrongArgsInf = TestCase $ do
+    res <- evalInterpret [ Expression $ Call (Var "<") [Int 1] ] []
+    assertEqual "interpret < 1" Nothing res
+interpretWrongArgsEq = TestCase $ do
+    res <- evalInterpret [ Expression $ Call (Var "eq?") [Int 1] ] []
+    assertEqual "interpret eq 1" Nothing res
+interpretWrongArgsType = TestCase $ do
+    res <- evalInterpret [ Expression $ Call (Var "div") [Int 42, Boolean True] ] []
+    assertEqual "interpret div 42 True" Nothing res
 interpretMinusInt = TestCase (assertEqual "interpret - 1"
     (Just $ Expression (Int (-1)))
     (interpret [ Expression $ Call (Var "-") [Int 1] ] []) )

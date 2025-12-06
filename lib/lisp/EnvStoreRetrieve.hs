@@ -32,7 +32,7 @@ module EnvStoreRetrieve (
 
 import AbstractTree
 import Builtins
-import Debug.Trace
+import Error
 
 data Env =  DefinedExpr     Identifier Expr
     |       Variable        Identifier (Either Integer Bool)
@@ -94,7 +94,8 @@ expToInt (Int i: xs)                    = do
     rest <- expToInt xs                 
     Just $ i : rest
 expToInt []                             = Just []
-expToInt _                              = Nothing
+expToInt w                              = throwErr
+    (show w ++ ": What does this even mean?")
 
 -- | Takes a List of @'Env'@ an @'Expr'@, and a List of @'Expr'@ as parameters
 -- returns a __Maybe__ @'Expr'@

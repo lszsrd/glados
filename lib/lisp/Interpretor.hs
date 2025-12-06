@@ -30,6 +30,7 @@ module Interpretor (
 
 import AbstractTree
 import EnvStoreRetrieve 
+import Error
 
 -- | Takes a list of @'Identifier'@ and an another list of @'Expr'@,
 -- returns a __Maybe__ @'[Env]'@
@@ -58,7 +59,7 @@ tryEvalLambda :: [Env] -> Expr -> [Expr] -> Maybe Expr
 tryEvalLambda env (Lambda args bdy) arglist = do
     locEnv <- createLocalEnv args arglist
     reduceExpr (env ++ locEnv) bdy
-tryEvalLambda _ _ _ = Nothing
+tryEvalLambda _ e _ = Just e
 
 -- | Takes a List of @'Env'@ and an Expr
 -- returns an @'Expr'@
@@ -76,6 +77,7 @@ reduceExpr env c@(Call f ag)            = do
     agList <- mapM (reduceExpr env) ag
     case checkCallToken env c agList of
         Nothing -> tryEvalLambda env f agList
+        Just l@(Lambda a _) -> tryEvalLambda env l agList
         Just expr -> case reduceExpr env expr of
             Nothing -> tryEvalLambda env expr agList
             Just a -> Just a
@@ -83,7 +85,7 @@ reduceExpr env i@(If cond th el)        =
     case reduceExpr env cond of
         Just (Boolean True) -> reduceExpr env th
         Just (Boolean False) -> reduceExpr env el
-        _ -> Nothing
+        _ -> throwErr "If Condition not returning a `Boolean`"
 reduceExpr _ e                          = Just e
 
 -- | Takes a List of @'Ast'@, a List of @'Env'@,
@@ -99,7 +101,7 @@ reduceExpr _ e                          = Just e
 -- for more explanation on this phenomenon :
 -- try compiling an empty file with gcc (dumass)
 interpret :: [Ast] -> [Env] -> Maybe Ast
-interpret [] _                          = Nothing
+interpret [] _                          = throwErr "No code to Evaluate"
 interpret (Define ex body: ast) env     = case body of
     (Int i)     -> interpret ast (Variable ex (Left i): env)
     (Boolean i) -> interpret ast (Variable ex (Right i): env)
