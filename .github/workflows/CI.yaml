@@ -1,5 +1,5 @@
 name: CI
-run-name: "`${{ github.actor }}` triggered workflow from a ${{ github.event_name }} on `${{ github.head_ref || github.ref_name }}` : ${{ github.event.head_commit.message || github.event.workflow_run.head_commit.message }}"
+run-name: "`${{ github.actor }}` triggered workflow from a `${{ github.event_name }}` on `${{ github.ref_name }}` : ${{ github.event.head_commit.message || github.event.workflow_run.head_commit.message }}"
 
 on:
   push:
@@ -29,7 +29,7 @@ jobs:
       timeout-minutes: 2
 
   check-compilation:
-    name: Checking build
+    name: Checking compilation
     runs-on: ${{ matrix.os }}
 
     strategy:
@@ -58,32 +58,22 @@ jobs:
         timeout-minutes: 2
 
   run-unit-tests:
-    name: Running unit tests
+    name: Running tests
     runs-on: ubuntu-24.04
-    # container: epitechcontent/epitest-docker:latest
+    #container: epitechcontent/epitest-docker:latest
     needs: check-compilation
 
     steps:
       - name: Cloning repository
         uses: actions/checkout@v4
 
-      - name: Testing `${{ env.TARGET }}`
+      - name: Running unit tests on `${{ env.TARGET }}`
         run: |
           cabal update
           make tests_run
         timeout-minutes: 2
 
-  run-functional-tests:
-    name: Running functional tests
-    runs-on: ubuntu-24.04
-    # container: epitechcontent/epitest-docker:latest
-    needs: check-compilation
-
-    steps:
-      - name: Cloning repository
-        uses: actions/checkout@v4
-
-      - name: Testing `${{ env.TARGET }}`
+      - name: Running functional tests on `${{ env.TARGET }}`
         run: |
           ./functionaltests.sh
         timeout-minutes: 2
