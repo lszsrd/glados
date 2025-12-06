@@ -40,7 +40,7 @@ printResult (Just (Expression a)) =
         (Boolean False) -> putStrLn "#f"
         (Int a) -> print a
         _ -> putStrLn "#\\<procedure\\>"
-printResult _ = putStrLn "Nothing"
+printResult _ = putStrLn "Error happened: sorry not sorry"
 
 -- Entrypoint of the program, Coordinate every parts
 main :: IO ()
