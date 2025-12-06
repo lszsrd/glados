@@ -8,6 +8,7 @@ RESET="\e[0m"
 files=("lisp/builtins/builtins1" "lisp/builtins/builtins2" "lisp/builtins/builtins3"
     "lisp/conditions/if1" "lisp/conditions/if2" "lisp/conditions/if3"
     "lisp/errors/error1" "lisp/errors/error2"
+    "lisp/functions/function1" "lisp/functions/function2"
 )
 echo -e "${BOLD}Building binary glados${RESET}"
 make 1> /dev/null

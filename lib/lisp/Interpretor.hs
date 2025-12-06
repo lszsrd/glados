@@ -31,6 +31,7 @@ module Interpretor (
 import AbstractTree
 import EnvStoreRetrieve 
 import Error
+import Debug.Trace
 
 -- | Takes a list of @'Identifier'@ and an another list of @'Expr'@,
 -- returns a __Maybe__ @'[Env]'@
@@ -39,14 +40,25 @@ import Error
 -- function declaration, binding given identifiers to their values.
 --
 -- This function is used when detecting a call to a function with parameters
-createLocalEnv :: [Identifier] -> [Expr] -> Maybe [Env]
-createLocalEnv [] [] = Just []
-createLocalEnv (x:xs) (y:ys) = do
-    rest <- createLocalEnv xs ys
+createLocalEnv :: [Identifier] -> [Expr] -> [Env]
+createLocalEnv [] [] = []
+createLocalEnv (x:xs) (y:ys) =
     case y of
-        (Int i)     -> Just (Variable x (Left i):  rest)
-        (Boolean i) -> Just (Variable x (Right i): rest)
-createLocalEnv _ _ = Nothing
+        (Int i)     -> Variable x (Left i):  rest
+        (Boolean i) -> Variable x (Right i): rest
+    where rest = createLocalEnv xs ys
+
+updateEnv :: [Env] -> [Identifier] -> [Expr] -> [Env]
+updateEnv env@(Variable x exp:xs) ids@(y:ys) (newExp:exps) =
+    if x == y then
+        case newExp of  
+            (Int i)     -> Variable x (Left i):  rest
+            (Boolean i) -> Variable x (Right i): rest
+            _ -> []
+        else updateEnv env [y] [newExp] ++ rest
+    where rest = updateEnv env ys exps
+updateEnv [] a b = createLocalEnv a b
+updateEnv (e:evs) a b = e: updateEnv evs a b
 
 -- | Takes a list of @'Env'@, an @'Expr'@ and a list of @'Expr'@,
 -- returns a Maybe @'Expr'@.
@@ -56,9 +68,8 @@ createLocalEnv _ _ = Nothing
 -- binds lambda's parameters to given values,
 -- if correct, reduce body of the lambda
 tryEvalLambda :: [Env] -> Expr -> [Expr] -> Maybe Expr
-tryEvalLambda env (Lambda args bdy) arglist = do
-    locEnv <- createLocalEnv args arglist
-    reduceExpr (env ++ locEnv) bdy
+tryEvalLambda env (Lambda args bdy) arglist =
+    reduceExpr (updateEnv env args arglist) bdy
 tryEvalLambda _ e _ = Just e
 
 -- | Takes a List of @'Env'@ and an Expr

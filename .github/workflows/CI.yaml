@@ -72,3 +72,18 @@ jobs:
           cabal update
           make tests_run
         timeout-minutes: 2
+
+  run-functional-tests:
+    name: Running functional tests
+    runs-on: ubuntu-24.04
+    # container: epitechcontent/epitest-docker:latest
+    needs: check-compilation
+
+    steps:
+      - name: Cloning repository
+        uses: actions/checkout@v4
+
+      - name: Testing `${{ env.TARGET }}`
+        run: |
+          ./functionaltests.sh
+        timeout-minutes: 2

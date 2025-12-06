@@ -65,6 +65,15 @@ parseDefine (Lexer.Identifier name : xs) = do
     case rest of
         Lexer.Delimiter ")" : rest -> Right (Define name expr, rest)
         _ -> Left $ ErrorT 0 "Missing ')' after define"
+parseDefine (Lexer.Delimiter "(": Lexer.Identifier id : xs) = do
+    (expr, xs1) <- parseIdentifierList xs
+    case xs1 of
+        (Lexer.Delimiter ")" : xs2) -> do
+            (body, xs3) <- parseExpression xs2
+            case xs3 of
+                Lexer.Delimiter ")" : rest -> Right (Define id (Lambda expr body), rest)
+                _ -> Left $ ErrorT 0 "Missing ')' after lamdba body"
+        _ -> Left $ ErrorT 0 "Missing ')' after lamdba param list"
 parseDefine _ = Left $ ErrorT 0 "Invalid define"
 
 -- | Parse the Lambda keyword into a list of Identifier and a Expr
@@ -78,6 +87,7 @@ parseLambda (Lexer.Delimiter "(" : tokens) = do
                 Lexer.Delimiter ")" : rest -> Right (Lambda ids body, rest)
                 _ -> Left $ ErrorT 0 "Missing ')' after lamdba body"
         _ -> Left $ ErrorT 0 "Missing ')' after lamdba param list"
+parseLambda _ = Left $ ErrorT 0 "Missing '(' before lambda's params"
 
 -- | Parse the If keyword into 3 Expr
 parseIf :: Parser Expr
