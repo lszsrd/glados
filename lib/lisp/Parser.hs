@@ -141,5 +141,5 @@ parsor tokens =
 getAST :: [Lexer.Token] -> IO List
 getAST tkList =
     case parsor tkList of
-        Left err -> printError (show err)
+        Left err -> printError err
         Right ast -> return ast

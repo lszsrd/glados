@@ -17,15 +17,10 @@ data ErrorT = ErrorT {
 } deriving(Show)
 
 -- throw an error constructed with an ErrorT
-throwErr :: ErrorT -> a
-throwErr errT = throw (toException
-    (userError
-        (message errT ++ ", at line: " ++
-            show (location errT)
-        )
-    ))
+throwErr :: String -> a
+throwErr e = throw (toException (userError e))
 
 -- Prints error to stderr and exits with 84
-printError :: String -> IO a
-printError ff = hPutStrLn stderr ff
+printError :: ErrorT -> IO a
+printError ff = hPutStrLn stderr ("Error: " ++ message ff)
     >> exitWith (ExitFailure 84)

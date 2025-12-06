@@ -1,7 +1,8 @@
-{- EPITECH PROJECT, 2025
-   GENERIC LANGUAGE AND DATA OPERAND SYNTAX
-   File description:
-   src/Interpretor.hs
+{-
+-- EPITECH PROJECT, 2025
+-- GENERIC LANGUAGE AND DATA OPERAND SYNTAX
+-- File description:
+-- src/Interpretor.hs
 -}
 
 -------------------------------------------------------------------------------
@@ -29,7 +30,6 @@ module Interpretor (
 
 import AbstractTree
 import EnvStoreRetrieve 
-import Debug.Trace
 
 -- | Takes a list of @'Identifier'@ and an another list of @'Expr'@,
 -- returns a __Maybe__ @'[Env]'@
@@ -79,12 +79,12 @@ reduceExpr env c@(Call f ag)            = do
         Just expr -> case reduceExpr env expr of
             Nothing -> tryEvalLambda env expr agList
             Just a -> Just a
-reduceExpr env i@(If cond th el)        = do
+reduceExpr env i@(If cond th el)        =
     case reduceExpr env cond of
         Just (Boolean True) -> reduceExpr env th
         Just (Boolean False) -> reduceExpr env el
         _ -> Nothing
-reduceExpr _ _                          = Nothing 
+reduceExpr _ e                          = Just e
 
 -- | Takes a List of @'Ast'@, a List of @'Env'@,
 -- returns a __Maybe__ @'Ast'@

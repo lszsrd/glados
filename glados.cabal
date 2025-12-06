@@ -19,7 +19,7 @@ library lisp
     hs-source-dirs:     lib/lisp
     exposed-modules:
         Lexer
-        -- Parser
+        Parser
 
         AbstractTree
         Builtins

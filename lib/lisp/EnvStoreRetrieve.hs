@@ -1,8 +1,11 @@
-{- EPITECH PROJECT, 2025
-   GENERIC LANGUAGE AND DATA OPERAND SYNTAX
-   File description:
-   src/EnvStoreRetrieve.hs
+{-
+-- EPITECH PROJECT, 2025
+-- GENERIC LANGUAGE AND DATA OPERAND SYNTAX
+-- File description:
+-- src/EnvStoreRetrieve.hs
 -}
+
+
 
 
 -------------------------------------------------------------------------------

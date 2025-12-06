@@ -1,7 +1,8 @@
-{- EPITECH PROJECT, 2025
-   GENERIC LANGUAGE AND DATA OPERAND SYNTAX
-   File description:
-   src/Interpretor.hs
+{-
+-- EPITECH PROJECT, 2025
+-- GENERIC LANGUAGE AND DATA OPERAND SYNTAX
+-- File description:
+-- src/AbstractTree.hs
 -}
 
 module AbstractTree (
