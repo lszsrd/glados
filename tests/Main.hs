@@ -10,8 +10,10 @@ module Main where
 import Test.HUnit
 import System.Exit (exitSuccess, exitFailure)
 import LexerTests (lexerTestsLexemes, lexerTestsLexer, lexerTestsAnyToken, lexerTestsToken, lexerTestsIdentifier, lexerTestsUInteger, lexerTestsConstant)
+import InterpretorTests (interpretorTestsSimpleSubjet, interpretorExtended, interpretorTestsBuiltins, interpretorTestsEnv)
 
 main :: IO ()
 main = do
     result <- runTestTT $ TestList [lexerTestsLexemes, lexerTestsLexer, lexerTestsAnyToken, lexerTestsToken, lexerTestsIdentifier, lexerTestsConstant, lexerTestsUInteger]
-    if failures result > 0 then exitFailure else exitSuccess
+    result2 <- runTestTT $ TestList [interpretorTestsSimpleSubjet, interpretorExtended, interpretorTestsBuiltins, interpretorTestsEnv]
+    if failures result > 0 || failures result2 > 0 then exitFailure else exitSuccess

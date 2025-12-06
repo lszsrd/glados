@@ -75,5 +75,5 @@ jobs:
 
       - name: Running functional tests on `${{ env.TARGET }}`
         run: |
-          exit 0
+          ./functionaltests.sh
         timeout-minutes: 2

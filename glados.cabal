@@ -20,7 +20,12 @@ library lisp
     exposed-modules:
         Lexer
         Parser
+
+        AbstractTree
+        Builtins
+        EnvStoreRetrieve
         Interpretor
+
         Error
     build-depends:      base
 
@@ -37,4 +42,5 @@ test-suite unit_tests
     hs-source-dirs:     tests
     other-modules:
         LexerTests
+        InterpretorTests
     build-depends:      base, lisp, HUnit
