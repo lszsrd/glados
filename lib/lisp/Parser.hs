@@ -71,7 +71,8 @@ parseDefine (Lexer.Delimiter "(": Lexer.Identifier id : xs) = do
         (Lexer.Delimiter ")" : xs2) -> do
             (body, xs3) <- parseExpression xs2
             case xs3 of
-                Lexer.Delimiter ")" : rest -> Right (Define id (Lambda expr body), rest)
+                Lexer.Delimiter ")" : rest ->
+                    Right (Define id (Lambda expr body), rest)
                 _ -> Left $ ErrorT 0 "Missing ')' after lamdba body"
         _ -> Left $ ErrorT 0 "Missing ')' after lamdba param list"
 parseDefine _ = Left $ ErrorT 0 "Invalid define"
