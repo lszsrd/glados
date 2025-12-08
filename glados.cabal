@@ -43,4 +43,5 @@ test-suite unit_tests
     other-modules:
         LexerTests
         InterpretorTests
+        ParserTests
     build-depends:      base, lisp, HUnit
