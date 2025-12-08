@@ -57,7 +57,7 @@ jobs:
           fi
         timeout-minutes: 2
 
-  run-unit-tests:
+  run-tests:
     name: Running tests
     runs-on: ubuntu-24.04
     #container: epitechcontent/epitest-docker:latest
@@ -75,5 +75,5 @@ jobs:
 
       - name: Running functional tests on `${{ env.TARGET }}`
         run: |
-          ./functionaltests.sh
+          ./tests/functionaltests.sh
         timeout-minutes: 2
