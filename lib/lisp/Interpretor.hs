@@ -34,12 +34,10 @@ import Error
 import Debug.Trace
 
 -- | Takes a list of @'Identifier'@ and an another list of @'Expr'@,
--- returns a __Maybe__ @'[Env]'@
+-- returns a List of @'Env'@
 --
 -- This function tries to mimic variable definition in a case of a
 -- function declaration, binding given identifiers to their values.
---
--- This function is used when detecting a call to a function with parameters
 createLocalEnv :: [Identifier] -> [Expr] -> [Env]
 createLocalEnv [] [] = []
 createLocalEnv (x:xs) (y:ys) =
@@ -48,6 +46,13 @@ createLocalEnv (x:xs) (y:ys) =
         (Boolean i) -> Variable x (Right i): rest
     where rest = createLocalEnv xs ys
 
+-- | Takes a list of @'Env'@ list of @'Identifier'@ and a list of @'Expr'@,
+-- returns a List of @'Env'@
+--
+-- This function updates a given env, binding given identifiers to their values.
+-- if params doesn't exists, create em
+--
+-- This function is used when detecting a call to a function with parameters
 updateEnv :: [Env] -> [Identifier] -> [Expr] -> [Env]
 updateEnv env@(Variable x exp:xs) ids@(y:ys) (newExp:exps) =
     if x == y then
@@ -64,7 +69,6 @@ updateEnv (e:evs) a b = e: updateEnv evs a b
 -- returns a Maybe @'Expr'@.
 --
 -- This function tries to parse and evaluate a lambda.
--- /!\ (May be reused when implementing @'named functions'@)
 -- binds lambda's parameters to given values,
 -- if correct, reduce body of the lambda
 tryEvalLambda :: [Env] -> Expr -> [Expr] -> Maybe Expr
@@ -73,7 +77,7 @@ tryEvalLambda env (Lambda args bdy) arglist =
 tryEvalLambda _ e _ = Just e
 
 -- | Takes a List of @'Env'@ and an Expr
--- returns an @'Expr'@
+-- returns a __Maybe__ @'Expr'@
 --
 -- This function is the Core of the interpretor, it is used recursively
 -- to effectively reduce the given expression to its minimum,
