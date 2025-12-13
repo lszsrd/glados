@@ -6,22 +6,22 @@
 -}
 
 module Ast (
-    CmpdStmt                (..)
+    CompoundStmt            (..)
     , ParmVarDeclExpr       (..)
-    , Decl                  (..) -- main type
+    , Decl                  (..) -- main data structure
     , ParmCallDecl          (..)
     , VarDeclStmt           (..)
     , DeclStmt              (..)
     , BinaryOpParm          (..)
     , BinaryOpExpr          (..)
     , CallExprDecl          (..)
-    , Stmt                  (..) -- main type
+    , Stmt                  (..) -- main data structure
 ) where
 
 import Token
 
-data CmpdStmt
-    = CmpdStmt [Stmt]
+data CompoundStmt
+    = CompoundStmt [Stmt]
 
     deriving (
         Show
@@ -29,7 +29,7 @@ data CmpdStmt
     )
 
 data ParmVarDeclExpr
-    = ParmVarDeclExpr Type Identifier
+    = ParmVarDeclExpr BuiltinType Identifier
     -- ^ ParmVarDecl Boolean "x"
 
     deriving (
@@ -38,9 +38,10 @@ data ParmVarDeclExpr
     )
 
 data Decl
-    = FunctionDecl (Maybe Type) Identifier [ParmVarDeclExpr] CmpdStmt
-    -- ^ FunctionDecl Nothing "foo" [ParmVarDeclExpr Integer "x"] (CmpdStmt [])
+    = FunctionDecl (Maybe BuiltinType) Identifier [ParmVarDeclExpr] CompoundStmt
+    -- ^ FunctionDecl Nothing "foo" [ParmVarDeclExpr Integer "x"] (CompoundStmt [])
     | ParmVarDecl ParmVarDeclExpr
+    -- ^ ParmVarDeclExpr Integer "foo"
     | VarDecl VarDeclStmt -- TODO (semantic analysis): Check that the variable does not initialize itself!
     -- ^ VarDecl (VarDeclStmt Boolean "foo" (ParmCallDeclLiteral (BoolLiteral True)))
 
@@ -60,7 +61,7 @@ data ParmCallDecl
     )
 
 data VarDeclStmt
-    = VarDeclStmt Type Identifier ParmCallDecl
+    = VarDeclStmt BuiltinType Identifier ParmCallDecl
     
 
     deriving (
@@ -88,7 +89,7 @@ data BinaryOpParm
 
 data BinaryOpExpr
     = BinaryOpExpr BinaryOpParm BinaryOp BinaryOpParm
-    | BinaryOpConst Bool
+    | BinaryOpConst ParmCallDecl
 
     deriving (
         Show
@@ -110,22 +111,22 @@ data Stmt
     -- ^ UnaryOperator "x" IdentIncrement
     | BinaryOperator BinaryOpExpr
     -- ^ BinaryOpExpr (BinaryOpParm (ParmCallDeclLiteral (BoolLiteral True))) Lt (BinaryOpParm (ParmCallDeclIdent "a"))
-    | IfStmt BinaryOpExpr CmpdStmt (Maybe CmpdStmt)
+    | IfStmt BinaryOpExpr CompoundStmt (Maybe CompoundStmt)
     --                             ^
     --                             \-- else block that is OPTIONAL
-    -- ^ IfStmt (BinaryOpExpr (BinaryOpParm (ParmCallDeclExpr (CallExprDecl "foo" [ParmCallDeclLiteral (IntLiteral 42)]))) Lt (BinaryOpParm (ParmCallDeclIdent "a"))) (CmpdStmt []) (Just (CmpdStmt [])
-    -- ^ IfStmt (BinaryOpConst True) (CmpdStmt []) Nothing
-    | WhileStmt BinaryOpExpr CmpdStmt
-    -- ^ WhileStmt (BinaryOpConst True) (CmpdStmt [])
-    -- ^ WhileStmt (BinaryOpExpr (BinaryOpParm (ParmCallDeclLiteral (BoolLiteral True))) NEq (BinaryOpParm (ParmCallDeclLiteral (BoolLiteral False)))) (CmpdStmt [])
-    | ForStmt (Maybe VarDeclStmt) (Maybe BinaryOpExpr) (Maybe DeclStmt) CmpdStmt
-    -- ^ ForStmt (Just (VarDeclStmt Integer "i" (ParmCallDeclExpr (CallExprDecl "foo" [])))) (Just (BinaryOpExpr (BinaryOpParm (ParmCallDeclIdent "x")) Lt (BinaryOpParm (ParmCallDeclIdent "y")))) Nothing (CmpdStmt [])
-    | ForeachStmt Identifier Identifier CmpdStmt
-    -- ^ ForeachStmt "foo" "it" (CmpdStmt [])
+    -- ^ IfStmt (BinaryOpExpr (BinaryOpParm (ParmCallDeclExpr (CallExprDecl "foo" [ParmCallDeclLiteral (IntLiteral 42)]))) Lt (BinaryOpParm (ParmCallDeclIdent "a"))) (CompoundStmt []) (Just (CompoundStmt []))
+    -- ^ IfStmt (BinaryOpConst (ParmCallDeclLiteral (BoolLiteral True))) (CompoundStmt []) Nothing
+    | WhileStmt BinaryOpExpr CompoundStmt
+    -- ^ WhileStmt (BinaryOpConst (ParmCallDeclLiteral (BoolLiteral True))) (CompoundStmt [])
+    -- ^ WhileStmt (BinaryOpExpr (BinaryOpParm (ParmCallDeclLiteral (BoolLiteral True))) NEq (BinaryOpParm (ParmCallDeclLiteral (BoolLiteral False)))) (CompoundStmt [])
+    | ForStmt (Maybe VarDeclStmt) (Maybe BinaryOpExpr) (Maybe DeclStmt) CompoundStmt
+    -- ^ ForStmt (Just (VarDeclStmt Integer "i" (ParmCallDeclExpr (CallExprDecl "foo" [])))) (Just (BinaryOpExpr (BinaryOpParm (ParmCallDeclIdent "x")) Lt (BinaryOpParm (ParmCallDeclIdent "y")))) Nothing (CompoundStmt [])
+    | ForeachStmt Identifier Identifier CompoundStmt
+    -- ^ ForeachStmt "foo" "it" (CompoundStmt [])
     | CallExpr CallExprDecl
     -- ^ CallExpr (CallExprDecl "foo" [ParmCallDeclLiteral (IntLiteral 42)])
-    | RetStmt ParmCallDecl
-    -- ^ RetStmt (ParmCallDeclIdent "foo")
+    | RetStmt BinaryOpExpr
+    -- ^ RetStmt (BinaryOpConst (ParmCallDeclIdent "foo"))
 
     deriving (
         Show

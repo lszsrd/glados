@@ -8,7 +8,7 @@
 module Token (
     Identifier
     , Keyword               (..)
-    , Type                  (..)
+    , BuiltinType           (..)
     , Literal               (..)
     , SBracket              (..)
     , RBracket              (..)
@@ -41,7 +41,7 @@ data Keyword
         , Eq
     )
 
-data Type
+data BuiltinType
     = Boolean
     | Character
     | Integer
