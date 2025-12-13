@@ -5,23 +5,29 @@
 ## Makefile
 ##
 
-TARGET	:=	glados
+COMPILER	:=	glados-compiler
+VM			:=	glados-vm
 
-all: $(TARGET)
+all: $(COMPILER) $(VM)
 
-$(TARGET):
-	@cabal build
-	@cp $(shell cabal list-bin glados) .
+$(COMPILER):
+	@cabal build $(COMPILER)
+	@cp $(shell cabal list-bin $(COMPILER)) .
+
+$(VM):
+	@cabal build $(VM)
+	@cp $(shell cabal list-bin $(VM)) .
+
 
 clean:
 	@cabal clean
 
 fclean: clean
-	@$(RM) $(TARGET)
+	@$(RM) $(COMPILER) $(VM)
 
 re: fclean all
 
 tests_run:
 	@cabal test --enable-coverage
 
-.PHONY: all clean fclean re $(TARGET)
+.PHONY: all clean fclean re $(COMPILER) $(VM)
