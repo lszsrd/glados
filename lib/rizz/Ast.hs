@@ -9,13 +9,12 @@ module Ast (
     CmpdStmt                (..)
     , FunctionDecl          (..)
     , ParmVarDecl           (..)
-    , VarDecl               (..)
     , ParmCallDecl          (..)
+    , VarDeclStmt           (..)
     , DeclStmt              (..)
     , BinaryOpParm          (..)
     , BinaryOpExpr          (..)
     , CallExprDecl          (..)
-    , RetStmt               (..)
     , Stmt                  (..)
 ) where
 
@@ -48,20 +47,19 @@ data ParmVarDecl
         , Eq
     )
 
-data VarDecl
-    = VarDeclLiteral Type Identifier Literal
-    | VarDeclIdent Type Identifier Identifier
-    -- ^ WARNING: Check that the variable does not initialize itself!
-    | VarDeclCall Type Identifier CallExprDecl
+data ParmCallDecl
+    = ParmCallDeclLiteral Literal
+    | ParmCallDeclIdent Identifier
+    | ParmCallDeclExpr CallExprDecl
 
     deriving (
         Show
         , Eq
     )
 
-data ParmCallDecl
-    = ParmCallDeclLiteral Literal
-    | ParmCallDeclIdent Identifier
+data VarDeclStmt
+    = VarDeclStmt Type Identifier ParmCallDecl
+    
 
     deriving (
         Show
@@ -69,10 +67,8 @@ data ParmCallDecl
     )
 
 data DeclStmt
-    = DeclStmtLiteral Identifier AssignOp Literal
-    -- ^ DeclStmtLiteral "var" DivEqual (BoolLiteral True)
-    | DeclStmtIdent Identifier AssignOp Identifier
-    -- ^ DeclStmtIdent "var" MulEqual "bar"
+    = DeclStmtLiteral Identifier AssignOp ParmCallDecl
+    -- ^ DeclStmtLiteral "var" DivEqual (ParmCallDeclLiteral (BoolLiteral True))
 
     deriving (
         Show
@@ -80,10 +76,8 @@ data DeclStmt
     )
 
 data BinaryOpParm
-    = Ident Identifier
-    | BinaryOp BinaryOpExpr
-    | Constant Literal
-    | CallExprRes CallExprDecl
+    = BinaryOpParm ParmCallDecl
+    | BinaryOpParmBOp BinaryOpExpr
 
     deriving (
         Show
@@ -107,38 +101,29 @@ data CallExprDecl
         , Eq
     )
 
-data RetStmt
-    = RetStmtLiteral Literal
-    | RetStmtIdent Identifier
-
-    deriving (
-        Show
-        , Eq
-    )
-
 data Stmt
-    = VarDecl VarDecl
-    -- ^ VarDecl (VarDeclLiteral Boolean "foo" (BoolLiteral True))
+    = VarDecl VarDeclStmt -- WARNING: Check that the variable does not initialize itself!
+    -- ^ VarDecl (VarDeclStmt Boolean "foo" (ParmCallDeclLiteral (BoolLiteral True)))
     | DeclStmt DeclStmt
-    -- ^ DeclStmt (DeclStmtLiteral "var" MulEqual (BoolLiteral True))
+    -- ^ DeclStmt (DeclStmtLiteral "var" MulEqual (ParmCallDeclLiteral (BoolLiteral True)))
+    | UnaryOperator Identifier UnaryOp
+    -- ^ UnaryOperator "x" IdentIncrement
     | BinaryOperator BinaryOpExpr
-    -- ^ BinaryOpExpr (Ident "x") Lt (Ident "y")
+    -- ^ BinaryOpExpr (BinaryOpParm (ParmCallDeclLiteral (BoolLiteral True))) Lt (BinaryOpParm (ParmCallDeclIdent "a"))
     | IfStmt BinaryOpExpr CmpdStmt (Maybe CmpdStmt)
-    -- ^ IfStmt (BinaryOpExpr (CallExprRes (CallExprDecl "foo" [ParmCallDeclLiteral (IntLiteral 42)])) Eq (Constant (IntLiteral 42))) (CmpdStmt []) (Just (CmpdStmt []))
+    -- ^ IfStmt (BinaryOpExpr (BinaryOpParm (ParmCallDeclExpr (CallExprDecl "foo" [ParmCallDeclLiteral (IntLiteral 42)]))) Lt (BinaryOpParm (ParmCallDeclIdent "a"))) (CmpdStmt []) (Just (CmpdStmt [])
     -- ^ IfStmt (BinaryOpConst True) (CmpdStmt []) Nothing
     | WhileStmt BinaryOpExpr CmpdStmt
     -- ^ WhileStmt (BinaryOpConst True) (CmpdStmt [])
-    -- ^ WhileStmt (BinaryOpExpr (Constant (BoolLiteral True)) NEq (Constant (BoolLiteral True))) (CmpdStmt [])
-    | ForStmt (Maybe VarDecl) (Maybe BinaryOpExpr) (Maybe DeclStmt) CmpdStmt
-    -- ^ ForStmt (Just (VarDeclLiteral Boolean "x" (BoolLiteral True))) (Just (BinaryOpExpr (Ident "x") Lt (Ident "y"))) (Nothing) (CmpdStmt [])
+    -- ^ WhileStmt (BinaryOpExpr (BinaryOpParm (ParmCallDeclLiteral (BoolLiteral True))) NEq (BinaryOpParm (ParmCallDeclLiteral (BoolLiteral False)))) (CmpdStmt [])
+    | ForStmt (Maybe VarDeclStmt) (Maybe BinaryOpExpr) (Maybe DeclStmt) CmpdStmt
+    -- ^ ForStmt (Just (VarDeclStmt Integer "i" (ParmCallDeclExpr (CallExprDecl "foo" [])))) (Just (BinaryOpExpr (BinaryOpParm (ParmCallDeclIdent "x")) Lt (BinaryOpParm (ParmCallDeclIdent "y")))) Nothing (CmpdStmt [])
     | ForeachStmt Identifier Identifier CmpdStmt
     -- ^ ForeachStmt "foo" "it" (CmpdStmt [])
     | CallExpr CallExprDecl
     -- ^ CallExpr (CallExprDecl "foo" [ParmCallDeclLiteral (IntLiteral 42)])
-    | UnaryOperator Identifier UnaryOp
-    -- ^ UnaryOperator "x" IdentIncrement
-    | RetStmt RetStmt
-    -- ^ RetStmt (RetStmtLiteral (BoolLiteral True))
+    | RetStmt ParmCallDecl
+    -- ^ RetStmt (ParmCallDeclIdent "foo")
 
     deriving (
         Show
