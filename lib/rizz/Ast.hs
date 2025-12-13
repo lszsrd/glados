@@ -7,15 +7,15 @@
 
 module Ast (
     CmpdStmt                (..)
-    , FunctionDecl          (..)
-    , ParmVarDecl           (..)
+    , ParmVarDeclExpr       (..)
+    , Decl                  (..) -- main type
     , ParmCallDecl          (..)
     , VarDeclStmt           (..)
     , DeclStmt              (..)
     , BinaryOpParm          (..)
     , BinaryOpExpr          (..)
     , CallExprDecl          (..)
-    , Stmt                  (..)
+    , Stmt                  (..) -- main type
 ) where
 
 import Token
@@ -28,19 +28,21 @@ data CmpdStmt
         , Eq
     )
 
-data FunctionDecl
-    = FunctionDecl (Maybe Type) Identifier [ParmVarDecl] CmpdStmt
-    -- ^ FunctionDecl Nothing "foo" [ParmVarDecl Integer "x"] (CmpdStmt [])
+data ParmVarDeclExpr
+    = ParmVarDeclExpr Type Identifier
+    -- ^ ParmVarDecl Boolean "x"
 
     deriving (
         Show
         , Eq
     )
 
-
-data ParmVarDecl
-    = ParmVarDecl Type Identifier
-    -- ^ ParmVarDecl Boolean "x"
+data Decl
+    = FunctionDecl (Maybe Type) Identifier [ParmVarDeclExpr] CmpdStmt
+    -- ^ FunctionDecl Nothing "foo" [ParmVarDeclExpr Integer "x"] (CmpdStmt [])
+    | ParmVarDecl ParmVarDeclExpr
+    | VarDecl VarDeclStmt -- TODO (semantic analysis): Check that the variable does not initialize itself!
+    -- ^ VarDecl (VarDeclStmt Boolean "foo" (ParmCallDeclLiteral (BoolLiteral True)))
 
     deriving (
         Show
@@ -102,9 +104,7 @@ data CallExprDecl
     )
 
 data Stmt
-    = VarDecl VarDeclStmt -- TODO (semantic analysis): Check that the variable does not initialize itself!
-    -- ^ VarDecl (VarDeclStmt Boolean "foo" (ParmCallDeclLiteral (BoolLiteral True)))
-    | DeclStmt DeclStmt
+    = DeclStmt DeclStmt
     -- ^ DeclStmt (DeclStmtLiteral "var" MulEqual (ParmCallDeclLiteral (BoolLiteral True)))
     | UnaryOperator Identifier UnaryOp
     -- ^ UnaryOperator "x" IdentIncrement
