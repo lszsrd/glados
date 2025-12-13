@@ -60,8 +60,8 @@ data VarDecl
     )
 
 data ParmCallDecl
-    = ParmCallLiteral Literal
-    | ParmCallIdent Identifier
+    = ParmCallDeclLiteral Literal
+    | ParmCallDeclIdent Identifier
 
     deriving (
         Show
@@ -108,8 +108,8 @@ data CallExprDecl
     )
 
 data RetStmt
-    = RetLiteral Literal
-    | RetIdent Identifier
+    = RetStmtLiteral Literal
+    | RetStmtIdent Identifier
 
     deriving (
         Show
@@ -124,7 +124,7 @@ data Stmt
     | BinaryOperator BinaryOpExpr
     -- ^ BinaryOpExpr (Ident "x") Lt (Ident "y")
     | IfStmt BinaryOpExpr CmpdStmt (Maybe CmpdStmt)
-    -- ^ IfStmt (BinaryOpExpr (CallExprRes (CallExprDecl "foo" [ParmCallLiteral (IntLiteral 42)])) Eq (Constant (IntLiteral 42))) (CmpdStmt []) (Just (CmpdStmt []))
+    -- ^ IfStmt (BinaryOpExpr (CallExprRes (CallExprDecl "foo" [ParmCallDeclLiteral (IntLiteral 42)])) Eq (Constant (IntLiteral 42))) (CmpdStmt []) (Just (CmpdStmt []))
     -- ^ IfStmt (BinaryOpConst True) (CmpdStmt []) Nothing
     | WhileStmt BinaryOpExpr CmpdStmt
     -- ^ WhileStmt (BinaryOpConst True) (CmpdStmt [])
@@ -134,11 +134,11 @@ data Stmt
     | ForeachStmt Identifier Identifier CmpdStmt
     -- ^ ForeachStmt "foo" "it" (CmpdStmt [])
     | CallExpr CallExprDecl
-    -- ^ CallExpr (CallExprDecl "foo" [ParmCallLiteral (IntLiteral 42)])
+    -- ^ CallExpr (CallExprDecl "foo" [ParmCallDeclLiteral (IntLiteral 42)])
     | UnaryOperator Identifier UnaryOp
     -- ^ UnaryOperator "x" IdentIncrement
     | RetStmt RetStmt
-    -- ^ RetStmt (RetLiteral (BoolLiteral True))
+    -- ^ RetStmt (RetStmtLiteral (BoolLiteral True))
 
     deriving (
         Show

@@ -1,5 +1,5 @@
 name: CD
-run-name: "`${{ github.actor }}` triggered workflow from a ${{ github.event_name }} on `${{ github.head_ref || github.ref_name }}` : ${{ github.event.head_commit.message || github.event.workflow_run.head_commit.message }}"
+run-name: "`${{ github.actor }}` triggered workflow from a `${{ github.event_name }}` on `${{ github.ref_name }}` : ${{ github.event.head_commit.message || github.event.workflow_run.head_commit.message }}"
 
 on:
   workflow_run:
@@ -10,12 +10,11 @@ on:
       - completed
 
 env:
-  GIT_REPO: lszsrd/glados
   TARGET: glados
 
 jobs:
   build-haddock-documentation:
-    if: github.repository == {{ env.GIT_REPO }} && github.event.workflow_run.conclusion == 'success'
+    if: github.repository == 'lszsrd/glados' && github.event.workflow_run.conclusion == 'success'
     name: Generating documentation
     runs-on: ubuntu-24.04
 
@@ -37,52 +36,8 @@ jobs:
           publish_branch: documentation
       timeout-minutes: 2
 
-  build-github-release-assets:
-    if: github.repository == {{ env.GIT_REPO }} && github.event.workflow_run.conclusion == 'success'
-    name: Building Github release
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-24.04, self-hosted, windows-2022]
-
-    steps:
-      - name: Cloning repository
-        uses: actions/checkout@v4
-        timeout-minutes: 2
-
-      - name: Building `${{ env.TARGET }}` binary
-        run: |
-          mkdir -p binaries
-          cabal update
-          make
-          cp ${{ env.TARGET }} binaries/${{ env.TARGET }}-${{ matrix.os }}
-        # tar -czf c2dgl-${GITHUB_REF_NAME}-linux-x86_64.tar.gz -C package
-        timeout-minutes: 10
-
-    - name: Creating release
-      id: create_release
-      uses: softprops/action-gh-release@v2
-      with:
-        tag_name: ${{ github.ref_name }}
-        name: C2DGL ${{ github.ref_name }}
-        draft: false
-        prerelease: false
-      env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Uploading release
-      uses: softprops/action-gh-release@v2
-      with:
-        tag_name: ${{ github.ref_name }}
-        files: |
-          c2dgl-${GITHUB_REF_NAME}-linux-x86_64.tar.gz
-      env:
-        GITHUB_TOKEN: ${{ github.ref_name }}
-
   push-to-mirror:
-    if: github.repository == {{ env.GIT_REPO }} && github.event.workflow_run.conclusion == 'success'
+    if: github.repository == 'lszsrd/glados' && github.event.workflow_run.conclusion == 'success'
     name: Pushing to Epitech repository
     runs-on: ubuntu-24.04
 
