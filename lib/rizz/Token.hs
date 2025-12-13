@@ -7,6 +7,8 @@
 
 module Token (
     Identifier
+    , Location
+    , TokenMD               (..)
     , Keyword               (..)
     , BuiltinType           (..)
     , Literal               (..)
@@ -20,7 +22,20 @@ module Token (
     , Token                 (..)
 ) where
 
+
 type Identifier = String
+
+type Location = (Int, Int)
+
+-- Token MetaData
+data TokenMD
+    = TokenMD Token Location
+    -- ^ (Keyword Bool,(0,12))
+
+    deriving (
+        Show
+        , Eq
+    )
 
 data Keyword
     = Bool                  -- Bool
