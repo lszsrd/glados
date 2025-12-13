@@ -102,7 +102,7 @@ data CallExprDecl
     )
 
 data Stmt
-    = VarDecl VarDeclStmt -- WARNING: Check that the variable does not initialize itself!
+    = VarDecl VarDeclStmt -- TODO (semantic analysis): Check that the variable does not initialize itself!
     -- ^ VarDecl (VarDeclStmt Boolean "foo" (ParmCallDeclLiteral (BoolLiteral True)))
     | DeclStmt DeclStmt
     -- ^ DeclStmt (DeclStmtLiteral "var" MulEqual (ParmCallDeclLiteral (BoolLiteral True)))
@@ -111,6 +111,8 @@ data Stmt
     | BinaryOperator BinaryOpExpr
     -- ^ BinaryOpExpr (BinaryOpParm (ParmCallDeclLiteral (BoolLiteral True))) Lt (BinaryOpParm (ParmCallDeclIdent "a"))
     | IfStmt BinaryOpExpr CmpdStmt (Maybe CmpdStmt)
+    --                             ^
+    --                             \-- else block that is OPTIONAL
     -- ^ IfStmt (BinaryOpExpr (BinaryOpParm (ParmCallDeclExpr (CallExprDecl "foo" [ParmCallDeclLiteral (IntLiteral 42)]))) Lt (BinaryOpParm (ParmCallDeclIdent "a"))) (CmpdStmt []) (Just (CmpdStmt [])
     -- ^ IfStmt (BinaryOpConst True) (CmpdStmt []) Nothing
     | WhileStmt BinaryOpExpr CmpdStmt
