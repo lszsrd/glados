@@ -10,12 +10,13 @@ module Main where
 import System.Environment (getArgs)
 import System.Exit (exitSuccess)
 
-import Lexer (parseTokens)
+import Lexer (lexer)
 
 -- source => lexical analysis (tokens) => syntactic analysis (parse tree) => semantic analysis (type checking)
 
 main :: IO ()
 main = do
-    x <- getArgs
-    print $ parseTokens $ head x
+    path <- getArgs
+    buffer <- readFile $ head path
+    print $ lexer buffer
     exitSuccess

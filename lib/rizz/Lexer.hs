@@ -224,16 +224,16 @@ parsePunctuator _ = Nothing
 
 lexerWrapper :: String -> (Int, Int) -> [(Token, (Int, Int))]
 lexerWrapper [] _ = []
-lexerWrapper ('\n': x) (_, c) = lexerWrapper x (0, c + 1)
+lexerWrapper ('\n': x) (l, _) = lexerWrapper x (l + 1, 1)
 lexerWrapper stream@(_: xs) (l, c) = case parseKeyword stream of
     Nothing -> case parseIdentifier stream of
         Nothing -> case parseLiteral stream of
             Nothing -> case parsePunctuator stream of
-                Nothing -> lexerWrapper xs (l + 1, c)
-                Just (x, y, z) -> [(x, (l, c))] ++ lexerWrapper z (l + y, c)
-            Just (x, y, z) -> [(x, (l, c))] ++ lexerWrapper z (l + y, c)
-        Just (x, y, z) -> [(Identifier x, (l, c))] ++ lexerWrapper z (l + y, c)
-    Just (x, y, z) -> [(x, (l, c))] ++ lexerWrapper z (l + y, c)
+                Nothing -> lexerWrapper xs (l, c + 1)
+                Just (x, y, z) -> [(x, (l, c))] ++ lexerWrapper z (l, c + y)
+            Just (x, y, z) -> [(x, (l, c))] ++ lexerWrapper z (l, c + y)
+        Just (x, y, z) -> [(Identifier x, (l, c))] ++ lexerWrapper z (l, c + y)
+    Just (x, y, z) -> [(x, (l, c))] ++ lexerWrapper z (l, c + y)
 
 lexer :: String -> [(Token, (Int, Int))]
 lexer stream = lexerWrapper stream (1, 1)
