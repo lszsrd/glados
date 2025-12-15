@@ -8,9 +8,9 @@
 module Ast (
     CompoundStmt            (..)
     , ParmVarDeclExpr       (..)
+    , VarDeclStmt           (..)
     , Decl                  (..) -- main data structure
     , ParmCallDecl          (..)
-    , VarDeclStmt           (..)
     , DeclStmt              (..)
     , BinaryOpParm          (..)
     , BinaryOpExpr          (..)
@@ -37,6 +37,15 @@ data ParmVarDeclExpr
         , Eq
     )
 
+data VarDeclStmt
+    = VarDeclStmt BuiltinType Identifier ParmCallDecl
+    
+
+    deriving (
+        Show
+        , Eq
+    )
+
 data Decl
     = FunctionDecl (Maybe BuiltinType) Identifier [ParmVarDeclExpr] CompoundStmt
     -- ^ FunctionDecl Nothing "foo" [ParmVarDeclExpr Integer "x"] (CompoundStmt [])
@@ -54,15 +63,6 @@ data ParmCallDecl
     = ParmCallDeclLiteral Literal
     | ParmCallDeclIdent Identifier
     | ParmCallDeclExpr CallExprDecl
-
-    deriving (
-        Show
-        , Eq
-    )
-
-data VarDeclStmt
-    = VarDeclStmt BuiltinType Identifier ParmCallDecl
-    
 
     deriving (
         Show
