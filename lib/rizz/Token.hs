@@ -144,7 +144,6 @@ data Punctuator
     | Comma                 -- ,
     | Equal                 -- =
     | AssignOp AssignOp
-    | Hashtag               -- #
 
     deriving (
         Show

@@ -213,11 +213,11 @@ parsePunctuator (':': x) = Just (Punctuator Colon, 1, x)
 parsePunctuator (';': x) = Just (Punctuator Semicolon, 1, x)
 parsePunctuator (',': x) = Just (Punctuator Comma, 1, x)
 parsePunctuator ('=': x) = Just (Punctuator Equal, 1, x)
-parsePunctuator ('#': x) = Just (Punctuator Hashtag, 1, x)
 parsePunctuator _ = Nothing
 
 lexerWrapper :: String -> (Int, Int) -> [(Token, (Int, Int))]
 lexerWrapper [] _ = []
+lexerWrapper ('#': x) (l, _) = lexerWrapper (dropWhile (\x -> x /= '\n') x) (l + 1, 1)
 lexerWrapper ('\n': x) (l, _) = lexerWrapper x (l + 1, 1)
 lexerWrapper stream@(_: xs) (l, c) = case parseKeyword stream of
     Nothing -> case parseIdentifier stream of

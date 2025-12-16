@@ -1,7 +1,8 @@
+# divide two integers
 fn      foo(Int: x, Int: y) -> Int
 {
     if (y == 0) {
-        ret 0;
+        ret 0; # returns 0 to avoid div by 0
     }
     ret x / y;
 }
@@ -13,4 +14,4 @@ fn main()
     foo(x, 2);
     ret 0;
 }
-
+#endof file
