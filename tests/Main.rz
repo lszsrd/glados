@@ -1,4 +1,4 @@
-fn foo(Int: x, Int: y) -> Int
+fn      foo(Int: x, Int: y) -> Int
 {
     if (y == 0) {
         ret 0;
@@ -6,7 +6,7 @@ fn foo(Int: x, Int: y) -> Int
     ret x / y;
 }
 
-fn main()
+fn      main()
 {
     Int x = 42;
     

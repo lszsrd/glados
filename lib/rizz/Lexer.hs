@@ -105,8 +105,8 @@ parseChar (x: xs)
     | isAscii x = Just (x, 1, xs)
 parseChar _ = Nothing
 
--- not used in lexical analysis
 parseEscapeSequence :: String -> Maybe (Char, Int, Stream)
+parseEscapeSequence (' ': x) = Just (' ', 1, x)
 parseEscapeSequence ('\a': x) = Just ('\a', 1, x)
 parseEscapeSequence ('\b': x) = Just ('\b', 1, x)
 parseEscapeSequence ('\f': x) = Just ('\f', 1, x)
@@ -117,7 +117,6 @@ parseEscapeSequence ('\v': x) = Just ('\v', 1, x)
 parseEscapeSequence ('\'': x) = Just ('\'', 1, x)
 parseEscapeSequence ('\"': x) = Just ('\"', 1, x)
 parseEscapeSequence ('\\': x) = Just ('\\', 1, x)
---parseEscapeSequence ('\?': x) = Just ('\?', 1, x)
 parseEscapeSequence _ = Nothing
 
 parseIdentifier :: String -> Maybe (Identifier, Int, Stream)
@@ -166,6 +165,9 @@ parseKeyword x
     | otherwise = Nothing
 
 parseLiteral :: String -> Maybe (Token, Int, Stream)
+parseLiteral ('0': stream) = case parseDigit stream of
+    Nothing -> Just (Literal (IntLiteral 0), 1, stream)
+    _ -> Nothing
 parseLiteral stream = case parseBooleanConstant stream of
     Nothing -> case parseCharacterConstant stream of
         Nothing -> case parseFloatingConstant stream of
@@ -218,6 +220,7 @@ parsePunctuator ('<': x) = Just (Punctuator (BinaryOp Lt), 1, x)
 parsePunctuator ('>': x) = Just (Punctuator (BinaryOp Gt), 1, x)
 parsePunctuator (':': x) = Just (Punctuator Colon, 1, x)
 parsePunctuator (';': x) = Just (Punctuator Semicolon, 1, x)
+parsePunctuator (',': x) = Just (Punctuator Comma, 1, x)
 parsePunctuator ('=': x) = Just (Punctuator Equal, 1, x)
 parsePunctuator ('#': x) = Just (Punctuator Hashtag, 1, x)
 parsePunctuator _ = Nothing
@@ -229,7 +232,9 @@ lexerWrapper stream@(_: xs) (l, c) = case parseKeyword stream of
     Nothing -> case parseIdentifier stream of
         Nothing -> case parseLiteral stream of
             Nothing -> case parsePunctuator stream of
-                Nothing -> lexerWrapper xs (l, c + 1)
+                Nothing -> case parseEscapeSequence stream of
+                    Nothing -> error stream
+                    Just _ -> lexerWrapper xs (l, c + 1)
                 Just (x, y, z) -> [(x, (l, c))] ++ lexerWrapper z (l, c + y)
             Just (x, y, z) -> [(x, (l, c))] ++ lexerWrapper z (l, c + y)
         Just (x, y, z) -> [(Identifier x, (l, c))] ++ lexerWrapper z (l, c + y)

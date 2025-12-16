@@ -141,6 +141,7 @@ data Punctuator
     | BinaryOp BinaryOp
     | Colon                 -- :
     | Semicolon             -- ;
+    | Comma                 -- ,
     | Equal                 -- =
     | AssignOp AssignOp
     | Hashtag               -- #
