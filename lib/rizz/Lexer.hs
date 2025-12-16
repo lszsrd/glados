@@ -218,7 +218,7 @@ parsePunctuator _ = Nothing
 
 lexerWrapper :: String -> (Int, Int) -> [(Token, (Int, Int))]
 lexerWrapper [] _ = []
-lexerWrapper ('#': x) (l, _) = lexerWrapper (dropWhile (\x -> x /= '\n') x) (l + 1, 1)
+lexerWrapper ('#': x) (l, c) = lexerWrapper (dropWhile (\x -> x /= '\n') x) (l, c)
 lexerWrapper ('\n': x) (l, _) = lexerWrapper x (l + 1, 1)
 lexerWrapper stream@(_:xs) (l, c) =
     case  parseKeyword stream
