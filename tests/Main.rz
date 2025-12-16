@@ -6,7 +6,7 @@ fn      foo(Int: x, Int: y) -> Int
     ret x / y;
 }
 
-fn      main()
+fn main()
 {
     Int x = 42;
     

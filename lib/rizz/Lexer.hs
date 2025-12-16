@@ -15,7 +15,6 @@ module Lexer (
     , parseSCharSequence
     , parseSChar
     , parseDecimalConstant
-    , parseNonZeroDigit
     , parseFloatingConstant
     , parseDigitSequence
     , parseCharacterConstant
@@ -65,7 +64,7 @@ parseSChar (x: xs)
 parseSChar _ = Nothing
 
 parseDecimalConstant :: String -> Maybe (String, Int, Stream)
-parseDecimalConstant stream = case parseNonZeroDigit stream of
+parseDecimalConstant stream = case parseDigit stream of
     Nothing -> Nothing
     Just (x, y, z) -> case parseDigit z of
         Nothing -> case parseDecimalConstant z of
@@ -74,10 +73,6 @@ parseDecimalConstant stream = case parseNonZeroDigit stream of
         Just (xs, ys, zs) -> case parseDecimalConstant zs of
             Nothing -> Just (x: [xs], y + ys, zs)
             Just (xs', ys', zs') -> Just (x: xs: xs', y + ys + ys', zs')
-
-parseNonZeroDigit :: String -> Maybe (Char, Int, Stream)
-parseNonZeroDigit ('0': _) = Nothing
-parseNonZeroDigit stream = parseDigit stream
 
 parseFloatingConstant :: String -> Maybe (String, Int, Stream)
 parseFloatingConstant stream = do
@@ -165,9 +160,6 @@ parseKeyword x
     | otherwise = Nothing
 
 parseLiteral :: String -> Maybe (Token, Int, Stream)
-parseLiteral ('0': stream) = case parseDigit stream of
-    Nothing -> Just (Literal (IntLiteral 0), 1, stream)
-    _ -> Nothing
 parseLiteral stream = case parseBooleanConstant stream of
     Nothing -> case parseCharacterConstant stream of
         Nothing -> case parseFloatingConstant stream of
