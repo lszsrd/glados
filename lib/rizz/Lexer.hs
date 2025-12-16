@@ -144,20 +144,19 @@ parseBooleanConstant x
     | otherwise = Nothing
 
 parseKeyword :: String -> Maybe (Token, Int, Stream)
-parseKeyword x
-    | "Bool" `isPrefixOf` x = Just (Keyword Bool, 4, drop 4 x)
-    | "Char" `isPrefixOf` x = Just (Keyword Char, 4, drop 4 x)
-    | "Int" `isPrefixOf` x = Just (Keyword Int, 3, drop 3 x)
-    | "Float" `isPrefixOf` x = Just (Keyword Float, 5, drop 5 x)
-    | "Double" `isPrefixOf` x = Just (Keyword Double, 6, drop 6 x)
-    | "fn" `isPrefixOf` x = Just (Keyword Fn, 2, drop 2 x)
-    | "if" `isPrefixOf` x = Just (Keyword If, 2, drop 2 x)
-    | "else" `isPrefixOf` x = Just (Keyword Else, 4, drop 4 x)
-    | "while" `isPrefixOf` x = Just (Keyword While, 5, drop 5 x)
-    | "foreach" `isPrefixOf` x = Just (Keyword Foreach, 7, drop 7 x)
-    | "for" `isPrefixOf` x = Just (Keyword For, 3, drop 3 x)
-    | "ret" `isPrefixOf` x = Just (Keyword Ret, 3, drop 3 x)
-    | otherwise = Nothing
+parseKeyword ('B': 'o': 'o': 'l' : x) = Just (Keyword Bool, 4, x)
+parseKeyword ('C': 'h': 'a': 'r' : x) = Just (Keyword Char, 4, x)
+parseKeyword ('I': 'n': 't': x) = Just (Keyword Int, 3, x)
+parseKeyword ('F': 'l': 'o': 'a': 't': x) = Just (Keyword Float, 5, x)
+parseKeyword ('D': 'o': 'u': 'b': 'l': 'e': x) = Just (Keyword Double, 6, x)
+parseKeyword ('f': 'n': x) = Just (Keyword Fn, 2, x)
+parseKeyword ('i': 'f': x) = Just (Keyword If, 2, x)
+parseKeyword ('e': 'l': 's': 'e': x) = Just (Keyword Else, 4, x)
+parseKeyword ('w': 'h': 'i': 'l': 'e': x) = Just (Keyword While, 5, x)
+parseKeyword ('f': 'o': 'r': 'e': 'a': 'c': 'h': x) = Just (Keyword Foreach, 7, x)
+parseKeyword ('f': 'o': 'r': x) = Just (Keyword For, 3, x)
+parseKeyword ('r': 'e': 't': x) = Just (Keyword Ret, 3, x)
+parseKeyword _ = Nothing
 
 parseLiteral :: String -> Maybe (Token, Int, Stream)
 parseLiteral stream = case parseBooleanConstant stream of
