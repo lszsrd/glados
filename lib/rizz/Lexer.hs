@@ -38,6 +38,7 @@ module Lexer (
 
 import Data.Char (isDigit, isLetter, isAscii)
 import Data.List (isPrefixOf)
+import Control.Applicative ((<|>))
 
 import Token
 
@@ -219,17 +220,16 @@ parsePunctuator _ = Nothing
 lexerWrapper :: String -> (Int, Int) -> [(Token, (Int, Int))]
 lexerWrapper [] _ = []
 lexerWrapper ('\n': x) (l, _) = lexerWrapper x (l + 1, 1)
-lexerWrapper stream@(_: xs) (l, c) = case parseKeyword stream of
-    Nothing -> case parseIdentifier stream of
-        Nothing -> case parseLiteral stream of
-            Nothing -> case parsePunctuator stream of
-                Nothing -> case parseEscapeSequence stream of
-                    Nothing -> error stream
-                    Just _ -> lexerWrapper xs (l, c + 1)
-                Just (x, y, z) -> [(x, (l, c))] ++ lexerWrapper z (l, c + y)
-            Just (x, y, z) -> [(x, (l, c))] ++ lexerWrapper z (l, c + y)
-        Just (x, y, z) -> [(Identifier x, (l, c))] ++ lexerWrapper z (l, c + y)
-    Just (x, y, z) -> [(x, (l, c))] ++ lexerWrapper z (l, c + y)
+lexerWrapper stream@(_:xs) (l, c) =
+    case  parseKeyword stream
+      <|> fmap (\(x,y,z) -> (Identifier x, y, z)) (parseIdentifier stream)
+      <|> parseLiteral stream
+      <|> parsePunctuator stream of
+        Just (tok, len, rest) ->
+            (tok, (l, c)) : lexerWrapper rest (l, c + len)
+        Nothing -> case parseEscapeSequence stream of
+            Just _  -> lexerWrapper xs (l, c + 1)
+            Nothing -> error stream
 
 lexer :: String -> [(Token, (Int, Int))]
 lexer stream = lexerWrapper stream (1, 1)
