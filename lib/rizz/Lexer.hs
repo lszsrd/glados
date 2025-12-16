@@ -28,7 +28,6 @@ module Lexer (
     , parseBooleanConstant
     , parseKeyword
     , parseLiteral
-    , parseConstant
     , parsePunctuator
 
     -- * Tokens generating functions
@@ -154,32 +153,21 @@ parseKeyword ('f': 'n': x) = Just (Keyword Fn, 2, x)
 parseKeyword ('i': 'f': x) = Just (Keyword If, 2, x)
 parseKeyword ('e': 'l': 's': 'e': x) = Just (Keyword Else, 4, x)
 parseKeyword ('w': 'h': 'i': 'l': 'e': x) = Just (Keyword While, 5, x)
-parseKeyword ('f': 'o': 'r': 'e': 'a': 'c': 'h': x) = Just (Keyword Foreach, 7, x)
+parseKeyword ('f': 'o': 'r': 'e': 'a': 'c': 'h': x) = 
+    Just (Keyword Foreach, 7, x)
 parseKeyword ('f': 'o': 'r': x) = Just (Keyword For, 3, x)
 parseKeyword ('r': 'e': 't': x) = Just (Keyword Ret, 3, x)
 parseKeyword _ = Nothing
 
 parseLiteral :: String -> Maybe (Token, Int, Stream)
-parseLiteral stream = case parseBooleanConstant stream of
-    Nothing -> case parseCharacterConstant stream of
-        Nothing -> case parseFloatingConstant stream of
-            Nothing -> case parseDecimalConstant stream of
-                Nothing -> Nothing
-                Just (x, y, z) -> Just (Literal (IntLiteral (read x :: Integer)), y, z)
-            Just (x, y, z) -> Just (Literal (FloatLiteral (read x :: Float)), y, z)
-        Just (x, y, z) -> Just (Literal (CharLiteral x), y, z)
-    Just (x, y, z) -> Just (x, y, z)
-
-parseConstant :: String -> Maybe (Token, Int, Stream)
-parseConstant stream = case parseBooleanConstant stream of
-    Nothing -> case parseCharacterConstant stream of
-        Nothing -> case parseFloatingConstant stream of
-            Nothing -> case parseDecimalConstant stream of
-                Nothing -> Nothing
-                Just (x, y, z) -> Just (Literal (IntLiteral (read x :: Integer)), y, z)
-            Just (x, y, z) -> Just (Literal (FloatLiteral (read x :: Float)), y, z)
-        Just (x, y, z) -> Just (Literal (CharLiteral x), y, z)
-    Just (x, y, z) -> Just (x, y, z)
+parseLiteral stream =
+      parseBooleanConstant stream
+  <|> fmap (\(x,y,z) -> (Literal (CharLiteral x), y, z))
+        (parseCharacterConstant stream)
+  <|> fmap (\(x,y,z) -> (Literal (FloatLiteral (read x)), y, z))
+        (parseFloatingConstant stream)
+  <|> fmap (\(x,y,z) -> (Literal (IntLiteral (read x)), y, z))
+        (parseDecimalConstant stream)
 
 parsePunctuator :: String -> Maybe (Token, Int, Stream)
 parsePunctuator ('[': x) = Just (Punctuator (SBracket OpenSBracket), 1, x)
@@ -190,8 +178,10 @@ parsePunctuator ('{': x) = Just (Punctuator (CBracket OpenCBracket), 1, x)
 parsePunctuator ('}': x) = Just (Punctuator (CBracket CloseCBracket), 1, x)
 parsePunctuator ('.': x) = Just (Punctuator Dot, 1, x)
 parsePunctuator ('-': '>': x) = Just (Punctuator Arrow, 2, x)
-parsePunctuator ('+': '+': x) = Just (Punctuator (UnaryOp IdentIncrement), 2, x)
-parsePunctuator ('-': '-': x) = Just (Punctuator (UnaryOp IdentDecrement), 2, x)
+parsePunctuator ('+': '+': x) = Just (Punctuator (UnaryOp IdentIncrement),
+    2, x)
+parsePunctuator ('-': '-': x) = Just (Punctuator (UnaryOp IdentDecrement),
+    2, x)
 parsePunctuator ('*': '=': x) = Just (Punctuator (AssignOp MulEqual), 2, x)
 parsePunctuator ('/': '=': x) = Just (Punctuator (AssignOp DivEqual), 2, x)
 parsePunctuator ('%': '=': x) = Just (Punctuator (AssignOp ModEqual), 2, x)
@@ -218,7 +208,8 @@ parsePunctuator _ = Nothing
 
 lexerWrapper :: String -> (Int, Int) -> [(Token, (Int, Int))]
 lexerWrapper [] _ = []
-lexerWrapper ('#': x) (l, c) = lexerWrapper (dropWhile (\x -> x /= '\n') x) (l, c)
+lexerWrapper ('#': x) (l, c) = lexerWrapper (dropWhile (\x -> x /= '\n') x)
+    (l, c)
 lexerWrapper ('\n': x) (l, _) = lexerWrapper x (l + 1, 1)
 lexerWrapper stream@(_:xs) (l, c) =
     case  parseKeyword stream
