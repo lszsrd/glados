@@ -1,1 +1,0 @@
-<type-specifier>        ::= "Char" | "Float" | "Int" | "String"
