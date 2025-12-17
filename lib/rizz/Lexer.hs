@@ -52,6 +52,7 @@ import Data.Char (isDigit, isLetter, isAscii)
 import Data.List (isPrefixOf)
 
 import Token
+import Format
 
 -- | Defines @'Stream'@ type as a string which represents a finite byte stream.
 type Stream = String
@@ -229,10 +230,8 @@ parsePunctuator (',': x) = Just (Punctuator Comma, 1, x)
 parsePunctuator ('=': x) = Just (Punctuator Equal, 1, x)
 parsePunctuator _ = Nothing
 
-createErrorMessage :: Stream -> (Int, Int) -> String -> String
-createErrorMessage stream@(x: _) (line, column) message = show line ++ ":"
-    ++ show column ++ ": error: " ++ message ++ "\n    " ++ show line
-    ++ " | " ++ takeWhile (/= '\n') stream
+unexpectedChar :: String -> String
+unexpectedChar lexeme = "unexpected character '" ++ lexeme ++ "'"
 
 lexerWrapper :: Stream -> (Int, Int) -> Either String [(Token, (Int, Int))]
 lexerWrapper [] _ = Right []
@@ -247,7 +246,7 @@ lexerWrapper stream@(x:xs) (l, c) = case  parseKeyword stream
             Right x -> Right (x ++ [(tok, (l, c))])
         Nothing -> case parseEscapeSequence stream of
             Just _  -> lexerWrapper xs (l, c + 1)
-            Nothing -> Left $ createErrorMessage stream (l, c) ("unexpected character '" ++ [x] ++ "'")
+            Nothing -> Left $ fError stream (l, c) (unexpectedChar [x])
 
 lexer :: Stream -> Either String [(Token, (Int, Int))]
 lexer stream = lexerWrapper stream (1, 1)
