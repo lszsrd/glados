@@ -13,5 +13,14 @@ module Parser (
 import Lexer
 import Ast
 
-parser :: [(Token, (Int, Int))] -> [Stmt]
+parseFunctionDecl :: [(Token, (Int, Int))] -> Either String Decl
+parseFunctionDecl tokens = 
+
+parseDecl :: [(Token, (Int, Int))] -> Either String [Decl]
+parseDecl (Lexer.BuiltinType:Lexer.Identifier:, lines) =
+
+parser :: [(Token, (Int, Int))] -> Either String [Decl]
     parser tokens = 
+        case parseDecl tokens of
+            Left error -> Left error
+            Right tokens -> Right tokens
