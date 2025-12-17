@@ -7,5 +7,11 @@
 
 -- Builds AST from tokens
 module Parser (
-    
+    parser
 ) where
+
+import Lexer
+import Ast
+
+parser :: [(Token, (Int, Int))] -> [Stmt]
+    parser tokens = 
