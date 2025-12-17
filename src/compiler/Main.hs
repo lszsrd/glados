@@ -9,6 +9,7 @@ module Main where
 
 import System.Environment (getArgs)
 import System.Exit (exitSuccess)
+import System.IO (stderr, hPutStrLn)
 
 import Lexer (lexer)
 
@@ -18,5 +19,7 @@ main :: IO ()
 main = do
     path <- getArgs
     buffer <- readFile $ head path
-    print $ lexer buffer
+    case lexer buffer of
+        Left e -> hPutStrLn stderr (head path ++ ":" ++ e)
+        Right tokens -> print tokens
     exitSuccess

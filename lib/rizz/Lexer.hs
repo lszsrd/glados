@@ -5,12 +5,24 @@
 -- lib/rizz/Lexer.hs
 -}
 
--- Builds tokens list from input
+-------------------------------------------------------------------------------
+-- |
+-- Module      : Lexer
+-- Description : Performs lexical analysis of a stream of bytes and extracts a
+-- list of 'Rizz' tokens.
+-- License     : MIT
+-- Maintainer  : laszlo.serdet@epitech.eu
+--
+-- Takes a stream of bytes and performs some checkups, based on a BNF grammar,
+-- to extract every__@'Token'@__ from it.
+--
+-- If an unexpected character is found, the @'lexer'@ function throws an error.
+-------------------------------------------------------------------------------
 module Lexer (
     -- * Basic type
     Stream
 
-    -- * Parsing helper functions
+    -- * Parsing functions
     , parseStringLiteral
     , parseSCharSequence
     , parseSChar
@@ -30,40 +42,51 @@ module Lexer (
     , parseLiteral
     , parsePunctuator
 
-    -- * Tokens generating functions
+    -- * Lexical analysis functions
     , lexerWrapper
     , lexer
 ) where
 
+import Control.Applicative ((<|>))
 import Data.Char (isDigit, isLetter, isAscii)
 import Data.List (isPrefixOf)
-import Control.Applicative ((<|>))
 
 import Token
 
+-- | Defines @'Stream'@ type as a string which represents a finite byte stream.
 type Stream = String
 
-parseStringLiteral :: String -> Maybe (String, Int, Stream)
+-- | Defines @'Lexeme'@ type as a string representing a way to identify a
+-- specific @'Token'@.
+type Lexeme = String
+
+-- | Takes a @'Stream'@ as parameter and returns a __Maybe__
+-- (@'Stream'@, @'Int'@, @'Stream'@).
+--
+-- This function takes a @'Lexemes'@ and checks if any of its @'Lexeme'@
+-- match the first bytes of the given @'Stream'@. If none of the @'Lexemes'@
+-- were found at the __beginning__ of the stream, returns Nothing.
+parseStringLiteral :: Stream -> Maybe (Lexeme, Int, Stream)
 parseStringLiteral ('"': x) = case parseSCharSequence x of
-    Just (x, y, ('"': z)) -> Just (x, 2 + y, z)
+    Just (x, y, '"': z) -> Just (x, 2 + y, z)
     _ -> Nothing
 parseStringLiteral _ = Nothing
 
-parseSCharSequence :: String -> Maybe (String, Int, Stream)
+parseSCharSequence :: Stream -> Maybe (Lexeme, Int, Stream)
 parseSCharSequence stream = case parseSChar stream of
     Nothing -> Nothing
     Just (x, y, z) -> case parseSCharSequence z of
         Nothing -> Just ([x], y, z)
-        Just (x', y', z') -> Just ([x] ++ x', y + y', z')
+        Just (x', y', z') -> Just (x: x', y + y', z')
 
-parseSChar :: String -> Maybe (Char, Int, Stream)
+parseSChar :: Stream -> Maybe (Char, Int, Stream)
 parseSChar ('"': _) = Nothing
 parseSChar ('\n': _) = Nothing
 parseSChar (x: xs)
     | isAscii x = Just (x, 1, xs)
 parseSChar _ = Nothing
 
-parseDecimalConstant :: String -> Maybe (String, Int, Stream)
+parseDecimalConstant :: Stream -> Maybe (Lexeme, Int, Stream)
 parseDecimalConstant stream = case parseDigit stream of
     Nothing -> Nothing
     Just (x, y, z) -> case parseDigit z of
@@ -74,33 +97,33 @@ parseDecimalConstant stream = case parseDigit stream of
             Nothing -> Just (x: [xs], y + ys, zs)
             Just (xs', ys', zs') -> Just (x: xs: xs', y + ys + ys', zs')
 
-parseFloatingConstant :: String -> Maybe (String, Int, Stream)
+parseFloatingConstant :: Stream -> Maybe (Lexeme, Int, Stream)
 parseFloatingConstant stream = do
     (x, y, '.': z) <- parseDigitSequence stream
     (x', y', z') <- parseDigitSequence z
     Just (x ++ "." ++ x', y + 1 + y', z')
 
-parseDigitSequence :: String -> Maybe (String, Int, Stream)
+parseDigitSequence :: Stream -> Maybe (Lexeme, Int, Stream)
 parseDigitSequence stream = case parseDigit stream of
     Nothing -> Nothing
     Just (x, y, z) -> case parseDigitSequence z of
         Nothing -> Just ([x], y, z)
-        Just (x', y', z') -> Just ([x] ++ x', y + y', z')
+        Just (x', y', z') -> Just (x: x', y + y', z')
 
-parseCharacterConstant :: String -> Maybe (Char, Int, Stream)
+parseCharacterConstant :: Stream -> Maybe (Char, Int, Stream)
 parseCharacterConstant ('\'': x: '\'': xs) = case parseChar [x] of
     Nothing -> Nothing
     Just (x, _, _) -> Just (x, 3, xs)
 parseCharacterConstant _ = Nothing
 
-parseChar :: String -> Maybe (Char, Int, Stream)
+parseChar :: Stream -> Maybe (Char, Int, Stream)
 parseChar ('\'': _) = Nothing
 parseChar ('\n': _) = Nothing
 parseChar (x: xs)
     | isAscii x = Just (x, 1, xs)
 parseChar _ = Nothing
 
-parseEscapeSequence :: String -> Maybe (Char, Int, Stream)
+parseEscapeSequence :: Stream -> Maybe (Char, Int, Stream)
 parseEscapeSequence (' ': x) = Just (' ', 1, x)
 parseEscapeSequence ('\a': x) = Just ('\a', 1, x)
 parseEscapeSequence ('\b': x) = Just ('\b', 1, x)
@@ -114,7 +137,7 @@ parseEscapeSequence ('\"': x) = Just ('\"', 1, x)
 parseEscapeSequence ('\\': x) = Just ('\\', 1, x)
 parseEscapeSequence _ = Nothing
 
-parseIdentifier :: String -> Maybe (Identifier, Int, Stream)
+parseIdentifier :: Stream -> Maybe (Identifier, Int, Stream)
 parseIdentifier stream = case parseNonDigit stream of
     Nothing -> Nothing
     Just (x, y, z) -> case parseDigit z of
@@ -125,25 +148,25 @@ parseIdentifier stream = case parseNonDigit stream of
             Nothing -> Just (x: [xs], y + ys, zs)
             Just (xs', ys', zs') -> Just (x: xs: xs', y + ys + ys', zs')
 
-parseNonDigit :: String -> Maybe (Char, Int, Stream)
+parseNonDigit :: Stream -> Maybe (Char, Int, Stream)
 parseNonDigit ('_': xs) = Just ('_', 1, xs)
 parseNonDigit stream@(x: xs)
     | isLetter x = Just (x, 1, xs)
 parseNonDigit _ = Nothing
 
-parseDigit :: String -> Maybe (Char, Int, Stream)
+parseDigit :: Stream -> Maybe (Char, Int, Stream)
 parseDigit (x: xs)
     | isDigit x = Just (x, 1, xs)
 parseDigit _ = Nothing
 
 -- handmade, not in BNF
-parseBooleanConstant :: String -> Maybe (Token, Int, Stream)
+parseBooleanConstant :: Stream -> Maybe (Token, Int, Stream)
 parseBooleanConstant x
     | "True" `isPrefixOf` x = Just (Literal (BoolLiteral True), 4, drop 4 x)
     | "False" `isPrefixOf` x = Just (Literal (BoolLiteral False), 5, drop 5 x)
     | otherwise = Nothing
 
-parseKeyword :: String -> Maybe (Token, Int, Stream)
+parseKeyword :: Stream -> Maybe (Token, Int, Stream)
 parseKeyword ('B': 'o': 'o': 'l' : x) = Just (Keyword Bool, 4, x)
 parseKeyword ('C': 'h': 'a': 'r' : x) = Just (Keyword Char, 4, x)
 parseKeyword ('I': 'n': 't': x) = Just (Keyword Int, 3, x)
@@ -159,7 +182,7 @@ parseKeyword ('f': 'o': 'r': x) = Just (Keyword For, 3, x)
 parseKeyword ('r': 'e': 't': x) = Just (Keyword Ret, 3, x)
 parseKeyword _ = Nothing
 
-parseLiteral :: String -> Maybe (Token, Int, Stream)
+parseLiteral :: Stream -> Maybe (Token, Int, Stream)
 parseLiteral stream =
       parseBooleanConstant stream
   <|> fmap (\(x,y,z) -> (Literal (CharLiteral x), y, z))
@@ -169,7 +192,7 @@ parseLiteral stream =
   <|> fmap (\(x,y,z) -> (Literal (IntLiteral (read x)), y, z))
         (parseDecimalConstant stream)
 
-parsePunctuator :: String -> Maybe (Token, Int, Stream)
+parsePunctuator :: Stream -> Maybe (Token, Int, Stream)
 parsePunctuator ('[': x) = Just (Punctuator (SBracket OpenSBracket), 1, x)
 parsePunctuator (']': x) = Just (Punctuator (SBracket CloseSBracket), 1, x)
 parsePunctuator ('(': x) = Just (Punctuator (RBracket OpenRBracket), 1, x)
@@ -178,10 +201,10 @@ parsePunctuator ('{': x) = Just (Punctuator (CBracket OpenCBracket), 1, x)
 parsePunctuator ('}': x) = Just (Punctuator (CBracket CloseCBracket), 1, x)
 parsePunctuator ('.': x) = Just (Punctuator Dot, 1, x)
 parsePunctuator ('-': '>': x) = Just (Punctuator Arrow, 2, x)
-parsePunctuator ('+': '+': x) = Just (Punctuator (UnaryOp IdentIncrement),
-    2, x)
-parsePunctuator ('-': '-': x) = Just (Punctuator (UnaryOp IdentDecrement),
-    2, x)
+parsePunctuator ('+': '+': x)
+    = Just (Punctuator (UnaryOp IdentIncrement), 2, x)
+parsePunctuator ('-': '-': x)
+    = Just (Punctuator (UnaryOp IdentDecrement), 2, x)
 parsePunctuator ('*': '=': x) = Just (Punctuator (AssignOp MulEqual), 2, x)
 parsePunctuator ('/': '=': x) = Just (Punctuator (AssignOp DivEqual), 2, x)
 parsePunctuator ('%': '=': x) = Just (Punctuator (AssignOp ModEqual), 2, x)
@@ -206,21 +229,25 @@ parsePunctuator (',': x) = Just (Punctuator Comma, 1, x)
 parsePunctuator ('=': x) = Just (Punctuator Equal, 1, x)
 parsePunctuator _ = Nothing
 
-lexerWrapper :: String -> (Int, Int) -> [(Token, (Int, Int))]
-lexerWrapper [] _ = []
-lexerWrapper ('#': x) (l, c) = lexerWrapper (dropWhile (\x -> x /= '\n') x)
-    (l, c)
+createErrorMessage :: Stream -> (Int, Int) -> String -> String
+createErrorMessage stream@(x: _) (line, column) message = show line ++ ":"
+    ++ show column ++ ": error: " ++ message ++ "\n    " ++ show line
+    ++ " | " ++ takeWhile (/= '\n') stream
+
+lexerWrapper :: Stream -> (Int, Int) -> Either String [(Token, (Int, Int))]
+lexerWrapper [] _ = Right []
+lexerWrapper ('#': x) (l, c) = lexerWrapper (dropWhile (/= '\n') x) (l, c)
 lexerWrapper ('\n': x) (l, _) = lexerWrapper x (l + 1, 1)
-lexerWrapper stream@(_:xs) (l, c) =
-    case  parseKeyword stream
+lexerWrapper stream@(x:xs) (l, c) = case  parseKeyword stream
       <|> fmap (\(x,y,z) -> (Identifier x, y, z)) (parseIdentifier stream)
       <|> parseLiteral stream
       <|> parsePunctuator stream of
-        Just (tok, len, rest) ->
-            (tok, (l, c)) : lexerWrapper rest (l, c + len)
+        Just (tok, len, rest) -> case lexerWrapper rest (l, c + len) of
+            Left e -> Left e
+            Right x -> Right (x ++ [(tok, (l, c))])
         Nothing -> case parseEscapeSequence stream of
             Just _  -> lexerWrapper xs (l, c + 1)
-            Nothing -> error stream
+            Nothing -> Left $ createErrorMessage stream (l, c) ("unexpected character '" ++ [x] ++ "'")
 
-lexer :: String -> [(Token, (Int, Int))]
+lexer :: Stream -> Either String [(Token, (Int, Int))]
 lexer stream = lexerWrapper stream (1, 1)
