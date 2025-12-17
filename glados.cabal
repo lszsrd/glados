@@ -20,6 +20,9 @@ library rizz
     exposed-modules:
         Token
         Lexer
+        Parser
+        Analyser
+        Format
     build-depends:      base
 
 executable glados-compiler
