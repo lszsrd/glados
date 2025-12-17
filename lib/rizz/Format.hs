@@ -19,7 +19,7 @@ module Format (
     fError
 ) where
 
--- | Takes a @'Stream'@, a (@'Int'@, @'Int'@) and a @'String'@ as parameters
+-- | Takes a @'String'@, a (@'Int'@, @'Int'@) and a @'String'@ as parameters
 -- and create a formated error message off it.
 --
 -- The first @'String'@ represents the current stream of bytes to display (
