@@ -1,0 +1,5 @@
+int main() -> Int
+{
+    ^
+    ret 0;
+}
