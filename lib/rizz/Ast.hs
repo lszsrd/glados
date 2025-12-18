@@ -12,6 +12,7 @@ module Ast (
     , Decl                  (..) -- main data structure
     , ParmCallDecl          (..)
     , DeclStmt              (..)
+    , BuiltinType           (..)
     , BinaryOpParm          (..)
     , BinaryOpExpr          (..)
     , CallExprDecl          (..)
@@ -72,6 +73,17 @@ data ParmCallDecl
 data DeclStmt
     = DeclStmtLiteral Identifier AssignOp ParmCallDecl
     -- ^ DeclStmtLiteral "var" DivEqual (ParmCallDeclLiteral (BoolLiteral True))
+
+    deriving (
+        Show
+        , Eq
+    )
+
+data BuiltinType
+    = Boolean
+    | Character
+    | Integer
+    | SinglePrecision
 
     deriving (
         Show

@@ -24,12 +24,8 @@
 -- here.
 -------------------------------------------------------------------------------
 module Lexer (
-    -- * Basic type
-    Stream
-    , Lexeme
-
     -- * Lexemes parsing
-    , parseStringLiteral
+    parseStringLiteral
     , parseSCharSequence
     , parseSChar
     , parseDecimalConstant
@@ -59,13 +55,6 @@ import Data.List (isPrefixOf)
 
 import Token
 import Format (fError)
-
--- | Defines @'Stream'@ type as a string which represents a finite byte array.
-type Stream = String
-
--- | Defines @'Lexeme'@ type as a string representing a way to identify a
--- specific @'Token'@.
-type Lexeme = String
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__
 -- (@'Stream'@, @'Prelude.Int'@, @'Stream'@) if the streams starts with a
@@ -269,10 +258,10 @@ parseBooleanConstant x
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__
 -- (@'Token'@, @'Data.Int'@, @'Stream'@) if the streams starts with a
--- @'Keyword.Keyword'@.
+-- @'Keyword'@.
 --
 -- On success, this function returns a tuple made of the parsed
--- @'Keyword.Keyword'@, the @'Lexeme'@ length and the input stream striped of
+-- @'Keyword'@, the @'Lexeme'@ length and the input stream striped of
 -- the parsed @'Token'@.
 parseKeyword :: Stream -> Maybe (Token, Int, Stream)
 parseKeyword ('B': 'o': 'o': 'l' : x) = Just (Keyword Bool, 4, x)
@@ -292,10 +281,10 @@ parseKeyword _ = Nothing
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__
 -- (@'Token'@, @'Data.Int'@, @'Stream'@) if the streams starts with a
--- @'Literal.Literal'@.
+-- @'Literal'@.
 --
 -- On success, this function returns a tuple made of the parsed
--- @'Literal.Literal'@, the @'Lexeme'@ length and the input stream striped of
+-- @'Literal'@, the @'Lexeme'@ length and the input stream striped of
 -- the parsed @'Token'@.
 parseLiteral :: Stream -> Maybe (Token, Int, Stream)
 parseLiteral stream =
@@ -309,10 +298,10 @@ parseLiteral stream =
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__
 -- (@'Token'@, @'Data.Int'@, @'Stream'@) if the streams starts with a
--- @'Punctuator.Punctuator'@.
+-- @'Punctuator'@.
 --
 -- On success, this function returns a tuple made of the parsed
--- @'Punctuator.Punctuator'@, the @'Lexeme'@ length and the input stream striped
+-- @'Punctuator'@, the @'Lexeme'@ length and the input stream striped
 -- of the parsed @'Token'@.
 parsePunctuator :: Stream -> Maybe (Token, Int, Stream)
 parsePunctuator ('[': x) = Just (Punctuator (SBracket OpenSBracket), 1, x)
@@ -351,6 +340,7 @@ parsePunctuator (',': x) = Just (Punctuator Comma, 1, x)
 parsePunctuator ('=': x) = Just (Punctuator Equal, 1, x)
 parsePunctuator _ = Nothing
 
+-- coding style helper function, do not export it nor document it
 unexpectedChar :: String -> String
 unexpectedChar lexeme = "unexpected character '" ++ lexeme ++ "'"
 
