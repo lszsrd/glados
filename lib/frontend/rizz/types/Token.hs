@@ -8,13 +8,13 @@
 -------------------------------------------------------------------------------
 -- |
 -- Module      : Token
--- Description : Defines Tokens used to represent the Rizz language syntax.
+-- Description : Defines Tokens used to represent the rizz language syntax.
 -- License     : MIT
 -- Maintainer  : laszlo.serdet@epitech.eu
 --
 -- Sets different categories to which each token belongs. The tokens are based
 -- on the C programming language. For further information, refer to the
--- [Microsoft lexical grammar definition]
+-- [Microsoft C lexical grammar definition]
 -- (https://learn.microsoft.com/en-us/cpp/c-language/lexical-grammar) from which
 -- this definition is based.
 -------------------------------------------------------------------------------
@@ -25,6 +25,7 @@ module Token (
     , Identifier
 
     -- * Tokens kind
+    , Token                 (..)
     , Keyword               (..)
     , Literal               (..)
     , SBracket              (..)
@@ -34,7 +35,6 @@ module Token (
     , BinaryOp              (..)
     , AssignOp              (..)
     , Punctuator            (..)
-    , Token                 (..)
 ) where
 
 -- | Defines @'Stream'@ type as a string representing a finite byte array.
@@ -47,65 +47,87 @@ type Lexeme = String
 -- | Defines @'Identifier'@ type as a string representing a variable.
 type Identifier = String
 
+-- | Defines @'Token'@ which is bound by its corresponding representation in
+-- the bytes @'Stream'@.
+--
+-- It can only be of one type and serves as a way to represent a series
+-- of bytes in a more abstract way.
+data Token
+    = Keyword Keyword
+    -- ^ Keyword definition.
+    | Identifier Identifier
+    -- ^ Identifier definition.
+    | Literal Literal
+    -- ^ Literal definition.
+    | Punctuator Punctuator
+    -- ^ Punctuator definition.
+
+    deriving (
+        Show
+        -- ^ Allows @'Token'@ to be printed.
+        , Eq
+        -- ^ Allows @'Token'@ to be compared, needed for unit tests.
+    )
+
 -- | Defines @'Keyword'@ which are reserved words used by the language.
 data Keyword
-    = Bool                  -- Bool
+    = Bool
     -- ^ boolean type keyword, expressed in rizz code as @\`Bool\`@.
-    | Char                  -- Char
+    | Char
     -- ^ character type keyword, expressed in rizz code as @\`Char\`@.
-    | Int                   -- Int
+    | Int
     -- ^ integer type keyword, expressed in rizz code as @\`Int\`@.
-    | Float                 -- Float
+    | Float
     -- ^ float type keyword, expressed in rizz code as @\`Float\`@.
-    | Double                -- Double
+    | Double
     -- ^ double type keyword, expressed in rizz code as @\`Double\`@.
-    | Fn                    -- fn
+    | Fn
     -- ^ function declaration keyword, expressed in rizz code as @\`fn\`@.
-    | If                    -- if
+    | If
     -- ^ if keyword, expressed in rizz code as @\`if\`@.
-    | Else                  -- else
+    | Else
     -- ^ else keyword, expressed in rizz code as @\`else\`@.
-    | While                 -- while
+    | While
     -- ^ while loop type keyword, expressed in rizz code as @\`while\`@.
-    | For                   -- for
+    | For
     -- ^ for loop keyword, expressed in rizz code as @\`for\`@.
-    | Foreach               -- foreach
+    | Foreach
     -- ^ foreach loop keyword, expressed in rizz code as @\`foreach\`@.
-    | Ret                   -- ret
+    | Ret
     -- ^ return (from function) keyword, expressed in rizz code as @\`ret\`@.
     
     deriving (
         Show
-        -- ^ Allows @'Keyword'@ to be printed.
+        -- ^ Allows Keywords to be printed.
         , Eq
-        -- ^ Allows @'Keyword'@ to be compared, needed for unit tests.
+        -- ^ Allows Keywords to be compared, needed for unit tests.
     )
 
 -- | Defines @'Literal`@ which is a way to represent a constant value not
 -- bound to a variable.
 data Literal
-    = BoolLiteral Bool      -- boolean constant
+    = BoolLiteral Bool
     -- ^ boolean literal, expressed in rizz code as @\`True\`@ or @\`False\`@.
-    | CharLiteral Char      -- character constant
+    | CharLiteral Char
     -- ^ character literal, expressed in rizz code like @\`\'x\'\`@.
-    | IntLiteral Integer    -- integer constant
+    | IntLiteral Integer
     -- ^ integer literal, expressed in rizz code like @\`42\`@.
-    | FloatLiteral Float    -- floating point constant
+    | FloatLiteral Float
     -- ^ single floating point literal, expressed in rizz code like @\`3.14\`@.
     
     deriving (
         Show
-        -- ^ Allows @'Literal'@ to be printed.
+        -- ^ Allows Literals to be printed.
         , Eq
-        -- ^ Allows @'Literal'@ to be compared, needed for unit tests.
+        -- ^ Allows Literals to be compared, needed for unit tests.
     )
 
 -- | Defines @'SBracket`@ representing both opening and closing square
 -- brackets \`[]\`.
 data SBracket
-    = OpenSBracket          -- [
+    = OpenSBracket
     -- ^ opening square bracket, expressed in rizz code as @\`[\`@.
-    | CloseSBracket         -- ]
+    | CloseSBracket
     -- ^ closing square bracket, expressed in rizz code as @\`]\`@.
     
     deriving (
@@ -118,9 +140,9 @@ data SBracket
 -- | Defines @'RBracket`@ representing both opening and closing round
 -- brackets \`()\`.
 data RBracket
-    = OpenRBracket          -- (
+    = OpenRBracket
     -- ^ opening round bracket, expressed in rizz code as @\`(\`@.
-    | CloseRBracket         -- )
+    | CloseRBracket
     -- ^ closing round bracket, expressed in rizz code as @\`)\`@.
     
     deriving (
@@ -133,9 +155,9 @@ data RBracket
 -- | Defines @'RBracket`@ representing both opening and closing curly
 -- brackets \`{}\`.
 data CBracket
-    = OpenCBracket          -- {
+    = OpenCBracket
     -- ^ opening curly bracket, expressed in rizz code as @\`{\`@.
-    | CloseCBracket         -- }
+    | CloseCBracket
     -- ^ closing curly bracket, expressed in rizz code as @\`}\`@.
 
     deriving (
@@ -148,9 +170,9 @@ data CBracket
 -- | Defines @'UnaryOp`@ representing both increment and decrement
 -- unary operators.
 data UnaryOp
-    = IdentIncrement        -- ++
+    = IdentIncrement
     -- ^ unary increment operator, expressed in rizz code as @\`++\`@.
-    | IdentDecrement        -- --
+    | IdentDecrement
     -- ^ unary decrement operator, expressed in rizz code as @\`--\`@.
     
     deriving (
@@ -162,31 +184,31 @@ data UnaryOp
 
 -- | Defines @'BinaryOp`@ representing arithmetic and equality operators.
 data BinaryOp
-    = Mul                   -- *
+    = Mul
     -- ^ multiplication operator, expressed in rizz code as @\`\*`@.
-    | Add                   -- +
+    | Add
     -- ^ addition operator, expressed in rizz code as @\`+\`@.
-    | Sub                   -- -
+    | Sub
     -- ^ subtraction operator, expressed in rizz code as @\`-\`@.
-    | Div                   -- /
+    | Div
     -- ^ division operator, expressed in rizz code as @\`/\`@.
-    | Mod                   -- %
+    | Mod
     -- ^ modulo operator, expressed in rizz code as @\`%\`@.
-    | Lt                    -- <
+    | Lt
     -- ^ less than operator, expressed in rizz code as @\`<\`@.
-    | Gt                    -- >
+    | Gt
     -- ^ greater than operator, expressed in rizz code as @\`>\`@.
-    | LEq                   -- <=
+    | LEq
     -- ^ less than or equal to operator, expressed in rizz code as @\`<=\`@.
-    | GEq                   -- >=
+    | GEq
     -- ^ greater than or equal to operator, expressed in rizz code as @\`>=\`@.
-    | Eq                    -- ==
+    | Eq
     -- ^ equal operator, expressed in rizz code as @\`==\`@.
-    | NEq                   -- !=
+    | NEq
     -- ^ not equal operator, expressed in rizz code as @\`!=\`@.
-    | And                   -- &&
+    | And
     -- ^ and operator, expressed in rizz code as @\`&&\`@.
-    | Or                    -- ||
+    | Or
     -- ^ or operator, expressed in rizz code as @\`||\`@.
     
     deriving (
@@ -199,16 +221,16 @@ data BinaryOp
 -- | Defines @'AssignOp`@ representing assignment operators with
 -- arithmetic operation on it.
 data AssignOp
-    = MulEqual              -- *=
+    = MulEqual
     -- ^ multiplication and assignment operator, expressed in rizz code as
     -- @\`*=\`@.
-    | DivEqual              -- /=
+    | DivEqual
     -- ^ division and assignment operator, expressed in rizz code as @\`/=\`@.
-    | ModEqual              -- %=
+    | ModEqual
     -- ^ modulo and assignment operator, expressed in rizz code as @\`%=\`@.
-    | AddEqual              -- +=
+    | AddEqual
     -- ^ addition and assignment operator, expressed in rizz code as @\`+=\`@.
-    | SubEqual              -- -=
+    | SubEqual
     -- ^ subtraction and assignment operator, expressed in rizz code as
     -- @\`-=\`@.
 
@@ -228,26 +250,26 @@ data Punctuator
     -- ^ both curly brackets, used to declare or call functions.
     | CBracket CBracket
     -- ^ both curly brackets, used to define a scope.
-    | Dot                   -- .
+    | Dot
     -- ^ standalone dot @'Punctuator'@ , used to declare floating point
     -- constants and expressed in rizz code as @\`.\`@.
-    | Arrow                 -- ->
+    | Arrow
     -- ^ standalone arrow @'Punctuator'@, used to specify the return type of a
     -- function and expressed in rizz code as @\`+=\`@.
     | UnaryOp UnaryOp
     -- ^ both unary operators.
     | BinaryOp BinaryOp
     -- ^ all of binary operators.
-    | Colon                 -- :
+    | Colon
     -- ^ standalone colon @'Punctuator'@, used to specify the type of an
     -- @'Identifier'@ and expressed in rizz code as @\`:\`@.
-    | Semicolon             -- ;
+    | Semicolon
     -- ^ standalone semicolon @'Punctuator'@, used to specify the end of a
     -- statement and expressed in rizz code as @\`:\`@.
-    | Comma                 -- ,
+    | Comma
     -- ^ standalone comma @'Punctuator'@, used to space functions' arguments
     -- and expressed in rizz code as @\`,\`@.
-    | Equal                 -- =
+    | Equal
     -- ^ standalone equal @'Punctuator'@, used to assign a variable and
     -- expressed in rizz code as @\`,\`@.
     | AssignOp AssignOp
@@ -255,29 +277,7 @@ data Punctuator
 
     deriving (
         Show
-        -- ^ Allows @'Punctuator'@ to be printed.
+        -- ^ Allows Punctuators to be printed.
         , Eq
-        -- ^ Allows @'Punctuator'@ to be compared, needed for unit tests.
-    )
-
--- | Defines @'Token'@ which is bound by its corresponding representation in
--- the bytes @'Stream'@.
---
--- It can only be of one type and serves as a way to represent a series
--- of bytes in a more abstract way.
-data Token
-    = Keyword Keyword
-    -- ^ @'Keyword'@ definition.
-    | Identifier Identifier
-    -- ^ @'Identifier'@ definition.
-    | Literal Literal
-    -- ^ @'Literal'@ definition.
-    | Punctuator Punctuator
-    -- ^ @'Punctuator'@ definition.
-
-    deriving (
-        Show
-        -- ^ Allows @'Token'@ to be printed.
-        , Eq
-        -- ^ Allows @'Token'@ to be compared, needed for unit tests.
+        -- ^ Allows Punctuators to be compared, needed for unit tests.
     )
