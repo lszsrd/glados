@@ -26,13 +26,13 @@ module Ast (
     Decl                    (..)
     , Stmt                  (..)
 
-    -- * Declarations related definitions
+    -- * Declarations
     , CompoundStmt          (..)
     , ParmVarDeclExpr       (..)
     , BuiltinType           (..)
     , VarDeclStmt           (..)
 
-    -- * Statements related definitions
+    -- * Statements
     , DeclStmt              (..)
     , BinaryOpParm          (..)
     , BinaryOpExpr          (..)

@@ -69,7 +69,7 @@ import Format (fError)
 --
 -- On failure, this function returns a pretty formatted error message.
 lexer :: Stream -> Either String [(Token, (Int, Int))]
-lexer stream = lexerWrapper stream (1, 1)
+lexer stream = lexerWrapper stream stream (1, 1)
 
 -- coding style helper function, do not export it nor document it
 unexpectedChar :: String -> String
@@ -86,20 +86,21 @@ unexpectedChar lexeme = "unexpected character '" ++ lexeme ++ "'"
 -- column position.
 --
 -- On failure, this function returns a pretty formatted error message.
-lexerWrapper :: Stream -> (Int, Int) -> Either String [(Token, (Int, Int))]
-lexerWrapper [] _ = Right []
-lexerWrapper ('#': xs) y = lexerWrapper (dropWhile (/= '\n') xs) y
-lexerWrapper ('\n': xs) (l, _) = lexerWrapper xs (l + 1, 1)
-lexerWrapper stream@(x:xs) (l, c) = case parseKeyword stream
+lexerWrapper :: Stream -> Stream -> (Int, Int)
+    -> Either String [(Token, (Int, Int))]
+lexerWrapper _ [] _ = Right []
+lexerWrapper begin ('#': xs) y = lexerWrapper begin (dropWhile (/= '\n') xs) y
+lexerWrapper begin ('\n': xs) (l, _) = lexerWrapper begin xs (l + 1, 1)
+lexerWrapper begin stream@(x:xs) (l, c) = case parseKeyword stream
       <|> fmap (\(x,y,z) -> (Identifier x, y, z)) (parseIdentifier stream)
       <|> parseLiteral stream
       <|> parsePunctuator stream of
-        Just (tok, len, rest) -> case lexerWrapper rest (l, c + len) of
+        Just (tok, len, rest) -> case lexerWrapper begin rest (l, c + len) of
             Left error -> Left error
             Right tokens -> Right $ (tok, (l, c)): tokens
         Nothing -> case parseEscapeSequence stream of
-            Just _  -> lexerWrapper xs (l, c + 1)
-            Nothing -> Left $ fError stream (l, c) (unexpectedChar [x])
+            Just _  -> lexerWrapper begin xs (l, c + 1)
+            Nothing -> Left $ fError begin (l, c) 1 (unexpectedChar [x])
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__
 -- (@'Token'@, @'Data.Int'@, @'Stream'@) if the stream starts with a
