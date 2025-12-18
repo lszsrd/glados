@@ -2,7 +2,7 @@
 -- EPITECH PROJECT, 2025
 -- Generic Language And Data Operand Syntax
 -- File description:
--- lib/rizz/Lexer.hs
+-- lib/frontend/rizz/Lexer.hs
 -}
 
 -------------------------------------------------------------------------------
@@ -357,15 +357,15 @@ unexpectedChar lexeme = "unexpected character '" ++ lexeme ++ "'"
 -- On failure, this function returns a pretty formatted error message.
 lexerWrapper :: Stream -> (Int, Int) -> Either String [(Token, (Int, Int))]
 lexerWrapper [] _ = Right []
-lexerWrapper ('#': x) (l, c) = lexerWrapper (dropWhile (/= '\n') x) (l, c)
-lexerWrapper ('\n': x) (l, _) = lexerWrapper x (l + 1, 1)
-lexerWrapper stream@(x:xs) (l, c) = case  parseKeyword stream
+lexerWrapper ('#': xs) y = lexerWrapper (dropWhile (/= '\n') xs) y
+lexerWrapper ('\n': xs) (l, _) = lexerWrapper xs (l + 1, 1)
+lexerWrapper stream@(x:xs) (l, c) = case parseKeyword stream
       <|> fmap (\(x,y,z) -> (Identifier x, y, z)) (parseIdentifier stream)
       <|> parseLiteral stream
       <|> parsePunctuator stream of
         Just (tok, len, rest) -> case lexerWrapper rest (l, c + len) of
-            Left e -> Left e
-            Right x -> Right (x ++ [(tok, (l, c))])
+            Left error -> Left error
+            Right tokens -> Right $ (tok, (l, c)): tokens
         Nothing -> case parseEscapeSequence stream of
             Just _  -> lexerWrapper xs (l, c + 1)
             Nothing -> Left $ fError stream (l, c) (unexpectedChar [x])

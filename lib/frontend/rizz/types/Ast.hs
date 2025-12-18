@@ -21,7 +21,7 @@ module Ast (
 
 import Token
 
-data CompoundStmt
+newtype CompoundStmt
     = CompoundStmt [Stmt]
 
     deriving (
