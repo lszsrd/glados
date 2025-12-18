@@ -2,7 +2,7 @@
 -- EPITECH PROJECT, 2025
 -- Generic Language And Data Operand Syntax
 -- File description:
--- lib/rizz/Token.hs
+-- lib/frontend/rizz/types/Token.hs
 -}
 
 -------------------------------------------------------------------------------

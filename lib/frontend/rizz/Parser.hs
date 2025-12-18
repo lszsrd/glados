@@ -7,7 +7,7 @@
 
 -- Builds AST from tokens
 module Parser (
-    parser,
+    -- parser,
 ) where
 
 import Lexer
@@ -23,10 +23,10 @@ type Parser a = [(Token, (Int, Int))] -> Either String (a, [(Token, (Int, Int))]
 -- parseDecl :: [(Token, (Int, Int))] -> Either String [Decl]
 -- parseDecl (Lexer.BuiltinType:Lexer.Identifier:, lines) =
 
-parseVarDecl :: Parser Decl
+{- parseVarDecl :: Parser Decl
 parseVarDecl tokens = do
     (typ, rest1) <- parseBuiltinType tokens
-    (name, rest2) <- parseIdentifier rest1
+    (name, rest2) <- Parser.parseIdentifier rest1
     case rest2 of
         (Punctuator Equal, _) : rest3 ->
             case rest3 of
@@ -55,4 +55,4 @@ parser tokens =
     case parseDecl tokens of
         Left error -> Left error
         Right (decls, []) -> Right decls
-        Right (_, rest) -> Left "err"
+        Right (_, rest) -> Left "err" -}
