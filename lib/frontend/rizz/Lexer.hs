@@ -57,12 +57,12 @@ import Token
 import Format (fError)
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__
--- (@'Stream'@, @'Prelude.Int'@, @'Stream'@) if the streams starts with a
+-- (@'Lexeme'@, @'Prelude.Int'@, @'Stream'@) if the stream starts with a
 -- \<string-literal\>.
 --
--- This functions is a wrapper around @'parseSCharSequence'@ which checks that
--- the string literal starts and ends with the @'"'@ character. As so, its
--- returns the same components and increases the total length by 2, taking
+-- This function is a wrapper around @'parseSCharSequence'@ that checks whether
+-- the string literal starts and ends with the @'"'@ character. As such, it
+-- returns the same components and increases the total length by 2, taking into
 -- account both @'"'@ characters.
 parseStringLiteral :: Stream -> Maybe (Lexeme, Int, Stream)
 parseStringLiteral ('"': x) = case parseSCharSequence x of
@@ -71,13 +71,13 @@ parseStringLiteral ('"': x) = case parseSCharSequence x of
 parseStringLiteral _ = Nothing
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__
--- (@'Lexeme'@, @'Data.Int'@, @'Stream'@) if the streams starts with a
+-- (@'Lexeme'@, @'Data.Int'@, @'Stream'@) if the stream starts with a
 -- \<s-char-sequence\>.
 --
--- On success, this function returns a tuple made of the parser string literal,
--- the string length and the input stream striped of the parsed string literal.
+-- On success, this function returns a tuple made of the parsed string literal,
+-- the string length and the input stream stripped of the parsed string literal.
 --
--- This functions differs from @'parseCharacterConstant'@ as it accepts one or
+-- This function differs from @'parseCharacterConstant'@ in that it accepts one or
 -- many characters and is surrounded by @'"'@ characters.
 parseSCharSequence :: Stream -> Maybe (Lexeme, Int, Stream)
 parseSCharSequence stream = case parseSChar stream of
@@ -87,14 +87,14 @@ parseSCharSequence stream = case parseSChar stream of
         Just (x', y', z') -> Just (x: x', y + y', z')
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__
--- (@'Data.Char'@, @'Data.Int'@, @'Stream'@) if the streams starts with a
+-- (@'Data.Char'@, @'Data.Int'@, @'Stream'@) if the stream starts with a
 -- \<s-char\>.
 --
 -- On success, this function returns a tuple made of the parsed character,
--- the character length (which is always 1) and the input stream striped
+-- the character length (which is always 1) and the input stream stripped
 -- of the parsed character.
 --
--- This functions differs from @'parseChar'@ as it fails if the character @'"'@
+-- This function differs from @'parseChar'@ as it fails if the character @'"'@
 -- is not escaped.
 parseSChar :: Stream -> Maybe (Char, Int, Stream)
 parseSChar ('"': _) = Nothing
@@ -105,11 +105,11 @@ parseSChar (x: xs)
 parseSChar _ = Nothing
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__
--- (@'Lexeme'@, @'Data.Int'@, @'Stream'@) if the streams starts with a
+-- (@'Lexeme'@, @'Data.Int'@, @'Stream'@) if the stream starts with a
 -- \<decimal-constant\>.
 --
 -- On success, this function returns a tuple made of the decimal string
--- representation, the parsed integer length and the input stream striped
+-- representation, the parsed integer length and the input stream stripped
 -- of the parsed integer.
 parseDecimalConstant :: Stream -> Maybe (Lexeme, Int, Stream)
 parseDecimalConstant stream = case parseDigit stream of
@@ -123,12 +123,12 @@ parseDecimalConstant stream = case parseDigit stream of
             Just (xs', ys', zs') -> Just (x: xs: xs', y + ys + ys', zs')
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__
--- (@'Lexeme'@, @'Data.Int'@, @'Stream'@) if the streams starts with a
+-- (@'Lexeme'@, @'Data.Int'@, @'Stream'@) if the stream starts with a
 -- \<floating-constant\>.
 --
 -- On success, this function returns a tuple made of the float string
 -- representation, the parsed float length (including the dot separator) and
--- the input stream striped of the parsed float.
+-- the input stream stripped of the parsed float.
 parseFloatingConstant :: Stream -> Maybe (Lexeme, Int, Stream)
 parseFloatingConstant stream = do
     (x, y, '.': z) <- parseDigitSequence stream
@@ -136,11 +136,11 @@ parseFloatingConstant stream = do
     Just (x ++ "." ++ x', y + 1 + y', z')
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__
--- (@'Lexeme'@, @'Data.Int'@, @'Stream'@) if the streams starts with a
+-- (@'Lexeme'@, @'Data.Int'@, @'Stream'@) if the stream starts with a
 -- \<digit-sequence\>.
 --
 -- On success, this function returns a tuple made of the digit string
--- representation, the parsed digit length and the input stream striped of
+-- representation, the parsed digit length and the input stream stripped of
 -- the parsed digit.
 parseDigitSequence :: Stream -> Maybe (Lexeme, Int, Stream)
 parseDigitSequence stream = case parseDigit stream of
@@ -150,12 +150,12 @@ parseDigitSequence stream = case parseDigit stream of
         Just (x', y', z') -> Just (x: x', y + y', z')
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__
--- (@'Data.Char'@, @'Data.Int'@, @'Stream'@) if the streams starts with a
+-- (@'Data.Char'@, @'Data.Int'@, @'Stream'@) if the stream starts with a
 -- \<character-constant\>.
 --
--- On success, this function returns a tuple made of the parser string literal,
--- the string length and the input stream striped of the parsed string literal.
--- This functions differs from @'parseSCharSequence'@ as it accepts only one
+-- On success, this function returns a tuple made of the parsed string literal,
+-- the string length and the input stream stripped of the parsed string literal.
+-- This function differs from @'parseSCharSequence'@ in that it accepts only one
 -- character and is surrounded by @'\'@' characters.
 parseCharacterConstant :: Stream -> Maybe (Char, Int, Stream)
 parseCharacterConstant ('\'': x: '\'': xs) = case parseChar [x] of
@@ -164,14 +164,14 @@ parseCharacterConstant ('\'': x: '\'': xs) = case parseChar [x] of
 parseCharacterConstant _ = Nothing
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__
--- (@'Data.Char'@, @'Data.Int'@, @'Stream'@) if the streams starts with a
+-- (@'Data.Char'@, @'Data.Int'@, @'Stream'@) if the stream starts with a
 -- \<s-char\>.
 --
 -- On success, this function returns a tuple made of the parsed character,
--- the character length (which is always 1) and the input stream striped
+-- the character length (which is always 1) and the input stream stripped
 -- of the parsed character.
 --
--- This functions differs from @'parseSChar'@ as it fails if the character
+-- This function differs from @'parseSChar'@ as it fails if the character
 -- @'\''@ is not escaped.
 parseChar :: Stream -> Maybe (Char, Int, Stream)
 parseChar ('\'': _) = Nothing
@@ -182,11 +182,11 @@ parseChar (x: xs)
 parseChar _ = Nothing
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__
--- (@'Data.Char'@, @'Data.Int'@, @'Stream'@) if the streams starts with a
+-- (@'Data.Char'@, @'Data.Int'@, @'Stream'@) if the stream starts with a
 -- \<escape-sequence\>.
 --
 -- On success, this function returns a tuple made of the parsed character,
--- the character length (which is always 1) and the input stream striped
+-- the character length (which is always 1) and the input stream stripped
 -- of the parsed character.
 parseEscapeSequence :: Stream -> Maybe (Char, Int, Stream)
 parseEscapeSequence (' ': x) = Just (' ', 1, x)
@@ -203,11 +203,11 @@ parseEscapeSequence ('\\': x) = Just ('\\', 1, x)
 parseEscapeSequence _ = Nothing
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__
--- (@'Data.Char'@, @'Data.Int'@, @'Stream'@) if the streams starts with a
+-- (@'Data.Char'@, @'Data.Int'@, @'Stream'@) if the stream starts with a
 -- \<identifier\>.
 --
 -- On success, this function returns a tuple made of the parsed identifier,
--- the identifier length and the input stream striped of the identifier.
+-- the identifier length and the input stream stripped of the identifier.
 parseIdentifier :: Stream -> Maybe (Identifier, Int, Stream)
 parseIdentifier stream = case parseNonDigit stream of
     Nothing -> Nothing
@@ -220,11 +220,11 @@ parseIdentifier stream = case parseNonDigit stream of
             Just (xs', ys', zs') -> Just (x: xs: xs', y + ys + ys', zs')
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__
--- (@'Data.Char'@, @'Data.Int'@, @'Stream'@) if the streams starts with a
+-- (@'Data.Char'@, @'Data.Int'@, @'Stream'@) if the stream starts with a
 -- \<nondigit\>.
 --
 -- On success, this function returns a tuple made of the parsed character,
--- the character length (which is always 1) and the input stream striped
+-- the character length (which is always 1) and the input stream stripped
 -- of the parsed character.
 parseNonDigit :: Stream -> Maybe (Char, Int, Stream)
 parseNonDigit ('_': xs) = Just ('_', 1, xs)
@@ -233,23 +233,23 @@ parseNonDigit stream@(x: xs)
 parseNonDigit _ = Nothing
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__
--- (@'Data.Char'@, @'Data.Int'@, @'Stream'@) if the streams starts with a
+-- (@'Data.Char'@, @'Data.Int'@, @'Stream'@) if the stream starts with a
 -- \<digit\>.
 --
 -- On success, this function returns a tuple made of the parsed digit (as a
 -- @'Data.Char'@), the digit length (which is always 1) and the input
--- stream striped of the parsed digit.
+-- stream stripped of the parsed digit.
 parseDigit :: Stream -> Maybe (Char, Int, Stream)
 parseDigit (x: xs)
     | isDigit x = Just (x, 1, xs)
 parseDigit _ = Nothing
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__
--- (@'Token'@, @'Data.Int'@, @'Stream'@) if the streams starts with a
+-- (@'Token'@, @'Data.Int'@, @'Stream'@) if the stream starts with a
 -- @'BoolLiteral'@.
 --
 -- On success, this function returns a tuple made of the parsed @'BoolLiteral'@,
--- the @'Lexeme'@ length and the input stream striped of the parsed @'Token'@.
+-- the @'Lexeme'@ length and the input stream stripped of the parsed @'Token'@.
 parseBooleanConstant :: Stream -> Maybe (Token, Int, Stream)
 parseBooleanConstant x
     | "True" `isPrefixOf` x = Just (Literal (BoolLiteral True), 4, drop 4 x)
@@ -257,11 +257,11 @@ parseBooleanConstant x
     | otherwise = Nothing
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__
--- (@'Token'@, @'Data.Int'@, @'Stream'@) if the streams starts with a
+-- (@'Token'@, @'Data.Int'@, @'Stream'@) if the stream starts with a
 -- @'Keyword'@.
 --
 -- On success, this function returns a tuple made of the parsed
--- @'Keyword'@, the @'Lexeme'@ length and the input stream striped of
+-- @'Keyword'@, the @'Lexeme'@ length and the input stream stripped of
 -- the parsed @'Token'@.
 parseKeyword :: Stream -> Maybe (Token, Int, Stream)
 parseKeyword ('B': 'o': 'o': 'l' : x) = Just (Keyword Bool, 4, x)
@@ -280,11 +280,11 @@ parseKeyword ('r': 'e': 't': x) = Just (Keyword Ret, 3, x)
 parseKeyword _ = Nothing
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__
--- (@'Token'@, @'Data.Int'@, @'Stream'@) if the streams starts with a
+-- (@'Token'@, @'Data.Int'@, @'Stream'@) if the stream starts with a
 -- @'Literal'@.
 --
 -- On success, this function returns a tuple made of the parsed
--- @'Literal'@, the @'Lexeme'@ length and the input stream striped of
+-- @'Literal'@, the @'Lexeme'@ length and the input stream stripped of
 -- the parsed @'Token'@.
 parseLiteral :: Stream -> Maybe (Token, Int, Stream)
 parseLiteral stream =
@@ -297,11 +297,11 @@ parseLiteral stream =
         (parseDecimalConstant stream)
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__
--- (@'Token'@, @'Data.Int'@, @'Stream'@) if the streams starts with a
+-- (@'Token'@, @'Data.Int'@, @'Stream'@) if the stream starts with a
 -- @'Punctuator'@.
 --
 -- On success, this function returns a tuple made of the parsed
--- @'Punctuator'@, the @'Lexeme'@ length and the input stream striped
+-- @'Punctuator'@, the @'Lexeme'@ length and the input stream stripped
 -- of the parsed @'Token'@.
 parsePunctuator :: Stream -> Maybe (Token, Int, Stream)
 parsePunctuator ('[': x) = Just (Punctuator (SBracket OpenSBracket), 1, x)
@@ -354,7 +354,7 @@ unexpectedChar lexeme = "unexpected character '" ++ lexeme ++ "'"
 -- which each token has a tuple of integers representing the token's line and
 -- column position.
 --
--- On failure, this functions returns a pretty formatted error message.
+-- On failure, this function returns a pretty formatted error message.
 lexerWrapper :: Stream -> (Int, Int) -> Either String [(Token, (Int, Int))]
 lexerWrapper [] _ = Right []
 lexerWrapper ('#': x) (l, c) = lexerWrapper (dropWhile (/= '\n') x) (l, c)
@@ -377,6 +377,6 @@ lexerWrapper stream@(x:xs) (l, c) = case  parseKeyword stream
 -- which each token has a tuple of integers representing the token's line and
 -- column position.
 --
--- On failure, this functions returns a pretty formatted error message.
+-- On failure, this function returns a pretty formatted error message.
 lexer :: Stream -> Either String [(Token, (Int, Int))]
 lexer stream = lexerWrapper stream (1, 1)
