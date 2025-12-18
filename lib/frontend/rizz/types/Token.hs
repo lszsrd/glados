@@ -13,8 +13,9 @@
 -- Maintainer  : laszlo.serdet@epitech.eu
 --
 -- Sets different categories to which each token belongs.
--- The tokens are based on the C programming language. For further information, refer to the
--- [Microsoft C lexical grammar definition](https://learn.microsoft.com/en-us/cpp/c-language/lexical-grammar) from which this definition is based.
+-- The tokens are based on the C programming language.
+--
+-- For further informations, refer to the [Microsoft C lexical grammar definition](https://learn.microsoft.com/en-us/cpp/c-language/lexical-grammar) from which this definition is based.
 -------------------------------------------------------------------------------
 module Token (
     -- * Basic type
