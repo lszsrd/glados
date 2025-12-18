@@ -8,12 +8,12 @@
 -------------------------------------------------------------------------------
 -- |
 -- Module      : Token
--- Description : Defines Tokens used to represent the rizz language syntax.
+-- Description : Defines Tokens used to represent the Rizz language syntax.
 -- License     : MIT
 -- Maintainer  : laszlo.serdet@epitech.eu
 --
--- Sets different categories in which each token belong. The tokens are based
--- on the C programming language. For further informations, refers to the
+-- Sets different categories to which each token belongs. The tokens are based
+-- on the C programming language. For further information, refer to the
 -- [Microsoft lexical grammar definition]
 -- (https://learn.microsoft.com/en-us/cpp/c-language/lexical-grammar) from which
 -- this definition is based.
@@ -37,14 +37,14 @@ module Token (
     , Token                 (..)
 ) where
 
--- | Defines @'Stream'@ type as a string which represents a finite byte array.
+-- | Defines @'Stream'@ type as a string representing a finite byte array.
 type Stream = String
 
 -- | Defines @'Lexeme'@ type as a string representing a way to identify a
 -- specific @'Token'@.
 type Lexeme = String
 
--- | Defines @'Identifier'@ type as a string which represents a variable.
+-- | Defines @'Identifier'@ type as a string representing a variable.
 type Identifier = String
 
 -- | Defines @'Keyword'@ which are reserved words used by the language.
@@ -100,7 +100,7 @@ data Literal
         -- ^ Allows @'Literal'@ to be compared, needed for unit tests.
     )
 
--- | Defines @'SBracket`@ which represents both opening and closing square
+-- | Defines @'SBracket`@ representing both opening and closing square
 -- brackets \`[]\`.
 data SBracket
     = OpenSBracket          -- [
@@ -115,7 +115,7 @@ data SBracket
         -- ^ Allows @'SBracket'@ to be compared, needed for unit tests.
     )
 
--- | Defines @'RBracket`@ which represents both opening and closing round
+-- | Defines @'RBracket`@ representing both opening and closing round
 -- brackets \`()\`.
 data RBracket
     = OpenRBracket          -- (
@@ -130,7 +130,7 @@ data RBracket
         -- ^ Allows @'RBracket'@ to be compared, needed for unit tests.
     )
 
--- | Defines @'RBracket`@ which represents both opening and closing curly
+-- | Defines @'RBracket`@ representing both opening and closing curly
 -- brackets \`{}\`.
 data CBracket
     = OpenCBracket          -- {
@@ -145,7 +145,7 @@ data CBracket
         -- ^ Allows @'CBracket'@ to be compared, needed for unit tests.
     )
 
--- | Defines @'UnaryOp`@ which represents both increment and decrement
+-- | Defines @'UnaryOp`@ representing both increment and decrement
 -- unary operators.
 data UnaryOp
     = IdentIncrement        -- ++
@@ -160,14 +160,14 @@ data UnaryOp
         -- ^ Allows @'UnaryOp'@ to be compared, needed for unit tests.
     )
 
--- | Defines @'BinaryOp`@ which represents aritmethic and equality operators.
+-- | Defines @'BinaryOp`@ representing arithmetic and equality operators.
 data BinaryOp
     = Mul                   -- *
     -- ^ multiplication operator, expressed in rizz code as @\`\*`@.
     | Add                   -- +
     -- ^ addition operator, expressed in rizz code as @\`+\`@.
     | Sub                   -- -
-    -- ^ substraction operator, expressed in rizz code as @\`-\`@.
+    -- ^ subtraction operator, expressed in rizz code as @\`-\`@.
     | Div                   -- /
     -- ^ division operator, expressed in rizz code as @\`/\`@.
     | Mod                   -- %
@@ -196,20 +196,20 @@ data BinaryOp
         -- ^ Allows @'BinaryOp'@ to be compared, needed for unit tests.
     )
 
--- | Defines @'AssignOp`@ which represents assignement operators with
--- aritmethic operation on it.
+-- | Defines @'AssignOp`@ representing assignment operators with
+-- arithmetic operation on it.
 data AssignOp
     = MulEqual              -- *=
-    -- ^ multiplication and assignement operator, expressed in rizz code as
+    -- ^ multiplication and assignment operator, expressed in rizz code as
     -- @\`*=\`@.
     | DivEqual              -- /=
-    -- ^ division and assignement operator, expressed in rizz code as @\`/=\`@.
+    -- ^ division and assignment operator, expressed in rizz code as @\`/=\`@.
     | ModEqual              -- %=
-    -- ^ modulo and assignement operator, expressed in rizz code as @\`%=\`@.
+    -- ^ modulo and assignment operator, expressed in rizz code as @\`%=\`@.
     | AddEqual              -- +=
-    -- ^ addition and assignement operator, expressed in rizz code as @\`+=\`@.
+    -- ^ addition and assignment operator, expressed in rizz code as @\`+=\`@.
     | SubEqual              -- -=
-    -- ^ substraction and assignement operator, expressed in rizz code as
+    -- ^ subtraction and assignment operator, expressed in rizz code as
     -- @\`-=\`@.
 
     deriving (
@@ -251,7 +251,7 @@ data Punctuator
     -- ^ standalone equal @'Punctuator'@, used to assign a variable and
     -- expressed in rizz code as @\`,\`@.
     | AssignOp AssignOp
-    -- ^ All of assignement operators.
+    -- ^ All of assignment operators.
 
     deriving (
         Show
