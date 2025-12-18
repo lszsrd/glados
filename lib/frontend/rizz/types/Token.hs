@@ -12,11 +12,9 @@
 -- License     : MIT
 -- Maintainer  : laszlo.serdet@epitech.eu
 --
--- Sets different categories to which each token belongs. The tokens are based
--- on the C programming language. For further information, refer to the
--- [Microsoft C lexical grammar definition]
--- (https://learn.microsoft.com/en-us/cpp/c-language/lexical-grammar) from which
--- this definition is based.
+-- Sets different categories to which each token belongs.
+-- The tokens are based on the C programming language. For further information, refer to the
+-- [Microsoft C lexical grammar definition](https://learn.microsoft.com/en-us/cpp/c-language/lexical-grammar) from which this definition is based.
 -------------------------------------------------------------------------------
 module Token (
     -- * Basic type
@@ -40,8 +38,7 @@ module Token (
 -- | Defines @'Stream'@ type as a string representing a finite byte array.
 type Stream = String
 
--- | Defines @'Lexeme'@ type as a string representing a way to identify a
--- specific @'Token'@.
+-- | Defines @'Lexeme'@ type as a string representing a way to identify a specific @'Token'@.
 type Lexeme = String
 
 -- | Defines @'Identifier'@ type as a string representing a variable.
@@ -50,17 +47,16 @@ type Identifier = String
 -- | Defines @'Token'@ which is bound by its corresponding representation in
 -- the bytes @'Stream'@.
 --
--- It can only be of one type and serves as a way to represent a series
--- of bytes in a more abstract way.
+-- It can only be of one type and serves as a way to represent a series of bytes in a more abstract way.
 data Token
     = Keyword Keyword
-    -- ^ Keyword definition.
+    -- ^ keyword definition.
     | Identifier Identifier
-    -- ^ Identifier definition.
+    -- ^ identifier definition.
     | Literal Literal
-    -- ^ Literal definition.
+    -- ^ literal definition.
     | Punctuator Punctuator
-    -- ^ Punctuator definition.
+    -- ^ punctuator definition.
 
     deriving (
         Show
@@ -103,8 +99,7 @@ data Keyword
         -- ^ Allows Keywords to be compared, needed for unit tests.
     )
 
--- | Defines @'Literal`@ which is a way to represent a constant value not
--- bound to a variable.
+-- | Defines @'Literal`@ which is a way to represent a constant value not bound to a variable.
 data Literal
     = BoolLiteral Bool
     -- ^ boolean literal, expressed in rizz code as @\`True\`@ or @\`False\`@.
@@ -122,8 +117,7 @@ data Literal
         -- ^ Allows Literals to be compared, needed for unit tests.
     )
 
--- | Defines @'SBracket`@ representing both opening and closing square
--- brackets \`[]\`.
+-- | Defines @'SBracket`@ representing both opening and closing square brackets \`[]\`.
 data SBracket
     = OpenSBracket
     -- ^ opening square bracket, expressed in rizz code as @\`[\`@.
@@ -137,8 +131,7 @@ data SBracket
         -- ^ Allows @'SBracket'@ to be compared, needed for unit tests.
     )
 
--- | Defines @'RBracket`@ representing both opening and closing round
--- brackets \`()\`.
+-- | Defines @'RBracket`@ representing both opening and closing round brackets \`()\`.
 data RBracket
     = OpenRBracket
     -- ^ opening round bracket, expressed in rizz code as @\`(\`@.
@@ -152,8 +145,7 @@ data RBracket
         -- ^ Allows @'RBracket'@ to be compared, needed for unit tests.
     )
 
--- | Defines @'RBracket`@ representing both opening and closing curly
--- brackets \`{}\`.
+-- | Defines @'RBracket`@ representing both opening and closing curly brackets \`{}\`.
 data CBracket
     = OpenCBracket
     -- ^ opening curly bracket, expressed in rizz code as @\`{\`@.
@@ -167,8 +159,7 @@ data CBracket
         -- ^ Allows @'CBracket'@ to be compared, needed for unit tests.
     )
 
--- | Defines @'UnaryOp`@ representing both increment and decrement
--- unary operators.
+-- | Defines @'UnaryOp`@ representing both increment and decrement unary operators.
 data UnaryOp
     = IdentIncrement
     -- ^ unary increment operator, expressed in rizz code as @\`++\`@.
@@ -218,12 +209,10 @@ data BinaryOp
         -- ^ Allows @'BinaryOp'@ to be compared, needed for unit tests.
     )
 
--- | Defines @'AssignOp`@ representing assignment operators with
--- arithmetic operation on it.
+-- | Defines @'AssignOp`@ representing assignment operators with arithmetic operation on it.
 data AssignOp
     = MulEqual
-    -- ^ multiplication and assignment operator, expressed in rizz code as
-    -- @\`*=\`@.
+    -- ^ multiplication and assignment operator, expressed in rizz code as @\`*=\`@.
     | DivEqual
     -- ^ division and assignment operator, expressed in rizz code as @\`/=\`@.
     | ModEqual
@@ -231,8 +220,7 @@ data AssignOp
     | AddEqual
     -- ^ addition and assignment operator, expressed in rizz code as @\`+=\`@.
     | SubEqual
-    -- ^ subtraction and assignment operator, expressed in rizz code as
-    -- @\`-=\`@.
+    -- ^ subtraction and assignment operator, expressed in rizz code as @\`-=\`@.
 
     deriving (
         Show
@@ -241,8 +229,7 @@ data AssignOp
         -- ^ Allows @'AssignOp'@ to be compared, needed for unit tests.
     )
 
--- | Defines @'Punctuator'@ which is a large category containing non keywords,
--- non literals and non identifiers tokens.
+-- | Defines @'Punctuator'@ which is a large category containing non keywords, non literals and non identifiers tokens.
 data Punctuator
     = SBracket SBracket
     -- ^ both square brackets, used to index lists. 
@@ -251,27 +238,21 @@ data Punctuator
     | CBracket CBracket
     -- ^ both curly brackets, used to define a scope.
     | Dot
-    -- ^ standalone dot @'Punctuator'@ , used to declare floating point
-    -- constants and expressed in rizz code as @\`.\`@.
+    -- ^ standalone dot @'Punctuator'@ , used to declare floating point constants and expressed in rizz code as @\`.\`@.
     | Arrow
-    -- ^ standalone arrow @'Punctuator'@, used to specify the return type of a
-    -- function and expressed in rizz code as @\`+=\`@.
+    -- ^ standalone arrow @'Punctuator'@, used to specify the return type of a function and expressed in rizz code as @\`+=\`@.
     | UnaryOp UnaryOp
     -- ^ both unary operators.
     | BinaryOp BinaryOp
     -- ^ all of binary operators.
     | Colon
-    -- ^ standalone colon @'Punctuator'@, used to specify the type of an
-    -- @'Identifier'@ and expressed in rizz code as @\`:\`@.
+    -- ^ standalone colon @'Punctuator'@, used to specify the type of an @'Identifier'@ and expressed in rizz code as @\`:\`@.
     | Semicolon
-    -- ^ standalone semicolon @'Punctuator'@, used to specify the end of a
-    -- statement and expressed in rizz code as @\`:\`@.
+    -- ^ standalone semicolon @'Punctuator'@, used to specify the end of a statement and expressed in rizz code as @\`:\`@.
     | Comma
-    -- ^ standalone comma @'Punctuator'@, used to space functions' arguments
-    -- and expressed in rizz code as @\`,\`@.
+    -- ^ standalone comma @'Punctuator'@, used to space functions' arguments and expressed in rizz code as @\`,\`@.
     | Equal
-    -- ^ standalone equal @'Punctuator'@, used to assign a variable and
-    -- expressed in rizz code as @\`,\`@.
+    -- ^ standalone equal @'Punctuator'@, used to assign a variable and expressed in rizz code as @\`,\`@.
     | AssignOp AssignOp
     -- ^ All of assignment operators.
 
