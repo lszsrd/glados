@@ -168,7 +168,7 @@ parsePunctuator ('>': x) = Just (Punctuator (BinaryOp Gt), 1, x)
 parsePunctuator (':': x) = Just (Punctuator Colon, 1, x)
 parsePunctuator (';': x) = Just (Punctuator Semicolon, 1, x)
 parsePunctuator (',': x) = Just (Punctuator Comma, 1, x)
-parsePunctuator ('=': x) = Just (Punctuator Equal, 1, x)
+parsePunctuator ('=': x) = Just (Punctuator (AssignOp Equal), 1, x)
 parsePunctuator _ = Nothing
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__ (@'Lexeme'@, @'Prelude.Int'@, @'Stream'@) if the stream starts with a \<string-literal\>.

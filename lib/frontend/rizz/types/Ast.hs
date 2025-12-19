@@ -31,6 +31,7 @@ module Ast (
 
     -- * Statements
     , DeclStmt              (..)
+    , UnaryOperatorExpr     (..)
     , BinaryOpParm          (..)
     , BinaryOpExpr          (..)
     , ParmCallDecl          (..)
@@ -38,6 +39,7 @@ module Ast (
 ) where
 
 import Token
+import GHC.IO.SubSystem (conditional)
 
 -- | Defines @'Decl'@ as a primary Ast node containing language declarations.
 --
@@ -45,12 +47,12 @@ import Token
 --
 -- Some GHCI syntax examples for every @'Decl'@ constructors:
 --
--- >>> FunctionDecl "foo" [ParmVarDeclExpr Integer "x"] (CompoundStmt []) Nothing
+-- >>> FunctionDecl "foo" [ParmVarDeclExpr Integer "x"] (CompoundStmt []) (Just Integer)
 -- >>> ParmVarDeclExpr Integer "foo"
--- >>> VarDecl (VarDeclStmt Boolean "foo" (ParmCallDeclLiteral (BoolLiteral True)))
+-- >>> VarDecl (VarDeclStmt Boolean "foo" Equal (ParmCallDeclLiteral (BoolLiteral True)))
 data Decl
     = FunctionDecl Identifier [ParmVarDeclExpr] CompoundStmt (Maybe BuiltinType)
-    -- ^ function declaration, expressed in rizz code like @'fn foo(Char: bar) -> Int {}'@.
+    -- ^ function declaration, expressed in rizz code like @\`fn foo(Char: bar) -> Int {}\`@.
     --
     -- A @'FunctionDecl'@'s rizz grammar in-code is as follow, in the given order:
     --
@@ -60,8 +62,7 @@ data Decl
     --  - function's __optional__ return type. If the function __does__ returns, the return type is expressed as an @'Arrow'@ @'Keyword'@ and a @'BuiltinType'@.
     --  - function's body within a @'CompoundStmt'@.
     | ParmVarDecl ParmVarDeclExpr
-    -- ^ #ParmVarDeclLabel#
-    -- function parameter, expressed in rizz code like @\`Bool: baz\`@.
+    -- ^ function parameter, expressed in rizz code like @\`Bool: baz\`@.
     --
     -- A @'ParmVarDecl'@'s rizz grammar in-code is as follow, in the given order:
     --
@@ -71,12 +72,14 @@ data Decl
     --
     --  Note that a standalone @'ParmVarDecl'@ (not in a @'FunctionDecl'@ expression) is a __grammar violation__!
     | VarDecl VarDeclStmt
-    -- ^ variable (with its type) declaration, expressed in rizz code like @'Float pi = 3.14'@.
+    -- ^ variable (with its type) declaration, expressed in rizz code like @\`Float pi = 3.14;\`@.
     --
     -- A @'VarDecl'@ rizz grammar in-code is as follow, in the given order:
     --
     --  - the variable's type as a @'BuiltinType'@.
     --  - the variable's name as an @'Identifier'@.
+    --  - any @'AssignOp'@ assignment operator.
+    --  - any @'ParmCallDecl'@ (see the definition).
     --  - a trailing @'Semicolon'@ to end the expression.
     --
     -- Note that a variable that initializes itself is a __semantic violation__!
@@ -105,14 +108,88 @@ data Decl
 -- >>> RetStmt (BinaryOpConst (ParmCallDeclIdent "foo"))
 data Stmt
     = DeclStmt DeclStmt     
-    | UnaryOperator Identifier UnaryOp
+    -- ^ variable (without its type) assignment, expressed in rizz code like @\`foo = bar;\`@ or @\`baz++;\`@.
+    --
+    -- A @'Stmt.DeclStmt'@ rizz grammar in-code is as follow, in the given order:
+    --
+    --  - the variable's name as an @'Identifier'@.
+    --  - any @'AssignOp'@ assignment operator.
+    --  - any @'ParmCallDecl'@ (see the definition).
+    --  - a trailing @'Semicolon'@ to end the expression.
+    --
+    -- /TODO/: Rename this to 'AssignStmt' to better describe it.
+    -- Note that this statement differs from @'VarDecl'@ as it does not declare the variable's type, it only assigns it a new value.
+    | UnaryOperator UnaryOperatorExpr
+    -- ^ unary operator, which are @'Identifier'@ self increment or decrement, expressed in rizz code as @\`foo++;\`@ or @\`bar--\`@.
+    --
+    -- A @'Stmt.DeclStmt'@ rizz grammar in-code is as follow, in the given order:
+    --
+    --  - the variable's name as an @'Identifier'@.
+    --  - one of the @'UnaryOp'@ operator.
+    --  - a trailing @'Semicolon'@ to end the expression.
     | BinaryOperator BinaryOpExpr
+    -- ^ binary operation, expressed in rizz code like @\`a < 42\`@ or @\`True == foo(bar, baz)\`@ (non exhaustive list).
+    --
+    -- For further details, see @'BinaryOpExpr'@.
     | IfStmt BinaryOpExpr CompoundStmt (Maybe CompoundStmt)
+    -- ^ conditional branching, expressed in rizz code like @\`if (foo == bar) {...}\`@.
+    --
+    -- A @'IfStmt'@ rizz grammar in-code is as follow, in the given order:
+    --
+    --  - a leading @'If'@.
+    --  - condition enclosed in @'OpenRBracket'@ and @'CloseRBracket'@ expressed as @'BinaryOpExpr'@.
+    --  - conditional's body within a @'CompoundStmt'@.
+    --  - a second __optional__ @'CompoundStmt'@ to represent an @'Else'@ block, expressed in rizz code as @\`else {...}\`@.
     | WhileStmt BinaryOpExpr CompoundStmt
+    -- ^ while loop, expressed in rizz code like @\`while (True) {...}\`@.
+    --
+    -- A @'WhileStmt'@ rizz grammar in-code is as follow, in the given order:
+    --
+    --  - a leading @'While'@.
+    --  - condition enclosed in @'OpenRBracket'@ and @'CloseRBracket'@ expressed as @'BinaryOpExpr'@.
+    --  - while's body within a @'CompoundStmt'@.
     | ForStmt (Maybe VarDeclStmt) (Maybe BinaryOpExpr) (Maybe DeclStmt) CompoundStmt
+    -- ^ for loop, expressed in rizz code like @\`for (Int i = 0; i < 10; i++) {...}\`@.
+    --
+    -- A @'ForeachStmt'@'s rizz grammar in-code is as follow, in the given order:
+    --
+    --  - a leading @'for'@.
+    --  - an @'OpenRBracket'@.
+    --  - an __optional__ @'VarDeclStmt'@.
+    --  - a @'Semicolon'@ @'Punctuator'@.
+    --  - an __optional__ @'BinaryOpExpr'@.
+    --  - a @'Semicolon'@ @'Punctuator'@.
+    --  - an __optional__ @'DeclStmt'@.
+    --  - a @'CloseRBracket'@.
+    --  - for's body within a @'CompoundStmt'@.
     | ForeachStmt Identifier Identifier CompoundStmt
+    -- ^ foreach loop to iterate over a list, expressed in rizz code like @\`foreach (foo : it) {...}\`@.
+    --
+    -- A @'ForeachStmt'@'s rizz grammar in-code is as follow, in the given order:
+    --
+    --  - a leading @'Foreach'@.
+    --  - an @'OpenRBracket'@.
+    --  - the variable's name as an @'Identifier'@.
+    --  - a @'Colon'@ @'Punctuator'@.
+    --  - the iterator's name as an @'Identifier'@.
+    --  - a @'CloseRBracket'@.
+    --  - foreach's body within a @'CompoundStmt'@.
     | CallExpr CallExprDecl 
+    -- ^ function call, expressed in rizz code like @\`foo(bar, baz);\`@.
+    --
+    -- A @'CallExprDecl'@'s rizz grammar in-code is as follow, in the given order:
+    --
+    --  - function's name as an @'Identifier'@.
+    --  - function's parameters enclosed in @'OpenRBracket'@ and @'CloseRBracket'@ expressed as @'ParmCallDecl'@ (both round brackets are stil required even if no arguments are provided to the function).
+    --  - a trailing @'Semicolon'@ to end the expression.
     | RetStmt BinaryOpExpr
+    -- ^ return from function, expressed in rizz code like @\`ret 42;\`@.
+    --
+    -- A @'RetStmt'@ rizz grammar in-code is as follow, in the given order:
+    --
+    --  - a leading @'Ret'@.
+    --  - @'BinaryOpExpr'@ which suites all needs, from constants to aritmethics or even function call.
+    --  - a trailing @'Semicolon'@ to end the expression.
 
     deriving (
         Show
@@ -140,10 +217,15 @@ newtype CompoundStmt
         -- ^ Allows @'CompoundStmt'@ to be compared, needed for unit tests.
     )
 
+-- | Defines the @'ParmVarDeclExpr'@ expression (extended constructor for @'ParmVarDecl'@).
+--
+-- === __Example__
+--
+-- A GHCI syntax example to declare a @'ParmVarDecl'@:
+-- >>> ParmVarDecl Boolean "x"
 data ParmVarDeclExpr
-    = ParmVarDeclExpr BuiltinType Identifier    -- ParmVarDecl Boolean "x"
-    -- ^ Function's parameter, see [ParmVarDecl](Ast#ParmVarDeclLabel) definition.
-    
+    = ParmVarDeclExpr BuiltinType Identifier
+    -- ^ function's parameter, see @'ParmVarDecl'@ definition.
 
     deriving (
         Show
@@ -152,11 +234,16 @@ data ParmVarDeclExpr
         -- ^ Allows @'ParmVarDecl'@ to be compared, needed for unit tests.
     )
 
+-- | Defines the @'BuiltinType'@ expression which lists available rizz data types (implementating Keyword @'Token'@ types).
 data BuiltinType
     = Boolean
+    -- ^ boolean type keyword, see Bool @'Keyword'@
     | Character
+    -- ^ character type keyword, see Char @'Keyword'@
     | Integer
+    -- ^ integer type keyword, see Int @'Keyword'@
     | SinglePrecision
+    -- ^ float type keyword, see Float @'Keyword'@
 
     deriving (
         Show
@@ -165,10 +252,11 @@ data BuiltinType
         -- ^ Allows @'BuiltinType'@ to be compared, needed for unit tests.
     )
 
+-- | Defines the @'VarDeclStmt'@ expression (extended constructor for @'VarDecl'@).
 data VarDeclStmt
-    = VarDeclStmt BuiltinType Identifier ParmCallDecl
+    = VarDeclStmt BuiltinType Identifier AssignOp ParmCallDecl
+    -- ^ variable declaration, see @'VarDecl'@ definition.
     
-
     deriving (
         Show
         -- ^ Allows @'VarDeclStmt'@ to be printed.
@@ -176,9 +264,16 @@ data VarDeclStmt
         -- ^ Allows @'VarDeclStmt'@ to be compared, needed for unit tests.
     )
 
+-- | Defines the @'DeclStmt'@ expression (extended constructor for @'DeclStmt'@).
+--
+-- === __Example__
+--
+-- >>> DeclStmtLiteral "var" DivEqual (ParmCallDeclLiteral (BoolLiteral True))
 data DeclStmt
     = DeclStmtLiteral Identifier AssignOp ParmCallDecl
-    -- DeclStmtLiteral "var" DivEqual (ParmCallDeclLiteral (BoolLiteral True))
+    -- ^ variable assignment, expressed in rizz code like @\`foo = bar\`@.
+    | DeclStmtUnary UnaryOperatorExpr
+    -- ^ variable with a @'UnaryOp'@, expressed in rizz code like @\`foo++\`@.
 
     deriving (
         Show
@@ -187,9 +282,24 @@ data DeclStmt
         -- ^ Allows @'DeclStmt'@ to be compared, needed for unit tests.
     )
 
+-- | Defines the @'UnaryOperatorExpr'@ expression (extended constructor for @'UnaryOperator'@).
+data UnaryOperatorExpr
+    = UnaryOperatorExpr Identifier UnaryOp
+    -- ^ variable declaration, see @'UnaryOperator'@ definition.
+
+    deriving (
+        Show
+        -- ^ Allows @'UnaryOperatorExpr'@ to be printed.
+        , Eq
+        -- ^ Allows @'UnaryOperatorExpr'@ to be compared, needed for unit tests.BinaryOp
+    )
+
+-- | Defines @'BinaryOp'@'s parameters.
 data BinaryOpParm
     = BinaryOpParm ParmCallDecl
+    -- ^ function call which should be interpreted and evaluated.
     | BinaryOpParmBOp BinaryOpExpr
+    -- ^ any other @'BinaryOpExpr'@.
 
     deriving (
         Show
@@ -198,9 +308,12 @@ data BinaryOpParm
         -- ^ Allows @'BinaryOpParm'@ to be compared, needed for unit tests.
     )
 
+-- | Defines @'BinaryOpExpr'@ as any expression that can be evaluated by equality or aritmethic operators.
 data BinaryOpExpr
     = BinaryOpExpr BinaryOpParm BinaryOp BinaryOpParm
+    -- ^ two @'BinaryOpParm'@ being compared with any @'BinaryOp'@ operator.
     | BinaryOpConst ParmCallDecl
+    -- ^ any literal value defined by @'ParmCallDecl'@.
 
     deriving (
         Show
@@ -209,10 +322,14 @@ data BinaryOpExpr
         -- ^ Allows @'BinaryOpExpr'@ to be compared, needed for unit tests.
     )
 
+-- | Defines @'ParmCallDecl'@ as any value that can be evaluated. It also binds to function call's parameters.
 data ParmCallDecl
     = ParmCallDeclLiteral Literal
+    -- ^ literal value defined by Literal @'Token'@, expressed in rizz code like @\`42\`@.
     | ParmCallDeclIdent Identifier
+    -- ^ identifier, which is a bound variable, expressed in rizz code like @\`foo\`@.
     | ParmCallDeclExpr CallExprDecl
+    -- ^ function call, defined by @'CallExprDecl'@, see @'CallExprDecl'@.
 
     deriving (
         Show
@@ -221,8 +338,10 @@ data ParmCallDecl
         -- ^ Allows @'ParmCallDecl'@ to be compared, needed for unit tests.
     )
 
+-- | Defines @'CallExprDecl'@ as a function call expression.
 data CallExprDecl
     = CallExprDecl Identifier [ParmCallDecl]
+    -- ^ function call expression, actually 'calling' another function.
 
     deriving (
         Show

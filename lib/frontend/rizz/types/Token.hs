@@ -212,7 +212,9 @@ data BinaryOp
 
 -- | Defines @'AssignOp`@ representing assignment operators with arithmetic operation on it.
 data AssignOp
-    = MulEqual
+    = Equal
+    -- ^ assignment operator, expressed in rizz code as @\`=\`@.
+    | MulEqual
     -- ^ multiplication and assignment operator, expressed in rizz code as @\`*=\`@.
     | DivEqual
     -- ^ division and assignment operator, expressed in rizz code as @\`/=\`@.
@@ -252,8 +254,6 @@ data Punctuator
     -- ^ standalone semicolon @'Punctuator'@, used to specify the end of a statement and expressed in rizz code as @\`:\`@.
     | Comma
     -- ^ standalone comma @'Punctuator'@, used to space functions' arguments and expressed in rizz code as @\`,\`@.
-    | Equal
-    -- ^ standalone equal @'Punctuator'@, used to assign a variable and expressed in rizz code as @\`,\`@.
     | AssignOp AssignOp
     -- ^ All of assignment operators.
 
