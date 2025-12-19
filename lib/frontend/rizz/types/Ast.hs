@@ -39,7 +39,6 @@ module Ast (
 ) where
 
 import Token
-import GHC.IO.SubSystem (conditional)
 
 -- | Defines @'Decl'@ as a primary Ast node containing language declarations.
 --
@@ -118,6 +117,7 @@ data Stmt
     --  - a trailing @'Semicolon'@ to end the expression.
     --
     -- /TODO/: Rename this to 'AssignStmt' to better describe it.
+    --
     -- Note that this statement differs from @'VarDecl'@ as it does not declare the variable's type, it only assigns it a new value.
     | UnaryOperator UnaryOperatorExpr
     -- ^ unary operator, which are @'Identifier'@ self increment or decrement, expressed in rizz code as @\`foo++;\`@ or @\`bar--\`@.
