@@ -50,7 +50,7 @@ import Control.Applicative ((<|>))
 import Data.Char (isAscii, isLetter, isDigit)
 import Data.List (isPrefixOf)
 
-import Token
+import Tokens
 import Format (fError)
 
 -- $bnf

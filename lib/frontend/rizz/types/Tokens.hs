@@ -2,12 +2,12 @@
 -- EPITECH PROJECT, 2025
 -- Generic Language And Data Operand Syntax
 -- File description:
--- lib/frontend/rizz/types/Token.hs
+-- lib/frontend/rizz/types/Tokens.hs
 -}
 
 -------------------------------------------------------------------------------
 -- |
--- Module      : Token
+-- Module      : Tokens
 -- Description : Defines Tokens used to represent the rizz language syntax.
 -- License     : MIT
 -- Maintainer  : laszlo.serdet@epitech.eu
@@ -17,7 +17,7 @@
 --
 -- For further informations, refer to the [Microsoft C lexical grammar definition](https://learn.microsoft.com/en-us/cpp/c-language/lexical-grammar) from which this definition is based.
 -------------------------------------------------------------------------------
-module Token (
+module Tokens (
     -- * Basic type
     Stream
     , Lexeme

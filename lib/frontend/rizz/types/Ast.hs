@@ -38,7 +38,7 @@ module Ast (
     , CallExprDecl          (..)
 ) where
 
-import Token
+import Tokens
 
 -- | Defines @'Decl'@ as a primary Ast node containing language declarations.
 --
@@ -80,6 +80,8 @@ data Decl
     --  - any @'AssignOp'@ assignment operator.
     --  - any @'ParmCallDecl'@ (see the definition).
     --  - a trailing @'Semicolon'@ to end the expression.
+    --
+    --  /TODO/: Merge both @'VarDecl'@ and @'Stmt.DeclStmt'@ types as they are almost identical.
     --
     -- Note that a variable that initializes itself is a __semantic violation__!
 

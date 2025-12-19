@@ -12,7 +12,7 @@ module Parser (
 
 import Lexer
 import Ast
-import Token
+import Tokens
 
 
 type Parser a = [(Token, (Int, Int))] -> Either String (a, [(Token, (Int, Int))])

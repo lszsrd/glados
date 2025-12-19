@@ -30,4 +30,7 @@ re: fclean all
 tests_run:
 	@cabal test --enable-coverage
 
+doc:
+	@cabal haddock all | grep "Documentation created" -A1
+
 .PHONY: all clean fclean re $(COMPILER) $(VM)
