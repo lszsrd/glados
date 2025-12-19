@@ -12,10 +12,10 @@
 -- License     : MIT
 -- Maintainer  : laszlo.serdet@epitech.eu
 --
--- The abstract syntax tree serves to defines how rizz tokens forms a valid grammar in order to represent a correct language expression.
--- This grammar is heavely inspired from the Clang C's (programming language) AST.
+-- The abstract syntax tree serves to define how rizz tokens forms a valid grammar in order to represent a correct language expression.
+-- This grammar is heavily inspired from the Clang C's (programming language) AST.
 --
--- For further informations, refer to the [Microsoft C grammar definition] (https://learn.microsoft.com/en-us/cpp/c-language/phrase-structure-grammar)
+-- For further information, refer to the [Microsoft C grammar definition] (https://learn.microsoft.com/en-us/cpp/c-language/phrase-structure-grammar)
 -- and the [Clang AST](https://clang.llvm.org/docs/IntroductionToTheClangAST.html) documentation.
 -------------------------------------------------------------------------------
 module Ast (
@@ -57,7 +57,7 @@ data Decl
     --
     --  - a leading @'Fn'@.
     --  - function's name as an @'Identifier'@.
-    --  - function's __optional__ parameters enclosed in @'OpenRBracket'@ and @'CloseRBracket'@ expressed as @'ParmVarDeclExpr'@ (both round brackets are stil required even if no arguments are provided to the function).
+    --  - function's __optional__ parameters enclosed in @'OpenRBracket'@ and @'CloseRBracket'@ expressed as @'ParmVarDeclExpr'@ (both round brackets are still required even if no arguments are provided to the function).
     --  - function's __optional__ return type. If the function __does__ returns, the return type is expressed as an @'Arrow'@ @'Keyword'@ and a @'BuiltinType'@.
     --  - function's body within a @'CompoundStmt'@.
     | ParmVarDecl ParmVarDeclExpr
@@ -118,7 +118,7 @@ data Stmt
     --
     -- /TODO/: Rename this to 'AssignStmt' to better describe it.
     --
-    -- Note that this statement differs from @'VarDecl'@ as it does not declare the variable's type, it only assigns it a new value.
+    -- Note that this statement differs from @'VarDecl'@ as it does not declare the variable's type, it only assigns a new value to it.
     | UnaryOperator UnaryOperatorExpr
     -- ^ unary operator, which are @'Identifier'@ self increment or decrement, expressed in rizz code as @\`foo++;\`@ or @\`bar--\`@.
     --
@@ -180,7 +180,7 @@ data Stmt
     -- A @'CallExprDecl'@'s rizz grammar in-code is as follow, in the given order:
     --
     --  - function's name as an @'Identifier'@.
-    --  - function's parameters enclosed in @'OpenRBracket'@ and @'CloseRBracket'@ expressed as @'ParmCallDecl'@ (both round brackets are stil required even if no arguments are provided to the function).
+    --  - function's parameters enclosed in @'OpenRBracket'@ and @'CloseRBracket'@ expressed as @'ParmCallDecl'@ (both round brackets are still required even if no arguments are provided to the function).
     --  - a trailing @'Semicolon'@ to end the expression.
     | RetStmt BinaryOpExpr
     -- ^ return from function, expressed in rizz code like @\`ret 42;\`@.
@@ -188,7 +188,7 @@ data Stmt
     -- A @'RetStmt'@ rizz grammar in-code is as follow, in the given order:
     --
     --  - a leading @'Ret'@.
-    --  - @'BinaryOpExpr'@ which suites all needs, from constants to aritmethics or even function call.
+    --  - @'BinaryOpExpr'@ which suits all needs, from constants to arithmetics or even function call.
     --  - a trailing @'Semicolon'@ to end the expression.
 
     deriving (
@@ -203,7 +203,7 @@ newtype CompoundStmt
     = CompoundStmt [Stmt]
     -- ^ compound statement block, expressed in rizz code as @\`{...}\`@ (any code enclosed in a @'OpenCBracket'@ and a @'CloseCBracket'@).
     --
-    -- A @'CompoundStmt'@ is used for special cases:
+    -- A @'CompoundStmt'@ is used for the following special cases:
     --
     --  - a function body
     --  - a conditional body
@@ -308,7 +308,7 @@ data BinaryOpParm
         -- ^ Allows @'BinaryOpParm'@ to be compared, needed for unit tests.
     )
 
--- | Defines @'BinaryOpExpr'@ as any expression that can be evaluated by equality or aritmethic operators.
+-- | Defines @'BinaryOpExpr'@ as any expression that can be evaluated by equality or arithmetic operators.
 data BinaryOpExpr
     = BinaryOpExpr BinaryOpParm BinaryOp BinaryOpParm
     -- ^ two @'BinaryOpParm'@ being compared with any @'BinaryOp'@ operator.
