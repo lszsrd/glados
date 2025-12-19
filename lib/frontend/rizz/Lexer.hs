@@ -14,7 +14,7 @@
 --
 -- Takes a stream of bytes and performs some checkups, based on a BNF grammar, to extract every __@'Token'@__ from it.
 --
--- If an unexpected character is found, the @'lexer'@ function returns an error message using @'fError'@ function.
+-- If an unexpected character is found or a multi line comment block is not closed, the @'lexer'@ function returns an error message using @'fError'@ function.
 -------------------------------------------------------------------------------
 module Lexer (
     -- * BNF definition
@@ -31,6 +31,7 @@ module Lexer (
     , parsePunctuator
 
     -- * Lexemes parsing
+    , parseMultiLineComment
     , parseStringLiteral
     , parseSCharSequence
     , parseSChar
@@ -77,7 +78,11 @@ unexpectedChar lexeme = "unexpected character '" ++ lexeme ++ "'"
 lexerWrapper :: Stream -> Stream -> (Int, Int)
     -> Either String [(Token, (Int, Int))]
 lexerWrapper _ [] _ = Right []
-lexerWrapper begin ('#': xs) y = lexerWrapper begin (dropWhile (/= '\n') xs) y
+lexerWrapper begin ('/': x: xs) (l, c)
+    | x == '/' = lexerWrapper begin (dropWhile (/= '\n') xs) (l, c)
+    | x == '*' = case parseMultiLineComment begin xs (l, c + 2) (l, c + 2) of
+        Left error -> Left error
+        Right (stream, pos) -> lexerWrapper begin stream pos
 lexerWrapper begin ('\n': xs) (l, _) = lexerWrapper begin xs (l + 1, 1)
 lexerWrapper begin stream@(x:xs) (l, c) = case parseKeyword stream
       <|> fmap (\(x,y,z) -> (Identifier x, y, z)) (parseIdentifier stream)
@@ -170,6 +175,21 @@ parsePunctuator (';': x) = Just (Punctuator Semicolon, 1, x)
 parsePunctuator (',': x) = Just (Punctuator Comma, 1, x)
 parsePunctuator ('=': x) = Just (Punctuator (AssignOp Equal), 1, x)
 parsePunctuator _ = Nothing
+
+-- | Takes a 2 @'Stream'@ (stream's start and stream's current position) and 2 (@'Data.Int'@, @'Data.Int'@) (starting position and current position) as parameters and returns a __Either__ @'String'@ (@'Stream'@, (@'Data.Int'@, @'Data.Int'@)).
+--
+-- On success, this function returns a tuple made of the parsed comment block, enclosed in @\`\\*\`@ and @\`*/\`@ and the new @'Stream'@'s current position. On failure, this function returns a pretty formatted error message.
+parseMultiLineComment :: Stream -> Stream -> (Int, Int) -> (Int, Int)
+    -> Either String (Stream, (Int, Int))
+parseMultiLineComment begin [] _ y
+    = Left $ fError begin y 2 "unterminated comment block, missing '\\*'"
+parseMultiLineComment begin ('/': '*': x) y _ = Left $ fError begin y 2
+    "unterminated comment block upon creation of a new one"
+parseMultiLineComment begin ('\n': x) (l, c) y
+    = parseMultiLineComment begin x (l + 1, 1) y
+parseMultiLineComment begin ('*': '/': xs) (l, c) _ = Right (xs, (l, c + 2))
+parseMultiLineComment begin (_: x) (l, c) y
+    = parseMultiLineComment begin x (l, c + 1) y
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__ (@'Lexeme'@, @'Prelude.Int'@, @'Stream'@) if the stream starts with a \<string-literal\>.
 --

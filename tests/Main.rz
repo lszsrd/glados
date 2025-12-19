@@ -1,17 +1,20 @@
-# divide two integers
+// divide two integers
 fn      foo(Int: x, Int: y) -> Int
 {
     if (y == 0) {
-        ret 0; # returns 0 to avoid div by 0
+        ret 0; // returns 0 to avoid div by 0
     }
     ret x / y;
 }
 
+/* comment block
+            */
 fn main()
+*
 {
-    Int x = 42;
+    Int /*  */ x = 42;
     
     foo(x, 2);
     ret 0;
 }
-#endof file
+//endof file
