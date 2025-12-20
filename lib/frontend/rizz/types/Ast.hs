@@ -24,6 +24,7 @@
 -- @fn foo(Int: x) -> Int
 --{
 --    Int y = 42;
+-- \
 --    if (x == 0) {
 --        ret 0;
 --    }
