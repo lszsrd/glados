@@ -13,95 +13,52 @@
 -- Maintainer  : laszlo.serdet@epitech.eu
 -------------------------------------------------------------------------------
 module Instructions (
-    Instruction
+    Instruction           (..)
 ) where
+
+import Stack (Operand (..))
 
 -- fetch decode execute
 
-data Value
-    = Bool Bool
-    | Integer Integer
-    | Float Float
-
-    deriving (
-        Show
-        , Eq
-    )
-
-data Registers = Registers  {
-    rax :: Value
-    , r1 :: Value
-    , r2 :: Value
-    , r3 :: Value
-    , r4 :: Value
-    , r5 :: Value
-    , r6 :: Value
-    , r7 :: Value
-    , r8 :: Value
-                            }
-    deriving (
-        Show
-        , Eq
-    )
-
-type Environment = [(String, Value)]
-type Stack = [Value]
-
--- variables are in env
--- constants are in stack
--- move/get values to registers to operate on them
--- when an operation is done (add, mul, ret, calling a function -> store the value in rax)
-
 data Instruction
     = Nop
-    -- ^ code #0 nop; do nothing
-    | BPush -- push a boolean to the stack
-    -- ^ code # ;
-    | IPush -- push an integer to the stack
-    -- ^ code # ;
-    | FPush -- push a float to the stack
-    -- ^ code # ;
-    | Pop -- pop a value from stack and store in a reg
-    -- ^ code # ; 
-    | Mov -- copy a value from a reg to another
-    -- ^ code # ;
-    | Fetch -- get a var from env and store it in a register (fetch <name> <reg>)
-    -- all jumps conditions bellow
-    -- ^ code # ; 
-    | JLt
-    -- ^ code # ; 
-    | JGt
-    -- ^ code # ; 
-    | JLEq
-    -- ^ code # ; 
-    | JGEq
-    -- ^ code # ; 
-    | JEq
-    -- ^ code # ; 
-    | Neg
-    -- ^ code # ; 
-
-    -- all operations (operate on registers and store result in rax)
-    | Add
-    -- ^ code # ; 
-    | Sub
-    -- ^ code # ; 
-    | Mul
-    -- ^ code # ; 
-    | Div
-    -- ^ code # ; 
-    | Mod
-    -- ^ code # ; 
-    | And
-    -- ^ code # ; 
-    | Or
-    -- ^ code # ; 
-    | Inc -- increment a value in a reg
-    -- ^ code # ; 
-    | Dec -- decrement a value in a reg
-    -- ^ code # ; 
-    | Hlt -- halt for a X ms
-    -- ^ code # ; 
+    -- ^ code #0 nop; does nothing.
+    | Push Operand
+    -- ^ code #1; pushes an Operand to the Stack.
+    | Pop
+    -- ^ code #2; pops the topmost Operand from the Stack.
+    | Fetch String
+    -- ^ code #3; fetches an Operand from the Environment and pushes it to the Stack.
+    | JLt Int
+    -- ^ code #4; jumps of a given amount of instructions if the Operand on top of the Stack is less than the second Operand on the top of the Stack.
+    | JGt Int
+    -- ^ code #5; jumps of a given amount of instructions if the Operand on top of the Stack is greater than the second Operand on the top of the Stack.
+    | JLEq Int
+    -- ^ code #6; jumps of a given amount of instructions if the Operand on top of the Stack is less than or equal to the second Operand on the top of the Stack.
+    | JGEq Int
+    -- ^ code #7; jumps of a given amount of instructions if the Operand on top of the Stack is greater or equal to than the second Operand on the top of the Stack.
+    | JEq Int
+    -- ^ code #8; jumps of a given amount of instructions if the Operand on top of the Stack is equal to the second Operand on the top of the Stack.
+    | Neg Operand
+    -- ^ code #9; inverses the  value on top of the Stack (ex: True => False, 42 => -42, -3.14 => 3.14). 
+    | Add Operand Operand
+    -- ^ code #10; additions the two top most Operand on the Stack and store it the computed result.
+    | Sub Operand Operand
+    -- ^ code #11; substractes the two top most Operand on the Stack and store it the computed result.
+    | Mul Operand Operand
+    -- ^ code #12; multiplies the two top most Operand on the Stack and store it the computed result.
+    | Div Operand Operand
+    -- ^ code #13; divides the two top most Operand on the Stack and store it the computed result.
+    | Mod Operand Operand
+    -- ^ code #14; modulos the two top most Operand on the Stack and store it the computed result.
+    | And Operand Operand
+    -- ^ code #15; does a logical and to the two top most Operand on the Stack and store it the computed result.
+    | Or Operand Operand
+    -- ^ code #16; does a logical or to the two top most Operand on the Stack and store it the computed result.
+    | Inc Operand
+    -- ^ code #17; adds 1 to the Operand on top of the Stack.
+    | Dec Operand
+    -- ^ code #18; substractes 1 to the Operand on top of the Stack.
 
     deriving (
         Show

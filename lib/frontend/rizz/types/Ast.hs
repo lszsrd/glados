@@ -17,6 +17,20 @@
 --
 -- For further information, refer to the [Microsoft C grammar definition] (https://learn.microsoft.com/en-us/cpp/c-language/phrase-structure-grammar)
 -- and the [Clang AST](https://clang.llvm.org/docs/IntroductionToTheClangAST.html) documentation.
+--
+-- === __Example__
+-- Taking this simple function expressed in rizz code:
+--
+-- @fn foo(Int: x) -> Int
+--{
+--    Int y = 42;
+--    ret x / y;
+--}@
+--
+-- will be translated as the following abstract syntax tree:
+--
+-- >>> FunctionDecl "foo" [] (CompoundStmt [DeclStmt (DeclVarStmt (VarDeclStmt Integer "x" Equal (ParmCallDeclLiteral (IntLiteral 42)))), RetStmt (BinaryOpExpr (BinaryOpParm (ParmCallDeclIdent "x")) Div (BinaryOpParm (ParmCallDeclIdent "y")))]) (Just Integer)
+--
 -------------------------------------------------------------------------------
 module Ast (
     -- * Top level definitions
@@ -98,7 +112,7 @@ data Decl
 --
 -- Some GHCI syntax examples for every @'Stmt'@ constructors:
 --
--- >>> DeclStmt (DeclStmtLiteral "var" MulEqual (ParmCallDeclLiteral (BoolLiteral True)))
+-- >>> DeclStmt (DeclAssignStmtLiteral "var" MulEqual (ParmCallDeclLiteral (BoolLiteral True)))
 -- >>> UnaryOperator "x" IdentIncrement
 -- >>> BinaryOpExpr (BinaryOpParm (ParmCallDeclLiteral (BoolLiteral True))) Lt (BinaryOpParm (ParmCallDeclIdent "a"))
 -- >>> IfStmt (BinaryOpExpr (BinaryOpParm (ParmCallDeclExpr (CallExprDecl "foo" [ParmCallDeclLiteral (IntLiteral 42)]))) Lt (BinaryOpParm (ParmCallDeclIdent "a"))) (CompoundStmt []) (Just (CompoundStmt []))
@@ -270,12 +284,17 @@ data VarDeclStmt
 --
 -- === __Example__
 --
--- >>> DeclStmtLiteral "var" DivEqual (ParmCallDeclLiteral (BoolLiteral True))
+-- A GHCI syntax example to declare a @'ParmVarDecl'@:
+-- >>> DeclAssignStmtLiteral "var" DivEqual (ParmCallDeclLiteral (BoolLiteral True))
+-- >>> DeclAssignStmtUnary (UnaryOperatorExpr "var" IdentIncrement)
+-- >>> DeclVarStmt (VarDeclStmt Integer "foo" Equal (ParmCallDeclLiteral (IntLiteral 42)))
 data DeclStmt
-    = DeclStmtLiteral Identifier AssignOp ParmCallDecl
+    = DeclAssignStmtLiteral Identifier AssignOp ParmCallDecl
     -- ^ variable assignment, expressed in rizz code like @\`foo = bar\`@.
-    | DeclStmtUnary UnaryOperatorExpr
-    -- ^ variable with a @'UnaryOp'@, expressed in rizz code like @\`foo++\`@.
+    | DeclAssignStmtUnary UnaryOperatorExpr
+    -- ^ variable assignment via a @'UnaryOp'@, expressed in rizz code like @\`foo++\`@.
+    | DeclVarStmt VarDeclStmt
+    -- ^ variable declaration, see @'VarDeclStmt'@.
 
     deriving (
         Show
@@ -285,6 +304,11 @@ data DeclStmt
     )
 
 -- | Defines the @'UnaryOperatorExpr'@ expression (extended constructor for @'UnaryOperator'@).
+--
+-- === __Example__
+--
+-- A GHCI syntax example to declare a @'UnaryOperatorExpr'@:
+-- >>> UnaryOperatorExpr "foo" IdentIncrement
 data UnaryOperatorExpr
     = UnaryOperatorExpr Identifier UnaryOp
     -- ^ variable declaration, see @'UnaryOperator'@ definition.
@@ -297,6 +321,11 @@ data UnaryOperatorExpr
     )
 
 -- | Defines @'BinaryOp'@'s parameters.
+--
+-- === __Examples__
+--
+-- A GHCI syntax example to declare a @'ParmVarDecl'@:
+-- >>> BinaryOpParm (ParmCallDeclLiteral (IntLiteral 42))
 data BinaryOpParm
     = BinaryOpParm ParmCallDecl
     -- ^ function call which should be interpreted and evaluated.
@@ -311,6 +340,12 @@ data BinaryOpParm
     )
 
 -- | Defines @'BinaryOpExpr'@ as any expression that can be evaluated by equality or arithmetic operators.
+--
+-- === __Examples__
+--
+-- A GHCI syntax example to declare a @'ParmVarDecl'@:
+-- >>> BinaryOpExpr (BinaryOpParm (ParmCallDeclIdent "x")) Div (BinaryOpParm (ParmCallDeclLiteral (IntLiteral 42)))
+-- >>> BinaryOpConst (ParmCallDeclLiteral (IntLiteral 84))
 data BinaryOpExpr
     = BinaryOpExpr BinaryOpParm BinaryOp BinaryOpParm
     -- ^ two @'BinaryOpParm'@ being compared with any @'BinaryOp'@ operator.
