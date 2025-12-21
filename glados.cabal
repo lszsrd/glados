@@ -32,6 +32,7 @@ library frontend-rizz
         Lexer
         Parser
         Analyser
+        ParserHelper
     build-depends:      base, format
 
 library format
