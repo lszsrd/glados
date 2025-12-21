@@ -65,3 +65,12 @@ parsePVDEList tokens = do
             (params, rest3) <- parsePVDEList rest2
             Right(param : params, rest3)
         _ -> Right ([param], rest1)
+
+-- TODO DeclAssignStmtLiteral and DeclVarStmt
+parseDeclStmt :: Parser A.DeclStmt
+parseDeclStmt tokens@(((T.Identifier i), _) : rest1) =
+    case rest1 of
+        ((T.Punctuator (T.UnaryOp u), _) : rest2) -> Right ((A.DeclAssignStmtUnary (A.UnaryOperatorExpr i u)), rest2)
+        ((token, position) : _) -> errorAt position ("Expected got: " ++ show token)
+parseDeclStmt ((token, position) : _) = errorAt position ("Expected got: " ++ show token)
+ 
