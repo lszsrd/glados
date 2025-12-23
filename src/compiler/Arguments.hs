@@ -15,8 +15,8 @@ import Format (error)
 
 parseArgs :: [String] -> Either String [FilePath]
 parseArgs [] = Left $ ": " ++ Format.error ++ ": no input files"
+parseArgs ("-h": _) = Left "USAGE"
 parseArgs (x: xs)
-    | x == "-h" = Left "USAGE"
     | takeExtension x /= ".rz"
         = Left $ ": " ++ Format.error ++ ": " ++ x ++ ": unknown file type"
     | null xs = Right [x]

@@ -78,11 +78,11 @@ unexpectedChar lexeme = "unexpected character '" ++ lexeme ++ "'"
 lexerWrapper :: Stream -> Stream -> (Int, Int)
     -> Either String [(Token, (Int, Int))]
 lexerWrapper _ [] _ = Right []
-lexerWrapper begin ('/': x: xs) (l, c)
-    | x == '/' = lexerWrapper begin (dropWhile (/= '\n') xs) (l, c)
-    | x == '*' = case parseMultiLineComment begin xs (l, c + 2) (l, c + 2) of
+lexerWrapper begin ('/': '*': x) (l, c)
+    = case parseMultiLineComment begin x (l, c + 2) (l, c + 2) of
         Left e -> Left e
         Right (stream, pos) -> lexerWrapper begin stream pos
+lexerWrapper begin ('/': x) y = lexerWrapper begin (dropWhile (/= '\n') x) y
 lexerWrapper begin ('\n': xs) (l, _) = lexerWrapper begin xs (l + 1, 1)
 lexerWrapper begin stream@(x:xs) (l, c) = case parseKeyword stream
       <|> fmap (\(x,y,z) -> (Identifier x, y, z)) (parseIdentifier stream)
