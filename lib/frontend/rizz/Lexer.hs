@@ -81,7 +81,7 @@ lexerWrapper _ [] _ = Right []
 lexerWrapper begin ('/': x: xs) (l, c)
     | x == '/' = lexerWrapper begin (dropWhile (/= '\n') xs) (l, c)
     | x == '*' = case parseMultiLineComment begin xs (l, c + 2) (l, c + 2) of
-        Left error -> Left error
+        Left e -> Left e
         Right (stream, pos) -> lexerWrapper begin stream pos
 lexerWrapper begin ('\n': xs) (l, _) = lexerWrapper begin xs (l + 1, 1)
 lexerWrapper begin stream@(x:xs) (l, c) = case parseKeyword stream
@@ -89,7 +89,7 @@ lexerWrapper begin stream@(x:xs) (l, c) = case parseKeyword stream
       <|> parseLiteral stream
       <|> parsePunctuator stream of
         Just (tok, len, rest) -> case lexerWrapper begin rest (l, c + len) of
-            Left error -> Left error
+            Left e -> Left e
             Right tokens -> Right $ (tok, (l, c)): tokens
         Nothing -> case parseEscapeSequence stream of
             Just _  -> lexerWrapper begin xs (l, c + 1)

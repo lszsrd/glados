@@ -23,11 +23,13 @@ type Stack = [Operand]
 -- | Defines an @'Operand'@ as a value that can be stored in a @'Stack'@ and manipulated via instructions.
 data Operand
     = Bool Bool
-    -- ^ boolean values.
+    -- ^ boolean value.
+    | Char Char
+    -- ^ character value.
     | Integer Integer
-    -- ^ integer values.
+    -- ^ integer value.
     | Float Float
-    -- ^ single precision floating point values.
+    -- ^ single precision floating point value.
 
     deriving (
         Show

@@ -46,7 +46,11 @@ executable glados-compiler
     default-language:   Haskell2010
     main-is:            Main.hs
     hs-source-dirs:     src/compiler
-    build-depends:      base, frontend-rizz, backend
+    other-modules:
+        Utils
+        Arguments
+        Compilation
+    build-depends:      base, filepath, format, frontend-rizz, backend
 
 executable glados-vm
     default-language:   Haskell2010

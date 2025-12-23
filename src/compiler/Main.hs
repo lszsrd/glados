@@ -7,19 +7,25 @@
 
 module Main where
 
-import System.Environment (getArgs)
-import System.Exit (exitSuccess)
 import System.IO (stderr, hPutStrLn)
+import System.Environment (getProgName, getArgs)
+import System.Exit (exitFailure)
+
+import Data.List (isPrefixOf)
+
+import Arguments (parseArgs)
+import Compilation (compileFiles)
 
 import Lexer (lexer)
+import Parser (parser)
 
--- source => lexical analysis (tokens) => syntactic analysis (parse tree) => semantic analysis (type checking)
-
+-- parse all args as files, parse all files to [Token] and compiles all
 main :: IO ()
 main = do
-    path <- getArgs
-    buffer <- readFile $ head path
-    case lexer buffer of
-        Left e -> hPutStrLn stderr (head path ++ ":" ++ e)
-        Right tokens -> print tokens
-    exitSuccess
+    progName <- getProgName
+    args <- parseArgs <$> getArgs
+    case args of
+        Left e -> if "USAGE" `isPrefixOf` e
+            then putStrLn $ "USAGE: " ++ progName ++ " [rizz files (.rz)]"
+            else hPutStrLn stderr (progName ++ e) >> exitFailure
+        Right files -> compileFiles lexer parser files

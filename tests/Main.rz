@@ -10,7 +10,6 @@ fn      foo(Int: x, Int: y) -> Int
 /* comment block
             */
 fn main()
-*
 {
     Int /*  */ x = 42;
     
