@@ -33,9 +33,12 @@
 --
 -- will be translated as the following abstract syntax tree:
 --
--- >>> FunctionDecl "foo" [ParmVarDeclExpr Integer "x"] (CompoundStmt [DeclStmt (DeclVarStmt (VarDeclStmt Integer "y" Equal (ParmCallDeclLiteral (IntLiteral 42)))), IfStmt (BinaryOpExpr (BinaryOpParm (ParmCallDeclIdent "x")) Eq (BinaryOpParm (ParmCallDeclLiteral (IntLiteral 0)))) (CompoundStmt []) Nothing, RetStmt (BinaryOpExpr (BinaryOpParm (ParmCallDeclIdent "y")) Div (BinaryOpParm (ParmCallDeclIdent "x")))]) (Just Integer)
+-- >>> FunctionDecl "foo" [ParmVarDeclExpr Integer "x"] (CompoundStmt [DeclVarExpr (VarDeclStmt Integer "y" Equal (ParmCallDeclLiteral (IntLiteral 42))), IfStmt (BinaryOpExpr (BinaryOpParm (ParmCallDeclIdent "x")) Eq (BinaryOpParm (ParmCallDeclLiteral (IntLiteral 0)))) (CompoundStmt []) Nothing, RetStmt (BinaryOpExpr (BinaryOpParm (ParmCallDeclIdent "y")) Div (BinaryOpParm (ParmCallDeclIdent "x")))]) (Just Integer)
 -------------------------------------------------------------------------------
 module Ast (
+    -- * BNF definition
+    -- $bnf
+
     -- * Top level definitions
     Decl                    (..)
     , Stmt                  (..)
@@ -56,6 +59,9 @@ module Ast (
 ) where
 
 import Tokens
+
+-- $bnf
+-- For the full rizz grammar syntax definition, see the [BNF definition](https://github.com/lszsrd/glados/blob/main/docs/BNF/rizz-grammar.md) here.
 
 -- | Defines @'Decl'@ as a primary Ast node containing language declarations.
 --
@@ -83,6 +89,7 @@ data Decl
     -- A @'ParmVarDecl'@'s rizz grammar in-code is as follow, in the given order:
     --
     --  - the parameter's type as a @'BuiltinType'@.
+    --  - a @'Colon'@.
     --  - the parameter's name as an @'Identifier'@.
     --  - a trailing @'Comma'@ if and __only__ if the parameter is __not__ the last one in the list.
     --
@@ -115,17 +122,20 @@ data Decl
 --
 -- Some GHCI syntax examples for every @'Stmt'@ constructors:
 --
+-- >>> DeclVarExpr (VarDeclStmt Boolean "foo" Equal (ParmCallDeclLiteral (BoolLiteral True)))
 -- >>> DeclStmt (DeclAssignStmtLiteral "var" MulEqual (ParmCallDeclLiteral (BoolLiteral True)))
--- >>> UnaryOperator "x" IdentIncrement
+-- >>> UnaryOperatorExpr "x" IdentIncrement
 -- >>> BinaryOpExpr (BinaryOpParm (ParmCallDeclLiteral (BoolLiteral True))) Lt (BinaryOpParm (ParmCallDeclIdent "a"))
 -- >>> IfStmt (BinaryOpExpr (BinaryOpParm (ParmCallDeclExpr (CallExprDecl "foo" [ParmCallDeclLiteral (IntLiteral 42)]))) Lt (BinaryOpParm (ParmCallDeclIdent "a"))) (CompoundStmt []) (Just (CompoundStmt []))
 -- >>> WhileStmt (BinaryOpExpr (BinaryOpParm (ParmCallDeclLiteral (BoolLiteral True))) NEq (BinaryOpParm (ParmCallDeclLiteral (BoolLiteral False)))) (CompoundStmt [])
--- >>> ForStmt (Just (VarDeclStmt Integer "i" (ParmCallDeclExpr (CallExprDecl "foo" [])))) (Just (BinaryOpExpr (BinaryOpParm (ParmCallDeclIdent "x")) Lt (BinaryOpParm (ParmCallDeclIdent "y")))) Nothing (CompoundStmt [])
+-- >>> ForStmt (Just (VarDeclStmt Integer "i" Equal (ParmCallDeclExpr (CallExprDecl "foo" [])))) (Just (BinaryOpExpr (BinaryOpParm (ParmCallDeclIdent "x")) Lt (BinaryOpParm (ParmCallDeclIdent "y")))) Nothing (CompoundStmt [])
 -- >>> ForeachStmt "foo" "it" (CompoundStmt [])
 -- >>> CallExpr (CallExprDecl "foo" [ParmCallDeclLiteral (IntLiteral 42)])
 -- >>> RetStmt (BinaryOpConst (ParmCallDeclIdent "foo"))
 data Stmt
-    = DeclStmt DeclStmt     
+    = DeclVarExpr VarDeclStmt
+    -- ^ @'VarDeclStmt'@ alias, allows a variable typed declaration to be a @'Stmt'@.
+    | DeclStmt DeclStmt
     -- ^ variable (without its type) assignment, expressed in rizz code like @\`foo = bar;\`@ or @\`baz++;\`@.
     --
     -- A @'Stmt.DeclStmt'@ rizz grammar in-code is as follow, in the given order:
@@ -241,7 +251,7 @@ newtype CompoundStmt
 -- === __Example__
 --
 -- A GHCI syntax example to declare a @'ParmVarDecl'@:
--- >>> ParmVarDecl Boolean "x"
+-- >>> ParmVarDeclExpr Boolean "x"
 data ParmVarDeclExpr
     = ParmVarDeclExpr BuiltinType Identifier
     -- ^ function's parameter, see @'ParmVarDecl'@ definition.
@@ -290,14 +300,11 @@ data VarDeclStmt
 -- A GHCI syntax example to declare a @'ParmVarDecl'@:
 -- >>> DeclAssignStmtLiteral "var" DivEqual (ParmCallDeclLiteral (BoolLiteral True))
 -- >>> DeclAssignStmtUnary (UnaryOperatorExpr "var" IdentIncrement)
--- >>> DeclVarStmt (VarDeclStmt Integer "foo" Equal (ParmCallDeclLiteral (IntLiteral 42)))
 data DeclStmt
     = DeclAssignStmtLiteral Identifier AssignOp ParmCallDecl
     -- ^ variable assignment, expressed in rizz code like @\`foo = bar\`@.
     | DeclAssignStmtUnary UnaryOperatorExpr
     -- ^ variable assignment via a @'UnaryOp'@, expressed in rizz code like @\`foo++\`@.
-    | DeclVarStmt VarDeclStmt
-    -- ^ variable declaration, see @'VarDeclStmt'@.
 
     deriving (
         Show

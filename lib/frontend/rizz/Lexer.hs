@@ -17,9 +17,6 @@
 -- If an unexpected character is found or a multi line comment block is not closed, the @'lexer'@ function returns an error message using @'fError'@ function.
 -------------------------------------------------------------------------------
 module Lexer (
-    -- * BNF definition
-    -- $bnf
-
     -- * Lexical analysis
     lexer
     , lexerWrapper
@@ -52,9 +49,6 @@ import Data.List (isPrefixOf)
 
 import Tokens
 import Format (fError)
-
--- $bnf
--- For the full rizz lexical syntax definition, see the [BNF definition](https://github.com/lszsrd/glados/blob/main/docs/BNF/rizz.md) here.
 
 -- | Takes a @'Stream'@ as parameter and returns a __Either__ @'String'@ [(@'Token'@, (@'Data.Int'@, @'Data.Int'@))].
 --

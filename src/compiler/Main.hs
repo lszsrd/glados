@@ -19,7 +19,6 @@ import Compilation (compileFiles)
 import Lexer (lexer)
 import Parser (parser)
 
--- parse all args as files, parse all files to [Token] and compiles all
 main :: IO ()
 main = do
     progName <- getProgName

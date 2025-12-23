@@ -27,12 +27,17 @@ module Format (
 
 import Data.Char (isSpace)
 
+-- | Returns a pretty formatted 'error' message.
 error :: String
 error = "\ESC[1;31merror\ESC[0m"
 
+-- | Returns a pretty formatted 'warning' message.
 warning :: String
 warning = "\ESC[1;35mwarning\ESC[0m"
 
+-- | Takes a @'String'@, a @'String'@, a (@'Int'@, @'Int'@) and a @'String'@ as parameters and creates a formatted error message from them.
+--
+-- The first @'String'@ is the formatted error type, the second @'String'@ represents the current stream of bytes to display (giving the user some context), the tuple represents the line and column at which the error was detected, the integer is the token's size and the second @'String'@ is the informational message to display.
 fString :: String -> String -> (Int, Int) -> Int -> String -> String
 fString level s (l, c) size message
     = show l ++ ":" ++ show c ++ ": " ++ level ++ ": " ++ message
@@ -42,15 +47,14 @@ fString level s (l, c) size message
     ++ replicate (c - 1 - length (takeWhile isSpace (lines s !! (l - 1))))  ' '
     ++ "\ESC[1;32m^" ++ replicate (size - 1) '~' ++ " here\ESC[0m"
 
--- | Takes a @'String'@, a (@'Int'@, @'Int'@) and a @'String'@ as parameters
--- and creates a formatted error message from them.
+-- | Takes a @'String'@, a (@'Int'@, @'Int'@) and a @'String'@ as parameters and creates a formatted error message from them.
 --
--- The first @'String'@ represents the current stream of bytes to display
--- (giving the user some context), the tuple represents the line and column
--- at which the error was detected, the integer is the token's size and the
--- second @'String'@ is the informational message to display.
+-- The first @'String'@ represents the current stream of bytes to display (giving the user some context), the tuple represents the line and column at which the error was detected, the integer is the token's size and the second @'String'@ is the informational message to display.
 fError :: String -> (Int, Int) -> Int -> String -> String
 fError = fString Format.error
 
+-- | Takes a @'String'@, a (@'Int'@, @'Int'@) and a @'String'@ as parameters and creates a formatted warning message from them.
+--
+-- The first @'String'@ represents the current stream of bytes to display (giving the user some context), the tuple represents the line and column at which the warning was detected, the integer is the token's size and the second @'String'@ is the informational message to display.
 fWarn :: String -> (Int, Int) -> Int -> String -> String
 fWarn = fString Format.warning

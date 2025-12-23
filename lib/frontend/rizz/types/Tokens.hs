@@ -18,6 +18,9 @@
 -- For further informations, refer to the [Microsoft C lexical grammar definition](https://learn.microsoft.com/en-us/cpp/c-language/lexical-grammar) from which this definition is based.
 -------------------------------------------------------------------------------
 module Tokens (
+    -- * BNF definition
+    -- $bnf
+
     -- * Basic type
     Stream
     , Lexeme
@@ -35,6 +38,9 @@ module Tokens (
     , AssignOp              (..)
     , Punctuator            (..)
 ) where
+
+-- $bnf
+-- For the full rizz lexical syntax definition, see the [BNF definition](https://github.com/lszsrd/glados/blob/main/docs/BNF/rizz-lexical.md) here.
 
 -- | Defines @'Stream'@ type as a string representing a finite byte array.
 type Stream = String
