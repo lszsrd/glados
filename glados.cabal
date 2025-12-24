@@ -47,9 +47,7 @@ executable glados-compiler
     main-is:            Main.hs
     hs-source-dirs:     src/compiler
     other-modules:
-        Utils
-        Arguments
-        Compilation
+        Compiler
     build-depends:      base, filepath, format, frontend-rizz, backend
 
 executable glados-vm
@@ -57,3 +55,12 @@ executable glados-vm
     main-is:            Main.hs
     hs-source-dirs:     src/vm
     build-depends:      base, frontend-rizz, backend
+
+test-suite unit_tests
+    default-language:   Haskell2010
+    type:               exitcode-stdio-1.0
+    main-is:            Main.hs
+    hs-source-dirs:     tests/hunit, tests/hunit/lib/frontend/rizz
+    other-modules:
+        TestsLexer
+    build-depends:      base, HUnit, frontend-rizz
