@@ -76,7 +76,7 @@ lexerWrapper begin ('/': '*': x) (l, c)
     = case parseMultiLineComment begin x (l, c + 2) (l, c + 2) of
         Left e -> Left e
         Right (stream, pos) -> lexerWrapper begin stream pos
-lexerWrapper begin ('/': x) y = lexerWrapper begin (dropWhile (/= '\n') x) y
+lexerWrapper begin ('/': '/': x) y = lexerWrapper begin (dropWhile (/= '\n') x) y
 lexerWrapper begin ('\n': xs) (l, _) = lexerWrapper begin xs (l + 1, 1)
 lexerWrapper begin stream@(x:xs) (l, c) = case parseKeyword stream
       <|> fmap (\(x,y,z) -> (Identifier x, y, z)) (parseIdentifier stream)
@@ -234,15 +234,7 @@ parseSChar _ = Nothing
 --
 -- On success, this function returns a tuple made of the decimal string representation, the parsed integer length and the input stream stripped of the parsed integer.
 parseDecimalConstant :: Stream -> Maybe (Lexeme, Int, Stream)
-parseDecimalConstant stream = case parseDigit stream of
-    Nothing -> Nothing
-    Just (x, y, z) -> case parseDigit z of
-        Nothing -> case parseDecimalConstant z of
-            Nothing -> Just ([x], y, z)
-            Just (xs, ys, zs) -> Just (x: xs, y + ys, zs)
-        Just (xs, ys, zs) -> case parseDecimalConstant zs of
-            Nothing -> Just (x: [xs], y + ys, zs)
-            Just (xs', ys', zs') -> Just (x: xs: xs', y + ys + ys', zs')
+parseDecimalConstant = parseDigitSequence
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__ (@'Lexeme'@, @'Data.Int'@, @'Stream'@) if the stream starts with a \<floating-constant\>.
 --

@@ -14,7 +14,7 @@
                             | \<floating-constant>
                             | \<character-constant>
 
-\<decimal-constant>         ::= \<decimal-constant> \<digit>
+\<decimal-constant>         ::= \<digit-sequence>
 
 \<nonzero-digit>            ::= "0" | \<digit>
 

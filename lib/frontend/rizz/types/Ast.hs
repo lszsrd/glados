@@ -56,7 +56,7 @@
 --
 -- >>> FunctionDecl "baz" [] (CompoundStmt [CallExpr (CallExprDecl "bar" [ParmCallDeclExpr (CallExprDecl "foo" [ParmCallDeclLiteral (IntLiteral 100)])])]) Nothing
 --
--- and will be translated as a compilation unit (a [@'Decl'@]) as follow:
+-- and will be translated as a compilation unit (a @'[Decl]'@) as follow:
 --
 -- >>> [FunctionDecl "foo" [ParmVarDeclExpr Integer "x"] (CompoundStmt [DeclVarExpr (VarDeclStmt Integer "y" Equal (ParmCallDeclLiteral (IntLiteral 42))), IfStmt (BinaryOpExpr (BinaryOpParm (ParmCallDeclIdent "x")) Eq (BinaryOpParm (ParmCallDeclLiteral (IntLiteral 0)))) (CompoundStmt [RetStmt (BinaryOpConst (ParmCallDeclLiteral (IntLiteral 0)))]) Nothing, RetStmt (BinaryOpExpr (BinaryOpParm (ParmCallDeclIdent "y")) Div (BinaryOpParm (ParmCallDeclIdent "x")))]) (Just Integer), FunctionDecl "bar" [ParmVarDeclExpr Integer "x"] (CompoundStmt [DeclVarExpr (VarDeclStmt Integer "y" Equal (ParmCallDeclLiteral (IntLiteral 1))),ForStmt Nothing (Just (BinaryOpExpr (BinaryOpParm (ParmCallDeclIdent "x")) Lt (BinaryOpParm (ParmCallDeclIdent "y")))) (Just (DeclAssignStmtUnary (UnaryOperatorExpr "y" IdentIncrement))) (CompoundStmt [IfStmt (BinaryOpExpr (BinaryOpParm (ParmCallDeclExpr (CallExprDecl "foo" [ParmCallDeclIdent "y"]))) Eq (BinaryOpParm (ParmCallDeclLiteral (IntLiteral 0)))) (CompoundStmt [RetStmt (BinaryOpConst (ParmCallDeclLiteral (IntLiteral 0)))]) Nothing]),RetStmt (BinaryOpConst (ParmCallDeclIdent "y"))]) (Just Integer), FunctionDecl "baz" [] (CompoundStmt [CallExpr (CallExprDecl "bar" [ParmCallDeclExpr (CallExprDecl "foo" [ParmCallDeclLiteral (IntLiteral 100)])])]) Nothing]
 -------------------------------------------------------------------------------
