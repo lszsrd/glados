@@ -44,7 +44,7 @@ module Lexer (
 ) where
 
 import Control.Applicative ((<|>))
-import Data.Char (isAscii, isLetter, isDigit)
+import Data.Char (isAscii, isLetter, isDigit, isSpace)
 import Data.List (isPrefixOf)
 
 import Tokens
@@ -102,20 +102,30 @@ parseBooleanConstant x
 --
 -- On success, this function returns a tuple made of the parsed @'Keyword'@, the @'Lexeme'@ length and the input stream stripped of the parsed @'Token'@.
 parseKeyword :: Stream -> Maybe (Token, Int, Stream)
-parseKeyword ('B': 'o': 'o': 'l' : x) = Just (Keyword Bool, 4, x)
-parseKeyword ('C': 'h': 'a': 'r' : x) = Just (Keyword Char, 4, x)
-parseKeyword ('I': 'n': 't': x) = Just (Keyword Int, 3, x)
-parseKeyword ('F': 'l': 'o': 'a': 't': x) = Just (Keyword Float, 5, x)
-parseKeyword ('D': 'o': 'u': 'b': 'l': 'e': x) = Just (Keyword Double, 6, x)
-parseKeyword ('f': 'n': x) = Just (Keyword Fn, 2, x)
-parseKeyword ('i': 'f': x) = Just (Keyword If, 2, x)
-parseKeyword ('e': 'l': 's': 'e': x) = Just (Keyword Else, 4, x)
-parseKeyword ('w': 'h': 'i': 'l': 'e': x) = Just (Keyword While, 5, x)
-parseKeyword ('f': 'o': 'r': 'e': 'a': 'c': 'h': x) = 
-    Just (Keyword Foreach, 7, x)
-parseKeyword ('f': 'o': 'r': x) = Just (Keyword For, 3, x)
-parseKeyword ('r': 'e': 't': x) = Just (Keyword Ret, 3, x)
+parseKeyword ('B': 'o': 'o': 'l' : x) = hParseKeyword (Keyword Bool, 4, x)
+parseKeyword ('C': 'h': 'a': 'r' : x) = hParseKeyword (Keyword Char, 4, x)
+parseKeyword ('I': 'n': 't': x) = hParseKeyword (Keyword Int, 3, x)
+parseKeyword ('F': 'l': 'o': 'a': 't': x) = hParseKeyword (Keyword Float, 5, x)
+parseKeyword ('D': 'o': 'u': 'b': 'l': 'e': x)
+    = hParseKeyword (Keyword Double, 6, x)
+parseKeyword ('f': 'n': x) = hParseKeyword (Keyword Fn, 2, x)
+parseKeyword ('i': 'f': x) = hParseKeyword (Keyword If, 2, x)
+parseKeyword ('e': 'l': 's': 'e': x) = hParseKeyword (Keyword Else, 4, x)
+parseKeyword ('w': 'h': 'i': 'l': 'e': x) = hParseKeyword (Keyword While, 5, x)
+parseKeyword ('f': 'o': 'r': 'e': 'a': 'c': 'h': x) =
+    hParseKeyword (Keyword Foreach, 7, x)
+parseKeyword ('f': 'o': 'r': x) = hParseKeyword (Keyword For, 3, x)
+parseKeyword ('r': 'e': 't': x) = hParseKeyword (Keyword Ret, 3, x)
 parseKeyword _ = Nothing
+
+-- | Takes a (@'Token'@, @'Data.Int'@, @'Stream'@) as parameter and returns a __Maybe__ (@'Token'@, @'Data.Int'@, @'Stream'@) if the cut stream starts with a space character.
+--
+-- @'parseKeyword'@'s helper function that checks if the very next character after the token is a space.
+hParseKeyword :: (Token, Int, Stream) -> Maybe (Token, Int, Stream)
+hParseKeyword (token, tokSize, []) = Just (token, tokSize, [])
+hParseKeyword (token, tokSize, stream@(x: _))
+    | isSpace x = Just (token, tokSize, stream)
+    | otherwise = Nothing
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__ (@'Token'@, @'Data.Int'@, @'Stream'@) if the stream starts with a @'Literal'@.
 --
@@ -190,6 +200,7 @@ parseMultiLineComment begin (_: x) (l, c) y
 -- This function is a wrapper around @'parseSCharSequence'@ that checks whether the string literal starts and ends with the @\`"\`@ character.
 -- As such, it returns the same components and increases the total length by 2, taking into account both @\`"\`@ characters.
 parseStringLiteral :: Stream -> Maybe (Lexeme, Int, Stream)
+parseStringLiteral ('"': '"': x) = Just ([], 2, x)
 parseStringLiteral ('"': x) = case parseSCharSequence x of
     Just (x, y, '"': z) -> Just (x, 2 + y, z)
     _ -> Nothing
@@ -215,7 +226,6 @@ parseSCharSequence stream = case parseSChar stream of
 parseSChar :: Stream -> Maybe (Char, Int, Stream)
 parseSChar ('"': _) = Nothing
 parseSChar ('\\': _) = Nothing
-parseSChar ('\n': _) = Nothing
 parseSChar (x: xs)
     | isAscii x = Just (x, 1, xs)
 parseSChar _ = Nothing
@@ -272,7 +282,6 @@ parseCharacterConstant _ = Nothing
 parseChar :: Stream -> Maybe (Char, Int, Stream)
 parseChar ('\'': _) = Nothing
 parseChar ('\\': _) = Nothing
-parseChar ('\n': _) = Nothing
 parseChar (x: xs)
     | isAscii x = Just (x, 1, xs)
 parseChar _ = Nothing
