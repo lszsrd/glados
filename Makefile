@@ -11,11 +11,11 @@ VM			:=	glados-vm
 all: $(COMPILER) $(VM)
 
 $(COMPILER):
-	@cabal build $(COMPILER)
+	@cabal build $(COMPILER) --disable-debug-info
 	@cp $(shell cabal list-bin $(COMPILER)) .
 
 $(VM):
-	@cabal build $(VM)
+	@cabal build $(VM) --disable-debug-info
 	@cp $(shell cabal list-bin $(VM)) .
 
 
