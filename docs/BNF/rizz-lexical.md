@@ -8,7 +8,7 @@
 \<s-char-sequence>          ::= \<s-char>
                             | \<s-char-sequence> \<s-char>
 
-\<s-char>                   ::= any member of the source character set except the double-quotation mark ("), backslash (\\), or new-line character
+\<s-char>                   ::= any member of the source character set except the double-quotation mark ("), backslash (\\)
 
 \<constant>                 ::= \<decimal-constant>
                             | \<floating-constant>
@@ -25,7 +25,7 @@
 
 \<character-constant>       ::= "'" \<char> "'"
 
-\<char>                     ::= Any member of the source character set except the single quotation mark ('), backslash (\\), or new-line character
+\<char>                     ::= Any member of the source character set except the single quotation mark ('), backslash (\\)
 
 \<escape-sequence>          ::= " " | "\t" | "\a" | "\b" | "\f" | "\n" | "\r" | "\t" | "\v" | "\'" | "\"" | "\\\"
 

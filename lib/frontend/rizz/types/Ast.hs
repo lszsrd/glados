@@ -19,7 +19,7 @@
 -- and the [Clang AST](https://clang.llvm.org/docs/IntroductionToTheClangAST.html) documentation.
 --
 -- === __Example__
--- Taking this simple function expressed in rizz code:
+-- Taking those simple functions, expressed in rizz code:
 --
 -- @fn foo(Int: x) -> Int
 --{
@@ -29,11 +29,36 @@
 --        ret 0;
 --    }
 --    ret y / x;
+--}
+-- \
+--fn bar(Int: x) -> Int
+--{
+--    Int y = 1;
+-- \
+--    for (; y < x; y++) {
+--        if (foo(y) == 0) {
+--            ret 10;
+--        }
+--    }
+--    ret y;
+--}
+-- \
+--fn baz()
+--{
+--    bar(foo(100));
 --}@
 --
--- will be translated as the following abstract syntax tree:
+-- will be translated (each) as these following @'Decl'@:
 --
 -- >>> FunctionDecl "foo" [ParmVarDeclExpr Integer "x"] (CompoundStmt [DeclVarExpr (VarDeclStmt Integer "y" Equal (ParmCallDeclLiteral (IntLiteral 42))), IfStmt (BinaryOpExpr (BinaryOpParm (ParmCallDeclIdent "x")) Eq (BinaryOpParm (ParmCallDeclLiteral (IntLiteral 0)))) (CompoundStmt [RetStmt (BinaryOpConst (ParmCallDeclLiteral (IntLiteral 0)))]) Nothing, RetStmt (BinaryOpExpr (BinaryOpParm (ParmCallDeclIdent "y")) Div (BinaryOpParm (ParmCallDeclIdent "x")))]) (Just Integer)
+--
+-- >>> FunctionDecl "bar" [ParmVarDeclExpr Integer "x"] (CompoundStmt [DeclVarExpr (VarDeclStmt Integer "y" Equal (ParmCallDeclLiteral (IntLiteral 1))),ForStmt Nothing (Just (BinaryOpExpr (BinaryOpParm (ParmCallDeclIdent "x")) Lt (BinaryOpParm (ParmCallDeclIdent "y")))) (Just (DeclAssignStmtUnary (UnaryOperatorExpr "y" IdentIncrement))) (CompoundStmt [IfStmt (BinaryOpExpr (BinaryOpParm (ParmCallDeclExpr (CallExprDecl "foo" [ParmCallDeclIdent "y"]))) Eq (BinaryOpParm (ParmCallDeclLiteral (IntLiteral 0)))) (CompoundStmt [RetStmt (BinaryOpConst (ParmCallDeclLiteral (IntLiteral 0)))]) Nothing]),RetStmt (BinaryOpConst (ParmCallDeclIdent "y"))]) (Just Integer)
+--
+-- >>> FunctionDecl "bar" [] (CompoundStmt [CallExpr (CallExprDecl "bar" [ParmCallDeclExpr (CallExprDecl "foo" [ParmCallDeclLiteral (IntLiteral 100)])])]) Nothing
+--
+-- and will be translated as a compilation unit as follow:
+--
+-- >>> [FunctionDecl "foo" [ParmVarDeclExpr Integer "x"] (CompoundStmt [DeclVarExpr (VarDeclStmt Integer "y" Equal (ParmCallDeclLiteral (IntLiteral 42))), IfStmt (BinaryOpExpr (BinaryOpParm (ParmCallDeclIdent "x")) Eq (BinaryOpParm (ParmCallDeclLiteral (IntLiteral 0)))) (CompoundStmt [RetStmt (BinaryOpConst (ParmCallDeclLiteral (IntLiteral 0)))]) Nothing, RetStmt (BinaryOpExpr (BinaryOpParm (ParmCallDeclIdent "y")) Div (BinaryOpParm (ParmCallDeclIdent "x")))]) (Just Integer), FunctionDecl "bar" [ParmVarDeclExpr Integer "x"] (CompoundStmt [DeclVarExpr (VarDeclStmt Integer "y" Equal (ParmCallDeclLiteral (IntLiteral 1))),ForStmt Nothing (Just (BinaryOpExpr (BinaryOpParm (ParmCallDeclIdent "x")) Lt (BinaryOpParm (ParmCallDeclIdent "y")))) (Just (DeclAssignStmtUnary (UnaryOperatorExpr "y" IdentIncrement))) (CompoundStmt [IfStmt (BinaryOpExpr (BinaryOpParm (ParmCallDeclExpr (CallExprDecl "foo" [ParmCallDeclIdent "y"]))) Eq (BinaryOpParm (ParmCallDeclLiteral (IntLiteral 0)))) (CompoundStmt [RetStmt (BinaryOpConst (ParmCallDeclLiteral (IntLiteral 0)))]) Nothing]),RetStmt (BinaryOpConst (ParmCallDeclIdent "y"))]) (Just Integer), FunctionDecl "bar" [] (CompoundStmt [CallExpr (CallExprDecl "bar" [ParmCallDeclExpr (CallExprDecl "foo" [ParmCallDeclLiteral (IntLiteral 100)])])]) Nothing]
 -------------------------------------------------------------------------------
 module Ast (
     -- * BNF definition
