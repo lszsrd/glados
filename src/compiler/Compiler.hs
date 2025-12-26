@@ -38,8 +38,8 @@ compile (x: xs) lexer parser = do
                 >> compile xs lexer parser
 
 eval :: [FilePath] -> Lexer a -> Parser a b -> String -> IO ()
-eval files lexer parser error = hPutStrLn stderr error
-    >> case findString error "warning" of
+eval files lexer parser e = hPutStrLn stderr e
+    >> case findString e "warning" of
         Nothing -> exitFailure
         _ -> compile files lexer parser
 
