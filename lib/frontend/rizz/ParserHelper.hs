@@ -32,6 +32,18 @@ expectToken expected message ((token, position) : xs)
     | token == expected = Right((), xs)
     | otherwise         = errorAt position (message ++ " (got " ++ show token ++ ")")
 
+-- Helper for parse AssignOp
+parseAssignOp :: Parser T.AssignOp
+parseAssignOp ((T.Punctuator (T.AssignOp op), _) : rest) = Right (op, rest)
+parseAssignOp ((token, position) : _) = errorAt position ("Expected AssignOp got: " ++ show token)
+parseAssignOp [] = Left "Expected AssignOp"
+
+-- Helper for parse Literal
+parseLiteral :: Parser T.Literal
+parseLiteral ((T.Literal lit, _) : rest) = Right (lit, rest)
+parseLiteral ((token, position) : _) = errorAt position ("Expected Litteral got: " ++ show token)
+parseLiteral [] = Left "Expected Literal"
+
 -- Helper for parse BuiltinType
 parseBuiltinType :: Parser A.BuiltinType
 parseBuiltinType ((T.Keyword T.Bool, _) : rest) = Right (A.Boolean, rest)
@@ -39,7 +51,6 @@ parseBuiltinType ((T.Keyword T.Char, _) : rest) = Right (A.Character, rest)
 parseBuiltinType ((T.Keyword T.Int, _) : rest) = Right (A.Integer, rest)
 parseBuiltinType ((T.Keyword T.Float, _) : rest) = Right (A.SinglePrecision, rest)
 parseBuiltinType ((token, position) : _) = errorAt position ("Expected builtinetype got: " ++ show token)
-parseBuiltinType [] = Left "Unexpected err"
 
 -- Helper for parse Identifier token
 parseIdentifier :: Parser T.Identifier
@@ -51,9 +62,9 @@ parseIdentifier ((token, position) : _) = errorAt position ("Expected identifier
 parsePVDE :: Parser A.ParmVarDeclExpr
 parsePVDE token = do
     (btype, rest1) <- parseBuiltinType token
-    (_, r2)          <- expectToken (T.Punctuator T.Colon) "Expected ':' in parameter" rest1
-    (identifier, r3) <- parseIdentifier r2
-    Right(A.ParmVarDeclExpr btype identifier, r3)
+    (_, rest2)          <- expectToken (T.Punctuator T.Colon) "Expected ':' in parameter" rest1
+    (identifier, rest3) <- parseIdentifier rest2
+    Right(A.ParmVarDeclExpr btype identifier, rest3)
 
 -- Helper for parse list of ParmVarDeclExpr [BuiltinType Identifier]
 parsePVDEList :: Parser [A.ParmVarDeclExpr]
@@ -66,11 +77,53 @@ parsePVDEList tokens = do
             Right(param : params, rest3)
         _ -> Right ([param], rest1)
 
--- TODO DeclAssignStmtLiteral and DeclVarStmt
+-- Helper for parse ParmCallDecl
+parseParmCallDecl :: Parser A.ParmCallDecl
+parseParmCallDecl tokens@((T.Identifier _, _) : (T.Punctuator (T.RBracket T.OpenRBracket), _) : _) = do
+    (call, rest) <- parseCallExprDecl tokens
+    Right (A.ParmCallDeclExpr call, rest)
+parseParmCallDecl tokens@((T.Identifier id, _) : rest) = do
+    Right (A.ParmCallDeclIdent id, rest)
+parseParmCallDecl tokens@((T.Literal li, _) : rest) = do
+    Right (A.ParmCallDeclLiteral li, rest)
+parseParmCallDecl ((token, position) : _) =
+    errorAt position ("Expected literal/ident/call-expr, got: " ++ show token)
+parseParmCallDecl [] = Left "Expected ParmCallDecl"
+
+-- Helper for parse a list of ParmCallDecl
+parseParmCallDeclList :: Parser [A.ParmCallDecl]
+parseParmCallDeclList toks@((T.Punctuator (T.RBracket T.CloseRBracket), _) : _) = Right ([], toks)
+parseParmCallDeclList tokens = do
+    (arg, rest1) <- parseParmCallDecl tokens
+    case rest1 of
+        ((T.Punctuator T.Comma, _) : rest2) -> do
+            (args, rest3) <- parseParmCallDeclList rest2
+            Right (arg : args, rest3)
+        _ -> Right ([arg], rest1)
+
+-- Helper for parse CallExprDecl
+parseCallExprDecl :: Parser A.CallExprDecl
+parseCallExprDecl tokens = do
+    (fname, rest1) <- parseIdentifier tokens
+    (_, rest2) <- expectToken (T.Punctuator (T.RBracket T.OpenRBracket)) "Expected '(' after function name" rest1
+    (parmcldllist, rest3) <- parseParmCallDeclList rest2
+    (_, rest4) <- expectToken (T.Punctuator (T.RBracket T.CloseRBracket)) "Expected ')'" rest3
+    Right (A.CallExprDecl fname parmcldllist, rest4)
+
+-- Helper for parse DeclAssignStmtLiteral
+parseDeclAssignStmtLiteral :: Parser A.DeclStmt
+parseDeclAssignStmtLiteral tokens = do
+    (id, rest1) <- parseIdentifier tokens
+    (ap, rest2) <- parseAssignOp rest1
+    (parmcldl, rest3) <- parseParmCallDecl rest2
+    Right (A.DeclAssignStmtLiteral id ap parmcldl, rest3)
+
+-- TODO ---> DeclVarStmt
 parseDeclStmt :: Parser A.DeclStmt
 parseDeclStmt tokens@(((T.Identifier i), _) : rest1) =
     case rest1 of
         ((T.Punctuator (T.UnaryOp u), _) : rest2) -> Right ((A.DeclAssignStmtUnary (A.UnaryOperatorExpr i u)), rest2)
-        ((token, position) : _) -> errorAt position ("Expected got: " ++ show token)
+        _ -> case parseDeclAssignStmtLiteral rest1 of
+            Right decl -> Right decl
+            Left error -> Left error
 parseDeclStmt ((token, position) : _) = errorAt position ("Expected got: " ++ show token)
- 
