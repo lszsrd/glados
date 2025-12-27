@@ -49,6 +49,8 @@ executable glados-compiler
     ghc-options:        -Wall -O2 -rtsopts
     other-modules:
         Compiler
+        Compilation
+        CompilerBytecode
     build-depends:      base, filepath, format, frontend-rizz, backend
 
 executable glados-vm
