@@ -34,20 +34,14 @@ parseReturnType tokens@((T.Punctuator T.Arrow, _) : rest1) = do
     Right(Just returntype, rest2)
 parseReturnType toks = Right (Nothing, toks)
 
--- TODO take ParmCallDeclExpr (CallExprDecl) int foo = bar(x, y) --> error
 parseVarDecl :: Parser A.Decl
 parseVarDecl tokens = do
     (typ, rest1) <- H.parseBuiltinType tokens
     (name, rest2) <- H.parseIdentifier rest1
-    case rest2 of
-        (T.Punctuator (T.AssignOp op), _) : rest3 ->
-            case rest3 of
-                (T.Literal x, _) : (T.Punctuator T.Semicolon, _) : rest4 ->
-                    Right (A.VarDecl (A.VarDeclStmt typ name op (A.ParmCallDeclLiteral x)), rest4)
-                (T.Identifier id, _) : (T.Punctuator T.Semicolon, _) : rest4 ->
-                    Right (A.VarDecl (A.VarDeclStmt typ name op (A.ParmCallDeclIdent id)), rest4)
-                _ -> Left "Expected expression after semicollon"
-        _ -> Left "Expected '=' after variable declaration"
+    (op, rest3) <- H.parseAssignOp rest2
+    (value, rest4) <- H.parseParmCallDecl rest3
+    (_, rest5) <- H.expectToken (T.Punctuator T.Semicolon) "expected ';'" rest4
+    Right (A.VarDecl (A.VarDeclStmt typ name op value), rest5)
 
 parseFunctionDecl :: Parser A.Decl
 parseFunctionDecl tokens = do

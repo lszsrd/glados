@@ -11,6 +11,8 @@ module ParserHelper (
     parseIdentifier,
     parsePVDE,
     parsePVDEList,
+    parseAssignOp,
+    parseParmCallDecl,
     errorAt,
     expectToken
 ) where
