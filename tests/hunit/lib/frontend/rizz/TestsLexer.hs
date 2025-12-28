@@ -45,20 +45,21 @@ testsLexer = TestList                   [
     lexerTest1, lexerTest2, lexerTest3
     , lexerTest4, lexerTest5, lexerTest6
     , lexerTest7, lexerTest8, lexerTest9
-    , lexerTest10, lexerTest11
+    , lexerTest10, lexerTest11, lexerTest12
                                         ]
 
 lexerTest1 = TestCase (assertEqual "lexer \"\"" (Right []) (lexer ""))
 lexerTest2 = TestCase (assertEqual "lexer \"if (y == 0) {}\"" (Right [(Keyword If,(1,1)),(Punctuator (RBracket OpenRBracket),(1,4)),(Identifier "y",(1,5)),(Punctuator (BinaryOp Eq),(1,7)),(Literal (IntLiteral 0),(1,10)),(Punctuator (RBracket CloseRBracket),(1,11)),(Punctuator (CBracket OpenCBracket),(1,13)),(Punctuator (CBracket CloseCBracket),(1,14))]) (lexer "if (y == 0) {}"))
 lexerTest3 = TestCase (assertEqual "lexer \"if /**/ (\"" (Right [(Keyword If,(1,1)),(Punctuator (RBracket OpenRBracket),(1,9))]) (lexer "if /**/ ("))
-lexerTest4 = TestCase (assertEqual "lexer \"\n/\"" (Right []) (lexer "\n"))
-lexerTest5 = TestCase (assertEqual "lexer \"/\"" (Right [(Punctuator (BinaryOp Div),(1,1))]) (lexer "/"))
-lexerTest6 = TestCase (assertEqual "lexer \"Int   \nx\"" (Right [(Keyword Int,(1,1)),(Identifier "x",(2,1))]) (lexer "Int   \nx"))
-lexerTest7 = TestCase (assertEqual "lexer \"//\n//x\"" (Right []) (lexer "//\n//\n"))
-lexerTest8 = TestCase (assertEqual "lexer \"if /*\"" (Left "1:6: \ESC[1;31merror\ESC[0m: unterminated comment block, missing '\\*'\n    1 | if /*\n      |      \ESC[1;32m^~ here\ESC[0m") (lexer "if /*"))
-lexerTest9 = TestCase (assertEqual "lexer \"x @\"" (Left "1:3: \ESC[1;31merror\ESC[0m: unexpected character '@'\n    1 | x @\n      |   \ESC[1;32m^ here\ESC[0m") (lexer "x @"))
-lexerTest10 = TestCase (assertEqual "lexer \"/**/&\"" (Left "1:5: \ESC[1;31merror\ESC[0m: unexpected character '&'\n    1 | /**/&\n      |     \ESC[1;32m^ here\ESC[0m") (lexer "/**/&"))
-lexerTest11 = TestCase (assertEqual "lexer \"//\n&\"" (Left "2:1: \ESC[1;31merror\ESC[0m: unexpected character '&'\n    2 | &\n      | \ESC[1;32m^ here\ESC[0m") (lexer "//\n&"))
+lexerTest4 = TestCase (assertEqual "lexer \"fn      foo(Int: x, Int: y) -> Int\"" (Right [(Keyword Fn,(1,1)),(Identifier "foo",(1,9)),(Punctuator (RBracket OpenRBracket),(1,12)),(Keyword Int,(1,13)),(Punctuator Colon,(1,16)),(Identifier "x",(1,18)),(Punctuator Comma,(1,19)),(Keyword Int,(1,21)),(Punctuator Colon,(1,24)),(Identifier "y",(1,26)),(Punctuator (RBracket CloseRBracket),(1,27)),(Punctuator Arrow,(1,29)),(Keyword Int,(1,32))]) (lexer "fn      foo(Int: x, Int: y) -> Int"))
+lexerTest5 = TestCase (assertEqual "lexer \"\n/\"" (Right []) (lexer "\n"))
+lexerTest6 = TestCase (assertEqual "lexer \"/\"" (Right [(Punctuator (BinaryOp Div),(1,1))]) (lexer "/"))
+lexerTest7 = TestCase (assertEqual "lexer \"Int   \nx\"" (Right [(Keyword Int,(1,1)),(Identifier "x",(2,1))]) (lexer "Int   \nx"))
+lexerTest8 = TestCase (assertEqual "lexer \"//\n//x\"" (Right []) (lexer "//\n//\n"))
+lexerTest9 = TestCase (assertEqual "lexer \"if /*\"" (Left "1:6: \ESC[1;31merror\ESC[0m: unterminated comment block, missing '\\*'\n    1 | if /*\n      |      \ESC[1;32m^~ here\ESC[0m") (lexer "if /*"))
+lexerTest10 = TestCase (assertEqual "lexer \"x @\"" (Left "1:3: \ESC[1;31merror\ESC[0m: unexpected character '@'\n    1 | x @\n      |   \ESC[1;32m^ here\ESC[0m") (lexer "x @"))
+lexerTest11 = TestCase (assertEqual "lexer \"/**/&\"" (Left "1:5: \ESC[1;31merror\ESC[0m: unexpected character '&'\n    1 | /**/&\n      |     \ESC[1;32m^ here\ESC[0m") (lexer "/**/&"))
+lexerTest12 = TestCase (assertEqual "lexer \"//\n&\"" (Left "2:1: \ESC[1;31merror\ESC[0m: unexpected character '&'\n    2 | &\n      | \ESC[1;32m^ here\ESC[0m") (lexer "//\n&"))
 
 testsParseBooleanConstant = TestList    [
     parseBooleanConstantTest1, parseBooleanConstantTest2, parseBooleanConstantTest3

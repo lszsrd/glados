@@ -2,10 +2,10 @@
 -- EPITECH PROJECT, 2025
 -- Generic Language And Data Operand Syntax
 -- File description:
--- src/compiler/CompilerBytecode.hs
+-- lib/backend/rizz/Bytecode.hs
 -}
 
-module CompilerBytecode (
+module Bytecode (
     compileDecl,
     compileFunctionDecl
 ) where
@@ -13,12 +13,11 @@ module CompilerBytecode (
 import Ast
 import Tokens
 
-
 -- Convert a  Decl into bytecode, only FunctionDecl is handled
 -- other decls return an empty string
-compileDecl :: Decl -> String
-compileDecl (FunctionDecl name params body _) =
-    compileFunctionDecl name params body
+compileDecl :: [Decl] -> String
+compileDecl ((FunctionDecl name params body _): x) =
+    compileFunctionDecl name params body >> compileDecl x
 compileDecl _ = ""
 
 -- Create a function header, compile each statement in the body and close the func

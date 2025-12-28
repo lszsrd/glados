@@ -14,14 +14,12 @@ category:               Language
 build-type:             Simple
 extra-doc-files:        docs/CONTRIBUTING.md, docs/CODE_OF_CONDUCT.md
 
-library backend
+library backend-rizz
     default-language:   Haskell2010
-    hs-source-dirs:     lib/backend/types, lib/backend
+    hs-source-dirs:     lib/backend/rizz
     exposed-modules:
-        Stack
-        Instructions
-        Generator
-    build-depends:      base
+        Bytecode
+    build-depends:      base, frontend-rizz
 
 library frontend-rizz
     default-language:   Haskell2010
@@ -48,17 +46,16 @@ executable glados-compiler
     hs-source-dirs:     src/compiler
     ghc-options:        -Wall -O2 -rtsopts
     other-modules:
+        Arguments
         Compiler
-        Compilation
-        CompilerBytecode
-    build-depends:      base, filepath, format, frontend-rizz, backend
+    build-depends:      base, filepath, format, frontend-rizz, backend-rizz
 
 executable glados-vm
     default-language:   Haskell2010
     main-is:            Main.hs
     hs-source-dirs:     src/vm
     ghc-options:        -Wall -O2 -rtsopts
-    build-depends:      base, frontend-rizz, backend
+    build-depends:      base, frontend-rizz, backend-rizz
 
 test-suite unit_tests
     default-language:   Haskell2010

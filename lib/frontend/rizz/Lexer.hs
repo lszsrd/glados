@@ -24,6 +24,7 @@ module Lexer (
     -- * Tokens parsing
     , parseBooleanConstant
     , parseKeyword
+    , hParseKeyword
     , parseLiteral
     , parsePunctuator
 
@@ -120,9 +121,10 @@ parseKeyword _ = Nothing
 
 -- | Takes a (@'Token'@, @'Data.Int'@, @'Stream'@) as parameter and returns a __Maybe__ (@'Token'@, @'Data.Int'@, @'Stream'@) if the cut stream starts with a space character.
 --
--- @'parseKeyword'@'s helper function that checks if the very next character after the token is a space.
+-- @'parseKeyword'@'s helper function that checks if the very next character after the token is a space (to properly create a @'Token.Keyword'@ and not an @'Identifier'@) or a @'Colon'@ in case of function's parameter type.
 hParseKeyword :: (Token, Int, Stream) -> Maybe (Token, Int, Stream)
 hParseKeyword (token, tokSize, []) = Just (token, tokSize, [])
+hParseKeyword (token, tokSize, stream@(':': x)) = Just (token, tokSize, stream)
 hParseKeyword (token, tokSize, stream@(x: _))
     | isSpace x = Just (token, tokSize, stream)
     | otherwise = Nothing
