@@ -13,6 +13,9 @@ module ParserHelper (
     parsePVDEList,
     parseAssignOp,
     parseParmCallDecl,
+    parseCallExprDecl,
+    parseVarDeclStmt,
+    parseDeclStmt,
     errorAt,
     expectToken
 ) where
@@ -120,12 +123,19 @@ parseDeclAssignStmtLiteral tokens = do
     (parmcldl, rest3) <- parseParmCallDecl rest2
     Right (A.DeclAssignStmtLiteral id ap parmcldl, rest3)
 
--- TODO ---> DeclVarStmt
+-- Helper for parse VarDeclStmt (Type name = value)
+parseVarDeclStmt :: Parser A.VarDeclStmt
+parseVarDeclStmt tokens = do
+    (typ, rest1) <- parseBuiltinType tokens
+    (_, rest2) <- expectToken (T.Punctuator T.Colon) "Expected ':' after type" rest1
+    (name, rest3) <- parseIdentifier rest2
+    (op, rest4) <- parseAssignOp rest3
+    (value, rest5) <- parseParmCallDecl rest4
+    Right (A.VarDeclStmt typ name op value, rest5)
+
 parseDeclStmt :: Parser A.DeclStmt
 parseDeclStmt tokens@(((T.Identifier i), _) : rest1) =
     case rest1 of
         ((T.Punctuator (T.UnaryOp u), _) : rest2) -> Right ((A.DeclAssignStmtUnary (A.UnaryOperatorExpr i u)), rest2)
-        _ -> case parseDeclAssignStmtLiteral rest1 of
-            Right decl -> Right decl
-            Left error -> Left error
-parseDeclStmt ((token, position) : _) = errorAt position ("Expected got: " ++ show token)
+        _ -> parseDeclAssignStmtLiteral tokens
+parseDeclStmt ((token, position) : _) = errorAt position ("Expected identifier got: " ++ show token)
