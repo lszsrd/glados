@@ -1,3 +1,14 @@
+fn feur(Int: a, Int: b) -> Int
+{
+    fn kk(Int: z)-> Int
+    {
+        Int oiiai = z * 12;
+        ret oiiai;
+    }
+
+    ret kk(a);
+}
+
 // divide two integers
 fn      foo(Int: x, Int: y) -> Int
 {

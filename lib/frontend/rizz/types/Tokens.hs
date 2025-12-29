@@ -257,7 +257,7 @@ data Punctuator
     | Colon
     -- ^ standalone colon @'Punctuator'@, used to specify the type of an @'Identifier'@ and expressed in rizz code as @\`:\`@.
     | Semicolon
-    -- ^ standalone semicolon @'Punctuator'@, used to specify the end of a statement and expressed in rizz code as @\`:\`@.
+    -- ^ standalone semicolon @'Punctuator'@, used to specify the end of a statement and expressed in rizz code as @\`;\`@.
     | Comma
     -- ^ standalone comma @'Punctuator'@, used to space functions' arguments and expressed in rizz code as @\`,\`@.
     | AssignOp AssignOp
