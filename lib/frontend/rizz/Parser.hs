@@ -43,9 +43,8 @@ parseStmt tokens@((tok, pos) : _) = case tok of
                 parseCallExpr tokens
             _ -> parseDeclStmtExpr tokens
     T.Keyword T.Foreach -> parseForeach tokens
+    T.Keyword T.While   -> parseWhile tokens
     -- TODO T.Keyword ret/if/while/for etc
-
-
     T.Keyword T.Bool    -> parseDeclVarExpr tokens
     T.Keyword T.Char    -> parseDeclVarExpr tokens
     T.Keyword T.Int     -> parseDeclVarExpr tokens
@@ -81,6 +80,16 @@ parseForeach tokens = do
     (_, rest6) <- H.expectToken (T.Punctuator (T.RBracket T.CloseRBracket)) "expected ')'" rest5
     (body, rest7) <- parseCompoundStmt rest6
     Right (A.ForeachStmt container iterator body, rest7)
+
+--TODO: add BinaryOPexpr after
+parseWhile :: Parser A.Stmt
+parseWhile tokens = do
+    (_, rest1) <- H.expectToken (T.Keyword T.While) "Expected 'while'" tokens
+    (_, rest2) <- H.expectToken (T.Punctuator (T.RBracket T.OpenRBracket)) "Expected '('" rest1
+    (cond, rest3) <- H.parseParmCallDecl rest2
+    (_, rest4) <- H.expectToken (T.Punctuator (T.RBracket T.CloseRBracket)) "Expected ')'" rest3
+    (body, rest5) <- parseCompoundStmt rest4
+    Right (A.WhileStmt (A.BinaryOpConst cond) body, rest5)
 
 parseReturnType :: Parser (Maybe A.BuiltinType)
 parseReturnType tokens@((T.Punctuator T.Arrow, _) : rest1) = do
