@@ -64,4 +64,4 @@ parser tokens =
     case parseDecl tokens of
         Left error -> Left error
         Right (decls, []) -> Right decls
-        Right (_, rest) -> Left "Parser Exception."
+        Right (_, rest) -> Left "0: 0 Parser Exception."

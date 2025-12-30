@@ -65,4 +65,5 @@ test-suite unit_tests
     hs-source-dirs:     tests/hunit, tests/hunit/lib/frontend/rizz
     other-modules:
         TestsLexer
+        TestsParser
     build-depends:      base, HUnit, frontend-rizz

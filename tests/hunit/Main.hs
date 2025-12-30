@@ -11,7 +11,9 @@ import System.Exit (exitSuccess, exitFailure)
 
 import Test.HUnit
 
-import TestsLexer
+import qualified TestsLexer
+import qualified Control.Monad
+import qualified TestsParser
 
 runModuleTests :: String -> String -> Test -> IO ()
 runModuleTests name path tests = do
@@ -19,8 +21,9 @@ runModuleTests name path tests = do
     putStrLn $ "Running unit tests for module \"\ESC[1;35m" ++ name ++ "\ESC[0m\" (" ++ path ++")\n"
     results <- runTestTT $ TestList [tests]
     putStrLn $ "===================================" ++ replicate (length name + length path) '='
-    if failures results > 0 then exitFailure else return ()
+    Control.Monad.when (failures results > 0) exitFailure
 
 main :: IO ()
 main = do
     runModuleTests "Lexer" "frontend/rizz" TestsLexer.tests
+    runModuleTests "Parser" "frontend/rizz" TestsParser.tests

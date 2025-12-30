@@ -18,11 +18,13 @@ type Parser a = [SingleToken] -> Either String (a, [SingleToken])
 
 -- TODO; just a placeHolder 
 parseBinaryOpExpr :: Parser A.BinaryOpExpr
-parseBinaryOpExpr tokens = Right (A.BinaryOpConst (A.ParmCallDeclLiteral (T.IntLiteral 84)), tokens)
+parseBinaryOpExpr tokens =
+    Right (A.BinaryOpConst (A.ParmCallDeclLiteral (T.IntLiteral 84)), tokens)
 
 
 parseStmtList :: Parser [A.Stmt]
-parseStmtList tokens@((T.Punctuator (T.CBracket T.CloseCBracket), _) : _) = Right ([], tokens)
+parseStmtList tokens@((T.Punctuator (T.CBracket T.CloseCBracket), _) : _)
+    = Right ([], tokens)
 parseStmtList tokens = do
     (stmt, rest1) <- parseStmt tokens
     (stmts, rest2) <- parseStmtList rest1
@@ -30,9 +32,11 @@ parseStmtList tokens = do
 
 parseCompoundStmt :: Parser A.CompoundStmt
 parseCompoundStmt tokens = do
-    (_, rest1) <- H.expectToken (T.Punctuator (T.CBracket T.OpenCBracket)) "expected '{'" tokens
+    (_, rest1) <- H.expectToken (T.Punctuator (T.CBracket T.OpenCBracket))
+        "expected '{'" tokens
     (stmts, rest2) <- parseStmtList rest1
-    (_, rest3) <- H.expectToken (T.Punctuator (T.CBracket T.CloseCBracket)) "expected '}'" rest2
+    (_, rest3) <- H.expectToken (T.Punctuator (T.CBracket T.CloseCBracket))
+        "expected '}'" rest2
     Right (A.CompoundStmt stmts, rest3)
 
 parseStmt :: Parser A.Stmt
@@ -51,8 +55,8 @@ parseStmt tokens@((tok, pos) : _) = case tok of
     T.Keyword T.Char    -> parseDeclVarExpr tokens
     T.Keyword T.Int     -> parseDeclVarExpr tokens
     T.Keyword T.Float   -> parseDeclVarExpr tokens
-    _ -> Left $ "Unexpected token in stmt at " ++ show pos
-parseStmt [] = Left "Unexpected end of input in statement"
+    _ -> H.errorAt pos "Unexpected token in stmt at "
+parseStmt [] = H.errorAt (0, 0) "Unexpected end of input in statement"
 
 parseCallExpr :: Parser A.Stmt
 parseCallExpr tokens = do
@@ -80,9 +84,11 @@ parseRet tokens = do
 
 parseIf :: Parser A.Stmt
 parseIf tokens = do
-    (_, condNRest)  <- H.expectToken (T.Punctuator (T.RBracket T.OpenRBracket)) "expected '('" tokens
+    (_, condNRest)  <- H.expectToken (T.Punctuator (T.RBracket T.OpenRBracket))
+        "expected '('" tokens
     (cond, rest)    <- parseBinaryOpExpr condNRest
-    (_, bdyNrest)   <- H.expectToken (T.Punctuator (T.RBracket T.CloseRBracket)) "expected ')'" rest
+    (_, bdyNrest)   <- H.expectToken (T.Punctuator (T.RBracket T.CloseRBracket))
+        "expected ')'" rest
     (bdy, rest1)    <- parseCompoundStmt bdyNrest
     case rest1 of
         (T.Keyword T.Else,_) : elseBdyNrest -> do
