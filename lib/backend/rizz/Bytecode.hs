@@ -17,7 +17,7 @@ import Tokens
 -- other decls return an empty string
 compileDecl :: [Decl] -> String
 compileDecl ((FunctionDecl name params body _): x) =
-    compileFunctionDecl name params body >> compileDecl x
+    compileFunctionDecl name params body ++ compileDecl x
 compileDecl _ = ""
 
 -- Create a function header, compile each statement in the body and close the func

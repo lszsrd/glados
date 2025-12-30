@@ -47,9 +47,9 @@ printUsage :: String -> String -> IO ()
 printUsage x y = putStrLn $
     "GLaDOS project (compiler part) - Translate one or more source"
     ++ " (code) file(s) to custom bytecode file(s).\n\n"
-    ++ "\ESC[1;33mUSAGE\ESC[0m: " ++ y ++ " [--dump-ast] <source files (" ++ x
-    ++ ")>\n\nGenerated files are built from source file's path and a custom "
-    ++ "\".bc\" extension is appened.\n\nByte code files are NOT object files "
-    ++ "which mean that they do not link to any object linker (i.e. ld on "
-    ++ "linux).\nTo use compiled files, you need to pass them to the GLaDOS"
-    ++ " interpreter (glados-interpreter binary)."
+    ++ "\ESC[1;33mUSAGE\ESC[0m: " ++ y ++ " [--dump-ast] [--dump-tokens] <sour"
+    ++ "ce files (" ++ x ++ ")>\n\nGenerated files are built from source file'"
+    ++ "s path and a custom \".bc\" extension is appened.\n\nByte code files "
+    ++ "are NOT object files which mean that they do not link to any object "
+    ++ "linker (i.e. ld on linux).\nTo use compiled files, you need to pass "
+    ++ "them to the GLaDOS interpreter (glados-interpreter binary)."
