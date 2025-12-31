@@ -83,6 +83,26 @@ compileStmt (IfStmt cond (CompoundStmt body) _) fname =
     concatMap (`compileStmt` fname) body ++
     "LABEL endif\n"
 
+-- While loop
+compileStmt (WhileStmt cond (CompoundStmt body)) fname =
+    "LABEL while_start\n" ++
+    compileBinaryOpExpr cond fname ++
+    "JMP_IF_FALSE while_end\n" ++
+    concatMap (`compileStmt` fname) body ++
+    "JMP while_start\n" ++
+    "LABEL while_end\n"
+
+-- For loop
+compileStmt (ForStmt init cond step (CompoundStmt body)) fname =
+    compileForInit init fname ++
+    "LABEL for_start\n" ++
+    compileForCond cond fname ++
+    concatMap (`compileStmt` fname) body ++
+    compileForStep step fname ++
+    "JMP for_start\n" ++
+    "LABEL for_end\n"
+
+
 -- Fallback if statement unknown (like for/while )
 compileStmt _ _ = "NOP\n"
 
@@ -121,6 +141,27 @@ compileParmCall (ParmCallDeclIdent ident) =
 compileParmCall (ParmCallDeclExpr (CallExprDecl fname args)) =
     concatMap compileParmCall args ++
     "CALL " ++ fname ++ " " ++ show (length args) ++ "\n"
+
+-- While / For (Work in progress)
+
+compileForInit :: Maybe VarDeclStmt -> Identifier -> String
+compileForInit Nothing _ = ""
+compileForInit (Just vds) fname =
+    compileStmt (DeclVarExpr vds) fname
+
+
+compileForCond :: Maybe BinaryOpExpr -> Identifier -> String
+compileForCond Nothing _ = ""
+compileForCond (Just cond) fname =
+    compileBinaryOpExpr cond fname ++
+    "JMP_IF_FALSE for_end\n"
+
+
+compileForStep :: Maybe DeclStmt -> Identifier -> String
+compileForStep Nothing _ = ""
+compileForStep (Just ds) fname =
+    compileStmt (DeclStmt ds) fname
+
 
 -- Literals
 
