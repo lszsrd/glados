@@ -48,9 +48,11 @@ run files = do
     x <- mapM readFile (rmdups files)
     case parseFunctions (lines (concat x)) of
         Left e -> hPutStrLn stderr e >> exitFailure
-        Right symtab -> case call "baz" [] symtab symtab of
+        Right symtab -> case call "bar" [] symtab symtab of
             Left e -> hPutStrLn stderr e >> exitFailure
-            Right _ -> exitSuccess
+            Right y -> case y of
+                Nothing -> exitSuccess
+                Just z -> print z
 
 main :: IO ()
 main = do

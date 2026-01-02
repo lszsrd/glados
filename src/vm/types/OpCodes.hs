@@ -26,6 +26,7 @@ data Operand
     deriving (
         Show
         , Eq
+        , Ord
     )
 
 data OpCode
