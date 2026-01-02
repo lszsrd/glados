@@ -1,5 +1,6 @@
 FUNC foo 1
 PUSH_INT 42
+
 STORE y
 LOAD x
 PUSH_INT 0

@@ -23,7 +23,7 @@ import Text.Read (readMaybe)
 
 import Format (warning, fError)
 
-import Arguments (Options (..))
+import Options (Options (..))
 
 type Lexer a = String -> Either String [(a, (Int, Int))]
 type Parser a b = [(a, (Int, Int))] -> Either String [b]
