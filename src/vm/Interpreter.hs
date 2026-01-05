@@ -43,9 +43,7 @@ exec symtab bOps (Load x: ops) stack env = case getEnv x env of
     Just y -> exec symtab bOps ops (stack ++ [y]) env
 exec symtab bOps (Store x: ops) stack env = case unsnoc stack of
     Nothing -> Left "STORE: empty stack"
-    Just (y, z) -> case getEnv x env of
-        Nothing -> exec symtab bOps ops y (env ++ [(x, z)])
-        Just _ -> exec symtab bOps ops y ((filter (/= (x, z)) env) ++ [(x, z)])
+    Just (y, z) -> exec symtab bOps ops y $ pushEnv env (x, z)
 exec symtab bOps (PushBool x: ops) stack env = exec symtab bOps ops (stack ++ [x]) env
 exec symtab bOps (PushChar x: ops) stack env = exec symtab bOps ops (stack ++ [x]) env
 exec symtab bOps (PushInt x: ops) stack env = exec symtab bOps ops (stack ++ [x]) env
@@ -57,7 +55,7 @@ exec symtab bOps (Jump x: _) stack env = case jumpTo x bOps of
     Just opcodes -> exec symtab bOps opcodes stack env
 exec _ _ (JumpFalse _: _) [] _ = Left "JMP_IF_FALSE: empty stack"
 exec symtab bOps (JumpFalse x: ops) stack env = case last stack of
-    Bool y -> if y == False
+    Bool y -> if not y
         then case jumpTo x bOps of
             Nothing -> Left ("JMP_IF_FALSE: jump to undeclared label: " ++ x)
             Just opcodes -> exec symtab bOps opcodes (init stack) env
@@ -65,7 +63,7 @@ exec symtab bOps (JumpFalse x: ops) stack env = case last stack of
     _ -> Left "JMP_IF_FALSE: non-boolean comparison"
 exec _ _ (JumpTrue _: _) [] _ = Left "JMP_IF_TRUE: empty stack"
 exec symtab bOps (JumpTrue x: ops) stack env = case last stack of
-    Bool y -> if y == True
+    Bool y -> if y
         then case jumpTo x bOps of
             Nothing -> Left ("JMP_IF_TRUE: jump to undeclared label: " ++ x)
             Just opcodes -> exec symtab bOps opcodes (init stack) env
@@ -157,6 +155,12 @@ getEnv x ((y, ys): z)
     | x == y = Just ys
     | otherwise = getEnv x z
 
+pushEnv :: Env -> (String, Operand) -> Env
+pushEnv [] x = [x]
+pushEnv env (x, y)
+    | not $ x `elem` map fst env = env ++ [(x, y)]
+    | otherwise = map (\(x', y') -> if x' == x then (x', y) else (x', y')) env
+
 jumpTo :: String -> [OpCode] -> Maybe [OpCode]
 jumpTo _ [] = Nothing
 jumpTo x (Label y: z)
@@ -168,4 +172,4 @@ pop2 x = case unsnoc x of
     Nothing -> Left "not enough operands"
     Just (y, op1) -> case unsnoc y of
         Nothing -> Left "missing one operand"
-        Just (z, op2) -> Right (op1, op2, z)
+        Just (z, op2) -> Right (op2, op1, z)
