@@ -58,14 +58,14 @@ fixMe = " (fixez votre manière d'écrire une erreur parce que y'en a 3 "
     ++ "différentes là, rappel => LIGNE: COLONNE MESSAGE)"
 
 formatParserError :: String -> String -> String
-formatParserError content string =
-    case break (== ':') string of
-        (_, x) -> case break (== ':') (drop 1 x) of
-            (_, y) -> case readMaybe (takeWhile (/= ':') string) of
-                Nothing -> string ++ fixMe
-                Just l -> case readMaybe (takeWhile (/= ':') (drop 1 x)) of
-                    Nothing -> string ++ fixMe
-                    Just c -> fError content (l, c) 1 $ drop 2 y
+formatParserError content string = case words string of
+    [] -> string ++ fixMe
+    (x: xs) -> case break (== ':') x of
+        (y, z) -> case readMaybe y :: Maybe Int of
+            Just l -> case readMaybe $ drop 1 z :: Maybe Int of
+                Just c -> fError content (l, c) 1 $ unwords xs
+                _ -> string ++ fixMe
+            _ -> string ++ fixMe
 
 cestpascompletementoverkilljustepourafficherunmessagederreur :: String
     -> String -> String

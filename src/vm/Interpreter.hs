@@ -131,17 +131,17 @@ exec symtab bOps (NEq: ops) stack env = case pop2 stack of
 exec symtab bOps (And: ops) stack env = case pop2 stack of
     Left e -> Left ("AND: " ++ e)
     Right (Bool x, Bool y, z)
-        -> exec symtab bOps ops (z ++ [Bool (and [x, y])]) env
+        -> exec symtab bOps ops (z ++ [Bool (x && y)]) env
     Right _ -> Left "AND: non-boolean comparison"
 exec symtab bOps (Or: ops) stack env = case pop2 stack of
     Left e -> Left ("OR: " ++ e)
     Right (Bool x, Bool y, z)
-        -> exec symtab bOps ops (z ++ [Bool (or [x, y])]) env
+        -> exec symtab bOps ops (z ++ [Bool (x || y)]) env
     Right _ -> Left "OR: non-boolean comparison"
-exec _ _ (Ret: _) [] _ = Right $ Nothing
-exec _ _ (Ret: _) stack _ = Right $ (Just (last stack))
+exec _ _ (Ret: _) [] _ = Right Nothing
+exec _ _ (Ret: _) stack _ = Right $ Just (last stack)
 exec _ _ x _ _
-    | null x = Right $ Nothing
+    | null x = Right Nothing
     | otherwise = Left ("unknwon instruction: " ++ show (head x))
 
 -- Big L that we cannot use base-4.19 or newer
@@ -158,7 +158,7 @@ getEnv x ((y, ys): z)
 pushEnv :: Env -> (String, Operand) -> Env
 pushEnv [] x = [x]
 pushEnv env (x, y)
-    | not $ x `elem` map fst env = env ++ [(x, y)]
+    | x `notElem` map fst env = env ++ [(x, y)]
     | otherwise = map (\(x', y') -> if x' == x then (x', y) else (x', y')) env
 
 jumpTo :: String -> [OpCode] -> Maybe [OpCode]
