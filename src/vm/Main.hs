@@ -10,7 +10,7 @@ module Main where
 import System.Environment (getProgName, getArgs)
 import System.IO (stderr, hPutStrLn)
 import System.FilePath (takeExtension)
-import System.Exit (exitFailure)
+import System.Exit (exitFailure, exitSuccess)
 
 import Data.List (isPrefixOf, group, sort)
 
@@ -50,7 +50,9 @@ interpret files = do
         Left e -> hPutStrLn stderr e >> exitFailure
         Right symtab -> case call "baz" [] symtab symtab [] of
             Left e -> hPutStrLn stderr e >> exitFailure
-            Right y -> print y
+            Right y -> case y of
+                Nothing -> exitSuccess
+                Just z -> print $ show z
 
 main :: IO ()
 main = do

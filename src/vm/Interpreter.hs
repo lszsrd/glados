@@ -14,6 +14,8 @@ module Interpreter (
     , pop2
 ) where
 
+import Foreign (fromBool)
+
 import OpCodes (Operand (..), OpCode (..))
 import Function (Function)
 import Stack (Stack)
@@ -112,22 +114,58 @@ exec symtab bOps (Mod: ops) stack env = case pop2 stack of
     Right _ -> Left "MOD: non-numeric operands"
 exec symtab bOps (Lt: ops) stack env = case pop2 stack of
     Left e -> Left ("LT: " ++ e)
-    Right (x, y, z) -> exec symtab bOps ops (z ++ [Bool (x < y)]) env
+    Right (Integer x, Float y, z) -> exec symtab bOps ops (z ++ [Bool (fromIntegral x < y)]) env
+    Right (Float x, Integer y, z) -> exec symtab bOps ops (z ++ [Bool (x < fromIntegral y)]) env
+    Right (Bool x, Integer y, z) -> exec symtab bOps ops (z ++ [Bool (fromBool x < y)]) env
+    Right (Integer x, Bool y, z) -> exec symtab bOps ops (z ++ [Bool (x < fromBool y)]) env
+    Right (Bool x, Float y, z) -> exec symtab bOps ops (z ++ [Bool (fromBool x < y)]) env
+    Right (Float x, Bool y, z) -> exec symtab bOps ops (z ++ [Bool (x < fromBool y)]) env
+    Right (x, y, z) -> exec symtab bOps ops (z ++ [Bool ( x < y)]) env
 exec symtab bOps (Gt: ops) stack env = case pop2 stack of
     Left e -> Left ("GT: " ++ e)
-    Right (x, y, z) -> exec symtab bOps ops (z ++ [Bool (x > y)]) env
+    Right (Integer x, Float y, z) -> exec symtab bOps ops (z ++ [Bool (fromIntegral x > y)]) env
+    Right (Float x, Integer y, z) -> exec symtab bOps ops (z ++ [Bool (x > fromIntegral y)]) env
+    Right (Bool x, Integer y, z) -> exec symtab bOps ops (z ++ [Bool (fromBool x > y)]) env
+    Right (Integer x, Bool y, z) -> exec symtab bOps ops (z ++ [Bool (x > fromBool y)]) env
+    Right (Bool x, Float y, z) -> exec symtab bOps ops (z ++ [Bool (fromBool x > y)]) env
+    Right (Float x, Bool y, z) -> exec symtab bOps ops (z ++ [Bool (x > fromBool y)]) env
+    Right (x, y, z) -> exec symtab bOps ops (z ++ [Bool ( x > y)]) env
 exec symtab bOps (LEq: ops) stack env = case pop2 stack of
     Left e -> Left ("LT_EQ: " ++ e)
-    Right (x, y, z) -> exec symtab bOps ops (z ++ [Bool (x <= y)]) env
+    Right (Integer x, Float y, z) -> exec symtab bOps ops (z ++ [Bool (fromIntegral x <= y)]) env
+    Right (Float x, Integer y, z) -> exec symtab bOps ops (z ++ [Bool (x <= fromIntegral y)]) env
+    Right (Bool x, Integer y, z) -> exec symtab bOps ops (z ++ [Bool (fromBool x <= y)]) env
+    Right (Integer x, Bool y, z) -> exec symtab bOps ops (z ++ [Bool (x <= fromBool y)]) env
+    Right (Bool x, Float y, z) -> exec symtab bOps ops (z ++ [Bool (fromBool x <= y)]) env
+    Right (Float x, Bool y, z) -> exec symtab bOps ops (z ++ [Bool (x <= fromBool y)]) env
+    Right (x, y, z) -> exec symtab bOps ops (z ++ [Bool ( x <= y)]) env
 exec symtab bOps (GEq: ops) stack env = case pop2 stack of
     Left e -> Left ("GT_EQ: " ++ e)
-    Right (x, y, z) -> exec symtab bOps ops (z ++ [Bool (x >= y)]) env
+    Right (Integer x, Float y, z) -> exec symtab bOps ops (z ++ [Bool (fromIntegral x >= y)]) env
+    Right (Float x, Integer y, z) -> exec symtab bOps ops (z ++ [Bool (x >= fromIntegral y)]) env
+    Right (Bool x, Integer y, z) -> exec symtab bOps ops (z ++ [Bool (fromBool x >= y)]) env
+    Right (Integer x, Bool y, z) -> exec symtab bOps ops (z ++ [Bool (x >= fromBool y)]) env
+    Right (Bool x, Float y, z) -> exec symtab bOps ops (z ++ [Bool (fromBool x >= y)]) env
+    Right (Float x, Bool y, z) -> exec symtab bOps ops (z ++ [Bool (x >= fromBool y)]) env
+    Right (x, y, z) -> exec symtab bOps ops (z ++ [Bool ( x >= y)]) env
 exec symtab bOps (Eq: ops) stack env = case pop2 stack of
     Left e -> Left ("EQ: " ++ e)
-    Right (x, y, z) -> exec symtab bOps ops (z ++ [Bool (x == y)]) env
+    Right (Integer x, Float y, z) -> exec symtab bOps ops (z ++ [Bool (fromIntegral x == y)]) env
+    Right (Float x, Integer y, z) -> exec symtab bOps ops (z ++ [Bool (x == fromIntegral y)]) env
+    Right (Bool x, Integer y, z) -> exec symtab bOps ops (z ++ [Bool (fromBool x == y)]) env
+    Right (Integer x, Bool y, z) -> exec symtab bOps ops (z ++ [Bool (x == fromBool y)]) env
+    Right (Bool x, Float y, z) -> exec symtab bOps ops (z ++ [Bool (fromBool x == y)]) env
+    Right (Float x, Bool y, z) -> exec symtab bOps ops (z ++ [Bool (x == fromBool y)]) env
+    Right (x, y, z) -> exec symtab bOps ops (z ++ [Bool ( x == y)]) env
 exec symtab bOps (NEq: ops) stack env = case pop2 stack of
     Left e -> Left ("NOT_EQ: " ++ e)
-    Right (x, y, z) -> exec symtab bOps ops (z ++ [Bool (x /= y)]) env
+    Right (Integer x, Float y, z) -> exec symtab bOps ops (z ++ [Bool (fromIntegral x /= y)]) env
+    Right (Float x, Integer y, z) -> exec symtab bOps ops (z ++ [Bool (x /= fromIntegral y)]) env
+    Right (Bool x, Integer y, z) -> exec symtab bOps ops (z ++ [Bool (fromBool x /= y)]) env
+    Right (Integer x, Bool y, z) -> exec symtab bOps ops (z ++ [Bool (x /= fromBool y)]) env
+    Right (Bool x, Float y, z) -> exec symtab bOps ops (z ++ [Bool (fromBool x /= y)]) env
+    Right (Float x, Bool y, z) -> exec symtab bOps ops (z ++ [Bool (x /= fromBool y)]) env
+    Right (x, y, z) -> exec symtab bOps ops (z ++ [Bool ( x /= y)]) env
 exec symtab bOps (And: ops) stack env = case pop2 stack of
     Left e -> Left ("AND: " ++ e)
     Right (Bool x, Bool y, z)
