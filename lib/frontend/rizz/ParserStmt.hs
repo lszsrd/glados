@@ -27,17 +27,21 @@ parseBinaryOpParm tokens =
       (p, rest) <- H.parseParmCallDecl tokens
       Right (A.BinaryOpParm p, rest)
 
--- TODO; just a placeHolder 
 parseBinaryOpExpr :: Parser A.BinaryOpExpr
-parseBinaryOpExpr tokens@(param : opNrest) = do
-    case H.parseBinaryOp opNrest of
+parseBinaryOpExpr tokens@(_ : (T.Punctuator (T.BinaryOp op), _) : rest) = do
+    (parm1, _) <- parseBinaryOpParm tokens
+    (parm2, rest3) <- parseBinaryOpParm rest
+    Right (A.BinaryOpExpr parm1 op parm2, rest3)
+
+parseBinaryOpExpr tokens = do
+    (parm1, rest) <- parseBinaryOpParm tokens
+    case H.parseBinaryOp rest of
+        Left err -> do
+            (const, _) <- H.parseParmCallDecl tokens
+            Right (A.BinaryOpConst const, rest)
         Right (binop, rest2) -> do
-            (parm1, _) <- parseBinaryOpParm tokens
             (parm2, rest3) <- parseBinaryOpParm rest2
             Right (A.BinaryOpExpr parm1 binop parm2, rest3)
-        Left err -> do
-            (const, rest) <- H.parseParmCallDecl tokens
-            Right (A.BinaryOpConst const, rest)
 
 parseStmtList :: Parser [A.Stmt]
 parseStmtList tokens@((T.Punctuator (T.CBracket T.CloseCBracket), _) : _)

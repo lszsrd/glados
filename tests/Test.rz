@@ -16,6 +16,15 @@ fn bar(Int: x) -> Int
         if (foo(y) == 0) {
             ret 10;
         }
+        if (0) {
+            ret 0;
+        }
+        if ((4 > 2) == 0) {
+            ret 1;
+        }
+        if (foo(1)) {
+            ret 12;
+        }
     }
     ret y;
 }
