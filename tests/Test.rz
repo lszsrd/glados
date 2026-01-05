@@ -31,5 +31,7 @@ fn bar(Int: x) -> Int
  
 fn baz()
 {
-    bar(foo(100));
+    while (foo(bar)) {
+        ret bar(foo(100)) * (10 + 4);
+    }
 }

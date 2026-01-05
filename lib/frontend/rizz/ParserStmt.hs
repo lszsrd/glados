@@ -17,22 +17,21 @@ type SingleToken = (T.Token, (Int, Int))
 type Parser a = [SingleToken] -> Either String (a, [SingleToken])
 
 parseBinaryOpParm :: Parser A.BinaryOpParm
-parseBinaryOpParm tokens =
-  case tokens of
+parseBinaryOpParm tokens = case tokens of
     ((T.Punctuator (T.RBracket T.OpenRBracket), _) : rest) -> do
-      (e, rest1) <- parseBinaryOpExpr rest
-      (_, rest2) <- H.expectToken (T.Punctuator (T.RBracket T.CloseRBracket)) "expected ')'" rest1
-      Right (A.BinaryOpParmBOp e, rest2)
+        (e, rest1) <- parseBinaryOpExpr rest
+        (_, rest2) <- H.expectToken
+            (T.Punctuator (T.RBracket T.CloseRBracket)) "expected ')'" rest1
+        Right (A.BinaryOpParmBOp e, rest2)
     _ -> do
-      (p, rest) <- H.parseParmCallDecl tokens
-      Right (A.BinaryOpParm p, rest)
+        (p, rest) <- H.parseParmCallDecl tokens
+        Right (A.BinaryOpParm p, rest)
 
 parseBinaryOpExpr :: Parser A.BinaryOpExpr
 parseBinaryOpExpr tokens@(_ : (T.Punctuator (T.BinaryOp op), _) : rest) = do
     (parm1, _) <- parseBinaryOpParm tokens
     (parm2, rest3) <- parseBinaryOpParm rest
     Right (A.BinaryOpExpr parm1 op parm2, rest3)
-
 parseBinaryOpExpr tokens = do
     (parm1, rest) <- parseBinaryOpParm tokens
     case H.parseBinaryOp rest of
