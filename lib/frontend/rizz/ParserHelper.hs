@@ -16,6 +16,7 @@ module ParserHelper (
     parseCallExprDecl,
     parseVarDeclStmt,
     parseDeclStmt,
+    parseBinaryOp,
     errorAt,
     expectToken
 ) where
@@ -44,6 +45,12 @@ parseAssignOp ((T.Punctuator (T.AssignOp op), _) : rest) = Right (op, rest)
 parseAssignOp ((token, position) : _) = 
     errorAt position ("Expected AssignOp, but got: " ++ show token)
 parseAssignOp [] = errorAt (0,0) "Expected AssignOp"
+
+parseBinaryOp :: Parser T.BinaryOp
+parseBinaryOp ((T.Punctuator (T.BinaryOp op), _) : rest) = Right (op, rest)
+parseBinaryOp ((token, position) : _) = 
+    errorAt position ("Expected BinaryOp, but got: " ++ show token)
+parseBinaryOp [] = errorAt (0, 0) "Expected BinaryOp"
 
 -- Helper for parse Literal
 parseLiteral :: Parser T.Literal

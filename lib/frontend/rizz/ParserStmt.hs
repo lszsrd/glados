@@ -16,11 +16,32 @@ import qualified ParserHelper as H
 type SingleToken = (T.Token, (Int, Int))
 type Parser a = [SingleToken] -> Either String (a, [SingleToken])
 
+parseBinaryOpParm :: Parser A.BinaryOpParm
+parseBinaryOpParm tokens =
+  case tokens of
+    ((T.Punctuator (T.RBracket T.OpenRBracket), _) : rest) -> do
+      (e, rest1) <- parseBinaryOpExpr rest
+      (_, rest2) <- H.expectToken (T.Punctuator (T.RBracket T.CloseRBracket)) "expected ')'" rest1
+      Right (A.BinaryOpParmBOp e, rest2)
+    _ -> do
+      (p, rest) <- H.parseParmCallDecl tokens
+      Right (A.BinaryOpParm p, rest)
+
 -- TODO; just a placeHolder 
 parseBinaryOpExpr :: Parser A.BinaryOpExpr
-parseBinaryOpExpr tokens =
-    Right (A.BinaryOpConst (A.ParmCallDeclLiteral (T.IntLiteral 84)), tokens)
-
+parseBinaryOpExpr tokens@(parm : rest1) =
+    case H.parseBinaryOp rest1 of
+        Right (binop, rest2) ->
+            case parseBinaryOpParm tokens of 
+                Right (parm1, _) ->
+                    case parseBinaryOpParm rest2 of
+                        Right (parm2, rest3) -> Right (A.BinaryOpExpr parm1 binop parm2, rest3)
+                        Left err -> Left err
+                Left err -> Left err
+        Left err ->
+            case H.parseParmCallDecl tokens of
+                Right (const, rest) -> Right (A.BinaryOpConst const, rest)
+                Left err -> Left err
 
 parseStmtList :: Parser [A.Stmt]
 parseStmtList tokens@((T.Punctuator (T.CBracket T.CloseCBracket), _) : _)
