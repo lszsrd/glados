@@ -145,12 +145,10 @@ parseDeclAssignStmtLiteral tokens = do
 parseVarDeclStmt :: Parser A.VarDeclStmt
 parseVarDeclStmt tokens = do
     (typ, rest1) <- parseBuiltinType tokens
-    (_, rest2) <- expectToken (T.Punctuator T.Colon)
-        "Expected ':' after type" rest1
-    (name, rest3) <- parseIdentifier rest2
-    (op, rest4) <- parseAssignOp rest3
-    (value, rest5) <- parseParmCallDecl rest4
-    Right (A.VarDeclStmt typ name op value, rest5)
+    (name, rest2) <- parseIdentifier rest1
+    (op, rest3) <- parseAssignOp rest2
+    (value, rest4) <- parseParmCallDecl rest3
+    Right (A.VarDeclStmt typ name op value, rest4)
 
 parseDeclStmt :: Parser A.DeclStmt
 parseDeclStmt tokens@((T.Identifier i, _) : rest1) =
