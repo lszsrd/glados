@@ -114,10 +114,9 @@ parseIf tokens = do
         _ -> Right (A.IfStmt cond bdy Nothing, rest3)
 
 parseMaybe :: Parser a -> Parser (Maybe a)
-parseMaybe _ ((T.Punctuator T.Semicolon,_):tkns) = Right (Nothing, tkns) 
-parseMaybe f tokens = do
-    (expr, rest) <- f tokens
-    Right (Just expr, rest)
+parseMaybe f tokens = case f tokens of 
+    Right (e, rest) -> Right (Just e, rest)
+    Left e -> Right (Nothing, tokens)
 
 parseFor :: Parser A.Stmt
 parseFor tokens = do
