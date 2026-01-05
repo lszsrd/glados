@@ -29,18 +29,18 @@ parseBinaryOpParm tokens =
 
 -- TODO; just a placeHolder 
 parseBinaryOpExpr :: Parser A.BinaryOpExpr
-parseBinaryOpExpr tokens = do
-    (_, tokens1@(_ : rest1)) <- H.expectToken (T.Punctuator (T.RBracket T.OpenRBracket)) "Expected (" tokens
-    case H.parseBinaryOp rest1 of
+parseBinaryOpExpr tokens@((T.Punctuator (T.RBracket T.OpenRBracket),_): param : opNrest) = do
+    case H.parseBinaryOp opNrest of
         Right (binop, rest2) -> do
-            (parm1, _) <- parseBinaryOpParm tokens1
+            (parm1, _) <- parseBinaryOpParm opNrest
             (parm2, rest3) <- parseBinaryOpParm rest2
-            (_, rest4) <- expectToken (T.Punctuator (T.RBracket T.CloseRBracket)) "Expected ')'" rest3
+            (_, rest4) <- H.expectToken (T.Punctuator (T.RBracket T.CloseRBracket)) "Expected ')'" rest3
             Right (A.BinaryOpExpr parm1 binop parm2, rest4)
         Left err -> do
-            (const, rest) <- H.parseParmCallDecl tokens1
-            (_, rest2) <- expectToken (T.Punctuator (T.RBracket T.CloseRBracket)) "Expected ')'" rest
+            (const, rest) <- H.parseParmCallDecl opNrest
+            (_, rest2) <- H.expectToken (T.Punctuator (T.RBracket T.CloseRBracket)) "Expected ')'" rest
             Right (A.BinaryOpConst const, rest2)
+parseBinaryOpExpr ((t, pos) : _) = H.errorAt pos ("Expected '(', but got " ++ show t)
 
 parseStmtList :: Parser [A.Stmt]
 parseStmtList tokens@((T.Punctuator (T.CBracket T.CloseCBracket), _) : _)
