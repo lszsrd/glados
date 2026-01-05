@@ -22,6 +22,7 @@ data Operand
     | Integer Integer
     | Float Float
     | List [Operand]
+    | Struct [Operand]
 
     deriving (
         Show
@@ -39,6 +40,7 @@ data OpCode
     | PushInt Operand
     | PushFloat Operand
     | Pop
+    | Jump Label
     | JumpFalse Label
     | JumpTrue Label
     | Label Identifier

@@ -9,7 +9,6 @@ module Parser (
     parseFunctions
     , hParseFunctions
     , parseInstructions
-    , parseInstructions
     , hParseInstruction
 ) where
 
@@ -51,6 +50,7 @@ parseInstructions (x: xs) = case parseInstruction (words x) of
 
 parseInstruction :: [String] -> Either String OpCode
 parseInstruction [] = Right Nop
+parseInstruction (('#': _): _) = Right Nop
 parseInstruction ("NOP": x) = case hParseInstruction "NOP" x 0 of
     Left e -> Left e
     Right _ -> Right Nop
@@ -90,6 +90,9 @@ parseInstruction ("PUSH_FLOAT": x) = case hParseInstruction "PUSH_FLOAT" x 1 of
 parseInstruction ("POP": x) = case hParseInstruction "POP" x 0 of
     Left e -> Left e
     Right _ -> Right Pop
+parseInstruction ("JMP": x) = case hParseInstruction "JMP" x 1 of
+    Left e -> Left e
+    Right y -> Right $ Jump (head y)
 parseInstruction ("JMP_IF_FALSE": x) = case hParseInstruction "JMP_IF_FALSE" x 1 of
     Left e -> Left e
     Right y -> Right $ JumpFalse (head y)

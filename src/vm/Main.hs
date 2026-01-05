@@ -10,7 +10,7 @@ module Main where
 import System.Environment (getProgName, getArgs)
 import System.IO (stderr, hPutStrLn)
 import System.FilePath (takeExtension)
-import System.Exit (exitSuccess, exitFailure)
+import System.Exit (exitFailure)
 
 import Data.List (isPrefixOf, group, sort)
 
@@ -43,16 +43,14 @@ printUsage x = putStrLn $
     "GLaDOS project (vm part) - Execute pre-compiled byte code.\n\n"
     ++ "\ESC[1;33mUSAGE\ESC[0m: " ++ x ++ " <compiled files (.bc)>"
 
-run :: [FilePath] -> IO ()
-run files = do
-    x <- mapM readFile (rmdups files)
+interpret :: [FilePath] -> IO ()
+interpret files = do
+    x <- mapM readFile files 
     case parseFunctions (lines (concat x)) of
         Left e -> hPutStrLn stderr e >> exitFailure
-        Right symtab -> case call "bar" [] symtab symtab of
+        Right symtab -> case call "baz" [] symtab symtab [] of
             Left e -> hPutStrLn stderr e >> exitFailure
-            Right y -> case y of
-                Nothing -> exitSuccess
-                Just z -> print z
+            Right y -> print y
 
 main :: IO ()
 main = do
@@ -62,4 +60,4 @@ main = do
         Left e -> if "USAGE" `isPrefixOf` e
             then printUsage progName
             else hPutStrLn stderr (progName ++ e) >> exitFailure
-        Right files -> run files
+        Right files -> interpret $ rmdups files
