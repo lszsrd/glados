@@ -29,19 +29,18 @@ parseBinaryOpParm tokens =
 
 -- TODO; just a placeHolder 
 parseBinaryOpExpr :: Parser A.BinaryOpExpr
-parseBinaryOpExpr tokens@(parm : rest1) =
+parseBinaryOpExpr tokens = do
+    (_, tokens1@(_ : rest1)) <- H.expectToken (T.Punctuator (T.RBracket T.OpenRBracket)) "Expected (" tokens
     case H.parseBinaryOp rest1 of
-        Right (binop, rest2) ->
-            case parseBinaryOpParm tokens of 
-                Right (parm1, _) ->
-                    case parseBinaryOpParm rest2 of
-                        Right (parm2, rest3) -> Right (A.BinaryOpExpr parm1 binop parm2, rest3)
-                        Left err -> Left err
-                Left err -> Left err
-        Left err ->
-            case H.parseParmCallDecl tokens of
-                Right (const, rest) -> Right (A.BinaryOpConst const, rest)
-                Left err -> Left err
+        Right (binop, rest2) -> do
+            (parm1, _) <- parseBinaryOpParm tokens1
+            (parm2, rest3) <- parseBinaryOpParm rest2
+            (_, rest4) <- expectToken (T.Punctuator (T.RBracket T.CloseRBracket)) "Expected ')'" rest3
+            Right (A.BinaryOpExpr parm1 binop parm2, rest4)
+        Left err -> do
+            (const, rest) <- H.parseParmCallDecl tokens1
+            (_, rest2) <- expectToken (T.Punctuator (T.RBracket T.CloseRBracket)) "Expected ')'" rest
+            Right (A.BinaryOpConst const, rest2)
 
 parseStmtList :: Parser [A.Stmt]
 parseStmtList tokens@((T.Punctuator (T.CBracket T.CloseCBracket), _) : _)
