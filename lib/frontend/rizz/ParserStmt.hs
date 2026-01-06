@@ -12,35 +12,10 @@ module ParserStmt (
 import qualified Ast as A
 import qualified Tokens as T
 import qualified ParserHelper as H
+import ParserBinaryExpr (parseBinaryOpExpr)
 
 type SingleToken = (T.Token, (Int, Int))
 type Parser a = [SingleToken] -> Either String (a, [SingleToken])
-
-parseBinaryOpParm :: Parser A.BinaryOpParm
-parseBinaryOpParm tokens = case tokens of
-    ((T.Punctuator (T.RBracket T.OpenRBracket), _) : rest) -> do
-        (e, rest1) <- parseBinaryOpExpr rest
-        (_, rest2) <- H.expectToken
-            (T.Punctuator (T.RBracket T.CloseRBracket)) "expected ')'" rest1
-        Right (A.BinaryOpParmBOp e, rest2)
-    _ -> do
-        (p, rest) <- H.parseParmCallDecl tokens
-        Right (A.BinaryOpParm p, rest)
-
-parseBinaryOpExpr :: Parser A.BinaryOpExpr
-parseBinaryOpExpr tokens@(_ : (T.Punctuator (T.BinaryOp op), _) : rest) = do
-    (parm1, _) <- parseBinaryOpParm tokens
-    (parm2, rest3) <- parseBinaryOpParm rest
-    Right (A.BinaryOpExpr parm1 op parm2, rest3)
-parseBinaryOpExpr tokens = do
-    (parm1, rest) <- parseBinaryOpParm tokens
-    case H.parseBinaryOp rest of
-        Left err -> do
-            (const, _) <- H.parseParmCallDecl tokens
-            Right (A.BinaryOpConst const, rest)
-        Right (binop, rest2) -> do
-            (parm2, rest3) <- parseBinaryOpParm rest2
-            Right (A.BinaryOpExpr parm1 binop parm2, rest3)
 
 parseStmtList :: Parser [A.Stmt]
 parseStmtList tokens@((T.Punctuator (T.CBracket T.CloseCBracket), _) : _)
@@ -116,20 +91,15 @@ parseIf tokens = do
             Right (A.IfStmt cond bdy (Just elseBdy), rest4)
         _ -> Right (A.IfStmt cond bdy Nothing, rest3)
 
-parseMaybe :: Parser a -> Parser (Maybe a)
-parseMaybe f tokens = case f tokens of 
-    Right (e, rest) -> Right (Just e, rest)
-    Left e -> Right (Nothing, tokens)
-
 parseFor :: Parser A.Stmt
 parseFor tokens = do
     (_, rest)      <- H.expectToken (T.Keyword T.For) "Expected 'for'" tokens
     (_, vDeclNRest) <- H.expectToken (T.Punctuator (T.RBracket T.OpenRBracket)) "expected '('" rest
-    (vDecl, rest1)  <- parseMaybe H.parseVarDeclStmt vDeclNRest
+    (vDecl, rest1)  <- H.parseMaybe H.parseVarDeclStmt vDeclNRest
     (_, binOpNRest) <- H.expectToken (T.Punctuator T.Semicolon) "expected ';'" rest1
-    (binOp, rest2)  <- parseMaybe parseBinaryOpExpr binOpNRest
+    (binOp, rest2)  <- H.parseMaybe parseBinaryOpExpr binOpNRest
     (_, declNRest)  <- H.expectToken (T.Punctuator T.Semicolon) "expected ';'" rest2
-    (decl, rest3)   <- parseMaybe H.parseDeclStmt declNRest
+    (decl, rest3)   <- H.parseMaybe H.parseDeclStmt declNRest
     (_, bdyNRest) <- H.expectToken (T.Punctuator (T.RBracket T.CloseRBracket)) "expected ')'" rest3
     (bdy, rest4)    <- parseCompoundStmt bdyNRest
     Right (A.ForStmt vDecl binOp decl bdy, rest4)

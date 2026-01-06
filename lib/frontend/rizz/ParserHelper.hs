@@ -18,7 +18,8 @@ module ParserHelper (
     parseDeclStmt,
     parseBinaryOp,
     errorAt,
-    expectToken
+    expectToken,
+    parseMaybe
 ) where
 
 import qualified Ast as A
@@ -38,6 +39,11 @@ expectToken _ message [] = errorAt (0,0) message
 expectToken expected message ((token, position) : xs)
     | token == expected = Right((), xs)
     | otherwise         = errorAt position (message ++ ", got " ++ show token)
+
+parseMaybe :: Parser a -> Parser (Maybe a)
+parseMaybe f tokens = case f tokens of 
+    Right (e, rest) -> Right (Just e, rest)
+    Left e -> Right (Nothing, tokens)
 
 -- Helper for parse AssignOp
 parseAssignOp :: Parser T.AssignOp
