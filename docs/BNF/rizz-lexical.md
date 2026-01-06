@@ -18,9 +18,11 @@
 
 \<nonzero-digit>            ::= "0" | \<digit>
 
-\<floating-constant>        ::= \<digit-sequence> "." \<digit-sequence>
+\<floating-constant>        ::= \<digit-sequence> "." \<digit-seq>
 
-\<digit-sequence>           ::= \<digit>
+\<digit-sequence>           ::= \<digit-seq> | "-" \<digit-seq>
+
+\<digit-seq>                ::= \<digit>
                             | \<digit-sequence> \<digit>
 
 \<character-constant>       ::= "'" \<char> "'"

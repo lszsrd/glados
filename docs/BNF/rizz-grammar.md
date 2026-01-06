@@ -32,7 +32,7 @@
 
 \<parm-call-decl>           ::= \<constant> | \<s-char-sequence> | \<call-expr-decl>
 
-\<call-expr-decl>           ::= \<s-char-sequence> "(" { \<call-expr-parm> } ")"
+\<call-expr-decl>           ::= \<s-char-sequence> "(" { \<call-expr-parm> | \<binary-operator>} ")"
 
 \<call-expr-parm>           ::= \<parm-call-decl> | \<call-expr-parm> ","
 
