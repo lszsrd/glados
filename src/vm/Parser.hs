@@ -93,9 +93,10 @@ parseInstruction ("POP": x) = case hParseInstruction "POP" x 0 of
 parseInstruction ("JMP": x) = case hParseInstruction "JMP" x 1 of
     Left e -> Left e
     Right y -> Right $ Jump (head y)
-parseInstruction ("JMP_IF_FALSE": x) = case hParseInstruction "JMP_IF_FALSE" x 1 of
-    Left e -> Left e
-    Right y -> Right $ JumpFalse (head y)
+parseInstruction ("JMP_IF_FALSE": x) =
+    case hParseInstruction "JMP_IF_FALSE" x 1 of
+        Left e -> Left e
+        Right y -> Right $ JumpFalse (head y)
 parseInstruction ("JMP_IF_TRUE": x) = case hParseInstruction "JMP_IF_TRUE" x 1 of
     Left e -> Left e
     Right y -> Right $ JumpTrue (head y)
