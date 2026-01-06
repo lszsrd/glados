@@ -36,6 +36,7 @@ module Lexer (
     , parseDecimalConstant
     , parseFloatingConstant
     , parseDigitSequence
+    , hParseDigitSequence
     , parseCharacterConstant
     , parseChar
     , parseEscapeSequence
@@ -180,6 +181,7 @@ parsePunctuator (':': x) = Just (Punctuator Colon, 1, x)
 parsePunctuator (';': x) = Just (Punctuator Semicolon, 1, x)
 parsePunctuator (',': x) = Just (Punctuator Comma, 1, x)
 parsePunctuator ('=': x) = Just (Punctuator (AssignOp Equal), 1, x)
+parsePunctuator ('?': x) = Just (Punctuator QMark, 1, x)
 parsePunctuator _ = Nothing
 
 -- | Takes a 2 @'Stream'@ (stream's start and stream's current position) and 2 (@'Data.Int'@, @'Data.Int'@) (starting position and current position) as parameters and returns a __Either__ @'String'@ (@'Stream'@, (@'Data.Int'@, @'Data.Int'@)).
@@ -244,16 +246,25 @@ parseDecimalConstant = parseDigitSequence
 parseFloatingConstant :: Stream -> Maybe (Lexeme, Int, Stream)
 parseFloatingConstant stream = do
     (x, y, '.': z) <- parseDigitSequence stream
-    (x', y', z') <- parseDigitSequence z
+    (x', y', z') <- hParseDigitSequence z
     Just (x ++ "." ++ x', y + 1 + y', z')
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__ (@'Lexeme'@, @'Data.Int'@, @'Stream'@) if the stream starts with a \<digit-sequence\>.
 --
 -- On success, this function returns a tuple made of the digit string representation, the parsed digit length and the input stream stripped of the parsed digit.
 parseDigitSequence :: Stream -> Maybe (Lexeme, Int, Stream)
-parseDigitSequence stream = case parseDigit stream of
+parseDigitSequence ('-': xs) = case parseDigitSequence xs of
     Nothing -> Nothing
-    Just (x, y, z) -> case parseDigitSequence z of
+    Just (x, y, z) -> Just ('-': x, y + 1, z)
+parseDigitSequence x = hParseDigitSequence x
+
+-- | Takes a @'Stream'@ as parameter and returns a __Maybe__ (@'Lexeme'@, @'Data.Int'@, @'Stream'@) if the stream starts with a \<digit-sequence\>.
+--
+-- @'parseDigitSequence'@'s helper function that if the current stream a a digit sequence.
+hParseDigitSequence :: Stream -> Maybe (Lexeme, Int, Stream)
+hParseDigitSequence stream = case parseDigit stream of
+    Nothing -> Nothing
+    Just (x, y, z) -> case hParseDigitSequence z of
         Nothing -> Just ([x], y, z)
         Just (x', y', z') -> Just (x: x', y + y', z')
 

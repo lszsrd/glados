@@ -23,9 +23,6 @@ import Bytecode (compileDecl)
 import Options (Options (..))
 import Compiler (compile)
 
-rmdups :: (Ord a) => [a] -> [a]
-rmdups = map head . group . sort
-
 parseArgs :: String -> [String] -> Either String (Options, [FilePath])
 parseArgs _ [] = Left $ ": " ++ Format.error ++ ": no input files"
 parseArgs extension ("--dump-tokens": x) = case parseArgs extension x of
@@ -63,4 +60,5 @@ main = do
         Left e -> if "USAGE" `isPrefixOf` e
             then printUsage extension progName
             else hPutStrLn stderr (progName ++ e) >> exitFailure
-        Right (opts, files) -> compile opts (rmdups files) lexer parser compileDecl
+        Right (opts, files) -> compile
+            opts (map head . group . sort $ files) lexer parser compileDecl

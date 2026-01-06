@@ -239,6 +239,7 @@ testsParseDigitSequence = TestList      [
     parseDigitSequenceTest1, parseDigitSequenceTest2, parseDigitSequenceTest3
     , parseDigitSequenceTest4, parseDigitSequenceTest5, parseDigitSequenceTest6
     , parseDigitSequenceTest7, parseDigitSequenceTest8, parseDigitSequenceTest9
+    , parseDigitSequenceTest10
                                         ]
 
 parseDigitSequenceTest1 = TestCase (assertEqual "parseDigitSequence \"0\"" (Just ("0", 1, [])) (parseDigitSequence "0"))
@@ -250,6 +251,7 @@ parseDigitSequenceTest6 = TestCase (assertEqual "parseDigitSequence \"42a42\"" (
 parseDigitSequenceTest7 = TestCase (assertEqual "parseDigitSequence \"foo\"" Nothing (parseDigitSequence "foo"))
 parseDigitSequenceTest8 = TestCase (assertEqual "parseDigitSequence \"A\"" Nothing (parseDigitSequence "A"))
 parseDigitSequenceTest9 = TestCase (assertEqual "parseDigitSequence \"\"" Nothing (parseDigitSequence ""))
+parseDigitSequenceTest10 = TestCase (assertEqual "parseDigitSequence \"-1\"" (Just ("-1", 2, [])) (parseDigitSequence "-1"))
 
 testsParseCharacterConstant = TestList  [
     parseCharacterConstantTest1, parseCharacterConstantTest2, parseCharacterConstantTest3

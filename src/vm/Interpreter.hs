@@ -22,20 +22,20 @@ import Stack (Stack)
 import Env (Env)
 
 -- invoke a new function and runs it
-call :: String -> [Operand] -> [Function] -> [Function] -> Env -> Either String (Maybe Operand)
-call fnName _ [] _ _ = Left ("call to undeclared function " ++ fnName)
-call fnName argv ((function, argc, opcodes): xs) symtab env
-    | fnName == function = if False -- length argv /= argc
+call :: String -> [Function] -> [Function] -> Env -> Either String (Maybe Operand)
+call fnName [] _ _ = Left ("call to undeclared function: " ++ fnName)
+call fnName ((function, argc, opcodes): xs) symtab env
+    | fnName == function = if length env < argc
         then Left ("invalid arguments to function call: " ++ fnName)
         else case exec symtab opcodes opcodes [] env of
             Left e -> Left e
             Right x -> Right x
-    | otherwise = call fnName argv xs symtab env
+    | otherwise = call fnName xs symtab env
 
 -- run a function's body (all its instructions)
 exec :: [Function] -> [OpCode] -> [OpCode] -> Stack -> Env -> Either String (Maybe Operand)
 exec symtab bOps (Nop: ops) stack env = exec symtab bOps ops stack env
-exec symtab bOps (Call x y: ops) stack env = case call x [] symtab symtab env of
+exec symtab bOps (Call x _: ops) stack env = case call x symtab symtab env of
     Left e -> Left e
     Right z -> case z of
         Nothing -> exec symtab bOps ops stack env

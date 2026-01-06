@@ -109,9 +109,9 @@ parseInstruction ("MUL": x) = case hParseInstruction "MUL" x 0 of
 parseInstruction ("ADD": x) = case hParseInstruction "ADD" x 0 of
     Left e -> Left e
     Right _ -> Right Add
-parseInstruction ("Sub": x) = case hParseInstruction "DIV" x 0 of
+parseInstruction ("SUB": x) = case hParseInstruction "SUB" x 0 of
     Left e -> Left e
-    Right _ -> Right Div
+    Right _ -> Right Sub
 parseInstruction ("DIV": x) = case hParseInstruction "DIV" x 0 of
     Left e -> Left e
     Right _ -> Right Mod

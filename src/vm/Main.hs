@@ -10,12 +10,13 @@ module Main where
 import System.Environment (getProgName, getArgs)
 import System.IO (stderr, hPutStrLn)
 import System.FilePath (takeExtension)
-import System.Exit (exitFailure, exitSuccess)
+import System.Exit (exitSuccess, exitFailure)
 
 import Data.List (isPrefixOf, group, sort)
 
 import Format (error)
 
+import OpCodes (Operand (..))
 import Parser (parseFunctions)
 import Interpreter (call)
 
@@ -23,9 +24,6 @@ import Interpreter (call)
 -- check if multiples function share the same name inside all files
 --  ==> can be solved by naming function by its file name (namespace) + function name
 -- fecth decode execute
-
-rmdups :: (Ord a) => [a] -> [a]
-rmdups = map head . group . sort
 
 parseArgs :: [String] -> Either String [FilePath]
 parseArgs [] = Left $ ": " ++ Format.error ++ ": no input files"
@@ -40,19 +38,20 @@ parseArgs (x: xs)
 
 printUsage :: String -> IO ()
 printUsage x = putStrLn $
-    "GLaDOS project (vm part) - Execute pre-compiled byte code.\n\n"
+    "GLaDOS project (VM part) - Execute pre-compiled byte code.\n\n"
     ++ "\ESC[1;33mUSAGE\ESC[0m: " ++ x ++ " <compiled files (.bc)>"
 
-interpret :: [FilePath] -> IO ()
-interpret files = do
-    x <- mapM readFile files 
-    case parseFunctions (lines (concat x)) of
+interpret :: String -> IO ()
+interpret x = case parseFunctions $ lines x of
+    Left e -> hPutStrLn stderr e >> exitFailure
+    Right symtab -> case call "main" symtab symtab [] of
         Left e -> hPutStrLn stderr e >> exitFailure
-        Right symtab -> case call "baz" [] symtab symtab [] of
-            Left e -> hPutStrLn stderr e >> exitFailure
-            Right y -> case y of
-                Nothing -> exitSuccess
-                Just z -> print $ show z
+        Right y -> case y of
+            Nothing -> return ()
+            Just (Bool z) -> print z
+            Just (Integer z) -> print z
+            Just (Float z) -> print z
+            _ -> print y
 
 main :: IO ()
 main = do
@@ -62,4 +61,6 @@ main = do
         Left e -> if "USAGE" `isPrefixOf` e
             then printUsage progName
             else hPutStrLn stderr (progName ++ e) >> exitFailure
-        Right files -> interpret $ rmdups files
+        Right files -> do
+            x <- mapM (readFile . head) (group . sort $ files)
+            interpret (concat x) >> exitSuccess

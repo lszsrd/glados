@@ -57,13 +57,13 @@ type Identifier = String
 -- It can only be of one type and serves as a way to represent a series of bytes in a more abstract way.
 data Token
     = Keyword Keyword
-    -- ^ keyword definition.
+    -- ^ Keyword definition.
     | Identifier Identifier
-    -- ^ identifier definition.
+    -- ^ Identifier definition.
     | Literal Literal
-    -- ^ literal definition.
+    -- ^ Literal definition.
     | Punctuator Punctuator
-    -- ^ punctuator definition.
+    -- ^ Punctuator definition.
 
     deriving (
         Show
@@ -75,29 +75,29 @@ data Token
 -- | Defines @'Keyword'@ which are reserved words used by the language.
 data Keyword
     = Bool
-    -- ^ boolean type keyword, expressed in rizz code as @\`Bool\`@.
+    -- ^ Boolean type keyword, expressed in rizz code as @\`Bool\`@.
     | Char
-    -- ^ character type keyword, expressed in rizz code as @\`Char\`@.
+    -- ^ Character type keyword, expressed in rizz code as @\`Char\`@.
     | Int
-    -- ^ integer type keyword, expressed in rizz code as @\`Int\`@.
+    -- ^ Integer type keyword, expressed in rizz code as @\`Int\`@.
     | Float
-    -- ^ float type keyword, expressed in rizz code as @\`Float\`@.
+    -- ^ Float type keyword, expressed in rizz code as @\`Float\`@.
     | Double
-    -- ^ double type keyword, expressed in rizz code as @\`Double\`@.
+    -- ^ Double type keyword, expressed in rizz code as @\`Double\`@.
     | Fn
-    -- ^ function declaration keyword, expressed in rizz code as @\`fn\`@.
+    -- ^ Function declaration keyword, expressed in rizz code as @\`fn\`@.
     | If
-    -- ^ if keyword, expressed in rizz code as @\`if\`@.
+    -- ^ If keyword, expressed in rizz code as @\`if\`@.
     | Else
-    -- ^ else keyword, expressed in rizz code as @\`else\`@.
+    -- ^ Else keyword, expressed in rizz code as @\`else\`@.
     | While
-    -- ^ while loop type keyword, expressed in rizz code as @\`while\`@.
+    -- ^ While loop type keyword, expressed in rizz code as @\`while\`@.
     | For
-    -- ^ for loop keyword, expressed in rizz code as @\`for\`@.
+    -- ^ For loop keyword, expressed in rizz code as @\`for\`@.
     | Foreach
-    -- ^ foreach loop keyword, expressed in rizz code as @\`foreach\`@.
+    -- ^ Foreach loop keyword, expressed in rizz code as @\`foreach\`@.
     | Ret
-    -- ^ return (from function) keyword, expressed in rizz code as @\`ret\`@.
+    -- ^ Return (from function) keyword, expressed in rizz code as @\`ret\`@.
     
     deriving (
         Show
@@ -109,13 +109,13 @@ data Keyword
 -- | Defines @'Literal`@ which is a way to represent a constant value not bound to a variable.
 data Literal
     = BoolLiteral Bool
-    -- ^ boolean literal, expressed in rizz code as @\`True\`@ or @\`False\`@.
+    -- ^ Boolean literal, expressed in rizz code as @\`True\`@ or @\`False\`@.
     | CharLiteral Char
-    -- ^ character literal, expressed in rizz code like @\`\'x\'\`@.
+    -- ^ Character literal, expressed in rizz code like @\`\'x\'\`@.
     | IntLiteral Integer
-    -- ^ integer literal, expressed in rizz code like @\`42\`@.
+    -- ^ Integer literal, expressed in rizz code like @\`42\`@.
     | FloatLiteral Float
-    -- ^ single floating point literal, expressed in rizz code like @\`3.14\`@.
+    -- ^ Single floating point literal, expressed in rizz code like @\`3.14\`@.
     
     deriving (
         Show
@@ -127,9 +127,9 @@ data Literal
 -- | Defines @'SBracket`@ representing both opening and closing square brackets \`[]\`.
 data SBracket
     = OpenSBracket
-    -- ^ opening square bracket, expressed in rizz code as @\`[\`@.
+    -- ^ Opening square bracket, expressed in rizz code as @\`[\`@.
     | CloseSBracket
-    -- ^ closing square bracket, expressed in rizz code as @\`]\`@.
+    -- ^ Closing square bracket, expressed in rizz code as @\`]\`@.
     
     deriving (
         Show
@@ -141,9 +141,9 @@ data SBracket
 -- | Defines @'RBracket`@ representing both opening and closing round brackets \`()\`.
 data RBracket
     = OpenRBracket
-    -- ^ opening round bracket, expressed in rizz code as @\`(\`@.
+    -- ^ Opening round bracket, expressed in rizz code as @\`(\`@.
     | CloseRBracket
-    -- ^ closing round bracket, expressed in rizz code as @\`)\`@.
+    -- ^ Closing round bracket, expressed in rizz code as @\`)\`@.
     
     deriving (
         Show
@@ -155,9 +155,9 @@ data RBracket
 -- | Defines @'RBracket`@ representing both opening and closing curly brackets \`{}\`.
 data CBracket
     = OpenCBracket
-    -- ^ opening curly bracket, expressed in rizz code as @\`{\`@.
+    -- ^ Opening curly bracket, expressed in rizz code as @\`{\`@.
     | CloseCBracket
-    -- ^ closing curly bracket, expressed in rizz code as @\`}\`@.
+    -- ^ Closing curly bracket, expressed in rizz code as @\`}\`@.
 
     deriving (
         Show
@@ -169,9 +169,9 @@ data CBracket
 -- | Defines @'UnaryOp`@ representing both increment and decrement unary operators.
 data UnaryOp
     = IdentIncrement
-    -- ^ unary increment operator, expressed in rizz code as @\`++\`@.
+    -- ^ Unary increment operator, expressed in rizz code as @\`++\`@.
     | IdentDecrement
-    -- ^ unary decrement operator, expressed in rizz code as @\`--\`@.
+    -- ^ Unary decrement operator, expressed in rizz code as @\`--\`@.
     
     deriving (
         Show
@@ -183,31 +183,31 @@ data UnaryOp
 -- | Defines @'BinaryOp`@ representing arithmetic and equality operators.
 data BinaryOp
     = Mul
-    -- ^ multiplication operator, expressed in rizz code as @\`\*`@.
+    -- ^ Multiplication operator, expressed in rizz code as @\`\*`@.
     | Add
-    -- ^ addition operator, expressed in rizz code as @\`+\`@.
+    -- ^ Addition operator, expressed in rizz code as @\`+\`@.
     | Sub
-    -- ^ subtraction operator, expressed in rizz code as @\`-\`@.
+    -- ^ Subtraction operator, expressed in rizz code as @\`-\`@.
     | Div
-    -- ^ division operator, expressed in rizz code as @\`/\`@.
+    -- ^ Division operator, expressed in rizz code as @\`/\`@.
     | Mod
-    -- ^ modulo operator, expressed in rizz code as @\`%\`@.
+    -- ^ Modulo operator, expressed in rizz code as @\`%\`@.
     | Lt
-    -- ^ less than operator, expressed in rizz code as @\`<\`@.
+    -- ^ Less than operator, expressed in rizz code as @\`<\`@.
     | Gt
-    -- ^ greater than operator, expressed in rizz code as @\`>\`@.
+    -- ^ Greater than operator, expressed in rizz code as @\`>\`@.
     | LEq
-    -- ^ less than or equal to operator, expressed in rizz code as @\`<=\`@.
+    -- ^ Less than or equal to operator, expressed in rizz code as @\`<=\`@.
     | GEq
-    -- ^ greater than or equal to operator, expressed in rizz code as @\`>=\`@.
+    -- ^ Greater than or equal to operator, expressed in rizz code as @\`>=\`@.
     | Eq
-    -- ^ equal operator, expressed in rizz code as @\`==\`@.
+    -- ^ Equal operator, expressed in rizz code as @\`==\`@.
     | NEq
-    -- ^ not equal operator, expressed in rizz code as @\`!=\`@.
+    -- ^ Not equal operator, expressed in rizz code as @\`!=\`@.
     | And
-    -- ^ and operator, expressed in rizz code as @\`&&\`@.
+    -- ^ And operator, expressed in rizz code as @\`&&\`@.
     | Or
-    -- ^ or operator, expressed in rizz code as @\`||\`@.
+    -- ^ Or operator, expressed in rizz code as @\`||\`@.
     
     deriving (
         Show
@@ -219,17 +219,17 @@ data BinaryOp
 -- | Defines @'AssignOp`@ representing assignment operators with arithmetic operation on it.
 data AssignOp
     = Equal
-    -- ^ assignment operator, expressed in rizz code as @\`=\`@.
+    -- ^ Assignment operator, expressed in rizz code as @\`=\`@.
     | MulEqual
-    -- ^ multiplication and assignment operator, expressed in rizz code as @\`*=\`@.
+    -- ^ Multiplication and assignment operator, expressed in rizz code as @\`*=\`@.
     | DivEqual
-    -- ^ division and assignment operator, expressed in rizz code as @\`/=\`@.
+    -- ^ Division and assignment operator, expressed in rizz code as @\`/=\`@.
     | ModEqual
-    -- ^ modulo and assignment operator, expressed in rizz code as @\`%=\`@.
+    -- ^ Modulo and assignment operator, expressed in rizz code as @\`%=\`@.
     | AddEqual
-    -- ^ addition and assignment operator, expressed in rizz code as @\`+=\`@.
+    -- ^ Addition and assignment operator, expressed in rizz code as @\`+=\`@.
     | SubEqual
-    -- ^ subtraction and assignment operator, expressed in rizz code as @\`-=\`@.
+    -- ^ Subtraction and assignment operator, expressed in rizz code as @\`-=\`@.
 
     deriving (
         Show
@@ -241,25 +241,27 @@ data AssignOp
 -- | Defines @'Punctuator'@ which is a large category containing non keywords, non literals and non identifiers tokens.
 data Punctuator
     = SBracket SBracket
-    -- ^ both square brackets, used to index lists. 
+    -- ^ Both square brackets, used to index lists. 
     | RBracket RBracket
-    -- ^ both curly brackets, used to declare or call functions.
+    -- ^ Both curly brackets, used to declare or call functions.
     | CBracket CBracket
-    -- ^ both curly brackets, used to define a scope.
+    -- ^ Both curly brackets, used to define a scope.
     | Dot
-    -- ^ standalone dot @'Punctuator'@ , used to declare floating point constants and expressed in rizz code as @\`.\`@.
+    -- ^ Standalone dot @'Punctuator'@ , used to declare floating point constants and expressed in rizz code as @\`.\`@.
     | Arrow
-    -- ^ standalone arrow @'Punctuator'@, used to specify the return type of a function and expressed in rizz code as @\`+=\`@.
+    -- ^ Standalone arrow @'Punctuator'@, used to specify the return type of a function and expressed in rizz code as @\`+=\`@.
     | UnaryOp UnaryOp
-    -- ^ both unary operators.
+    -- ^ Both unary operators.
     | BinaryOp BinaryOp
     -- ^ all of binary operators.
     | Colon
-    -- ^ standalone colon @'Punctuator'@, used to specify the type of an @'Identifier'@ and expressed in rizz code as @\`:\`@.
+    -- ^ Standalone colon @'Punctuator'@, used to specify the type of an @'Identifier'@ and expressed in rizz code as @\`:\`@.
     | Semicolon
-    -- ^ standalone semicolon @'Punctuator'@, used to specify the end of a statement and expressed in rizz code as @\`;\`@.
+    -- ^ Standalone semicolon @'Punctuator'@, used to specify the end of a statement and expressed in rizz code as @\`;\`@.
     | Comma
-    -- ^ standalone comma @'Punctuator'@, used to space functions' arguments and expressed in rizz code as @\`,\`@.
+    -- ^ Standalone comma @'Punctuator'@, used to space functions' arguments and expressed in rizz code as @\`,\`@.
+    | QMark
+    -- ^ Standalone question mark @'Punctuator'@, used to mark a ternary condition and expressed in rizz code like @\`True ? {} : {}\`@.
     | AssignOp AssignOp
     -- ^ All of assignment operators.
 
