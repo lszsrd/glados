@@ -5,7 +5,17 @@
 -- lib/frontend/rizz/Parser.hs
 -}
 
--- Builds AST from tokens
+-------------------------------------------------------------------------------
+-- |
+-- Module      : ParserHelper
+-- Description : Helper functions for parsing tokens
+-- License     : MIT
+-- Maintainer  : maxence.pierre@epitech.eu, florian.grave@epitech.eu, hugo.duda@epitech.eu
+--
+-- Provides helper functions for parsing tokens
+--
+-- If an unexpected token is found or if the syntax is invalid, the parsing functions return an pretty formatted error message.
+-------------------------------------------------------------------------------
 module ParserHelper (
     parseBuiltinType,
     parseIdentifier,
@@ -28,12 +38,18 @@ import qualified Tokens as T
 type SingleToken = (T.Token, (Int, Int))
 type Parser a = [SingleToken] -> Either String (a, [SingleToken])
 
--- Error message builder
+-- | Takes a (@'Data.Int'@, @'Data.Int'@) position and a @'String'@ message as parameters and returns a __Either__ @'String'@ a.
+--
+-- On failure, this function returns a pretty formatted error message with line & col position.
 errorAt :: (Int, Int) -> String -> Either String a
 errorAt (ligne, colonne) message =
     Left (show ligne ++ ":" ++ show colonne ++ " " ++ message)
 
--- Return a errorAt if the token is not expected otherwise right
+-- | Takes a @'T.Token'@, a @'String'@ message and a @'Parser'@ @'SingleToken'@ list as parameters and returns a __Either__ @'String'@ ((), [@'SingleToken'@]).
+--
+-- On success, this function returns a tuple...
+--
+-- On failure, this function returns a pretty formatted error message with line & col position.
 expectToken :: T.Token -> String -> Parser()
 expectToken _ message [] = errorAt (0,0) message
 expectToken expected message ((token, position) : xs)

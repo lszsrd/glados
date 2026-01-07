@@ -1,10 +1,21 @@
-{- 
+{-
 -- EPITECH PROJECT, 2025
 -- Generic Language And Data Operand Syntax
 -- File description:
 -- lib/frontend/rizz/ParserStmt.hs
 -}
 
+-------------------------------------------------------------------------------
+-- |
+-- Module      : ParserStmt
+-- Description : Parses statements and compound statements into Abstract Syntax Tree nodes.
+-- License     : MIT
+-- Maintainer  : maxence.pierre@epitech.eu, hugo.duda@epitech.eu, florian.grave@epitech.eu
+--
+-- Handles the parsing of statements including if/else, while loops, for loops, return statements, and compound statements.
+--
+-- If an unexpected token is found or if the syntax is invalid, the parsing functions return an pretty formatted error message.
+-------------------------------------------------------------------------------
 module ParserStmt (
     parseCompoundStmt
 ) where

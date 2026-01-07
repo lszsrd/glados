@@ -10,11 +10,11 @@
 -- Module      : Parser
 -- Description : Performs syntactic analysis of a list of tokens and builds an Abstract Syntax Tree.
 -- License     : MIT
--- Maintainer  : maxence.pierre@epitech.eu, florian.grave@epitech.eu, hugo.duda@protonmail.com
+-- Maintainer  : maxence.pierre@epitech.eu, florian.grave@epitech.eu, hugo.duda@epitech.eu
 --
 -- Takes a list of __@'T.Token'@__ and do an syntaxic analysis, based on a BNF grammar, to build an __@'A.Decl'@__ list representing the program Abstract Syntax Tree.
 --
--- If an unexpected token is found or the syntax is invalid, the @'parser'@ function returns an error message.
+-- If an unexpected token is found or the syntax is invalid, the @'parser'@ function returns an pretty :) error message.
 -------------------------------------------------------------------------------
 module Parser (
     parser
@@ -36,7 +36,7 @@ type Parser a = [SingleToken] -> Either String (a, [SingleToken])
 --
 -- On success, this function returns a tuple made of the parsed return type wrapped in @'Maybe'@ and the remaining tokens.
 --
--- If an arrow punctuator is found, it expects a builtin type after it. Otherwise, it returns @'Nothing'@ for the return type.
+-- On faillure, if an arrow punctuator is found, it expects a builtin type after it. Otherwise, it returns @'Nothing'@ for the return type.
 parseReturnType :: Parser (Maybe A.BuiltinType)
 parseReturnType tokens@((T.Punctuator T.Arrow, _) : rest1) = do
     (returntype, rest2) <- H.parseBuiltinType rest1
@@ -56,12 +56,11 @@ parseVarDecl tokens = do
 
 
 
--- | Takes a @'Parser'@
+-- | Takes a @'Parser'@ @'SingleToken'@ list as parameter and returns a __Either__ @'String'@ (@'A.Decl'@, [@'SingleToken'@]).
 --
--- On success,
+-- On success, this function returns a tuple made of the parsed function decl.
 --
--- On failure, this function returns a pretty formatted error message if invalid syntax or a semicolon is missing.
-
+-- On failure, this function returns a pretty formatted error message.
 parseFunctionDecl :: Parser A.Decl
 parseFunctionDecl tokens = do
     (_, rest0)          <- H.expectToken (T.Keyword T.Fn) "Expected 'Fn'" tokens
@@ -74,11 +73,11 @@ parseFunctionDecl tokens = do
     Right (A.FunctionDecl name pvdelist compStmt returntype, rest6)
 
 
--- | Takes a @'Parser'@
+-- | Takes a @'Parser'@ @'SingleToken'@ list as parameter and returns a __Either__ @'String'@ (@'A.Decl'@, [@'SingleToken'@]).
 --
--- On success,
+-- On success, this function returns a tuple made of the parsed top-level declaration (either a function or variable declaration) and the remaining tokens.
 --
--- On failure,
+-- On failure, this function returns a pretty formatted error message.
 parseTopLevel :: Parser A.Decl
 parseTopLevel tokens@((T.Keyword T.Fn, _) : _) = parseFunctionDecl tokens
 parseTopLevel tokens =
@@ -87,11 +86,11 @@ parseTopLevel tokens =
         Left error -> Left error
 
 
--- | Takes a
+-- | Takes a @'Parser'@ @'SingleToken'@ list as parameter and returns a __Either__ @'String'@ ([@'A.Decl'@], [@'SingleToken'@]).
 --
--- On success,
+-- On success, this function returns a tuple made of the parsed declaration list and the remaining tokens.
 --
--- On failure,
+-- On failure, this function returns a pretty formatted error message.
 parseDecl :: Parser [A.Decl]
 parseDecl [] = Right ([], [])
 parseDecl tokens = do
@@ -99,11 +98,11 @@ parseDecl tokens = do
     (decls, xsfinal) <- parseDecl xs
     Right (decl : decls, xsfinal)
 
--- | Takes a
+-- | Takes a [@'SingleToken'@] as parameter and returns a __Either__ @'String'@ [@'A.Decl'@].
 --
--- On success,
+-- On success, this function returns a list of @'A.Decl'@ representing the complete AST of the program.
 --
--- On failure,
+-- On failure, this function returns a pretty formatted error message.
 parser :: [SingleToken] -> Either String [A.Decl]
 parser tokens =
     case parseDecl tokens of

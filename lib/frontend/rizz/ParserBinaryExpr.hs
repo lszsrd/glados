@@ -1,10 +1,21 @@
-{- 
+{-
 -- EPITECH PROJECT, 2025
 -- Generic Language And Data Operand Syntax
 -- File description:
 -- lib/frontend/rizz/ParserBinaryExpr.hs
 -}
 
+-------------------------------------------------------------------------------
+-- |
+-- Module      : ParserBinaryExpr
+-- Description : Parses binary operation expressions with operator precedence.
+-- License     : MIT
+-- Maintainer  : maxence.pierre@epitech.eu hugo.duda@epitech.eu
+--
+-- Parsing of binary operation expressions
+--
+-- If an unexpected token is found or the syntax is invalid, the parsing functions return an error message.
+-------------------------------------------------------------------------------
 module ParserBinaryExpr (
     parseBinaryOpExpr
 ) where
