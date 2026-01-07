@@ -19,7 +19,7 @@ library backend-rizz
     hs-source-dirs:     lib/backend/rizz
     exposed-modules:
         Bytecode
-    build-depends:      base, frontend-rizz
+    build-depends:      base, frontend-rizz, containers
 
 library frontend-rizz
     default-language:   Haskell2010
