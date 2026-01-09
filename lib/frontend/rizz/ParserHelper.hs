@@ -51,7 +51,7 @@ errorAt (ligne, colonne) message =
 --
 -- On failure, this function returns a pretty formatted error message with line & col position.
 expectToken :: T.Token -> String -> Parser()
-expectToken _ message [] = errorAt (0,0) message
+expectToken _ message [] = errorAt (1, 1) message
 expectToken expected message ((token, position) : xs)
     | token == expected = Right((), xs)
     | otherwise         = errorAt position (message ++ ", got " ++ show token)
@@ -61,25 +61,30 @@ parseMaybe f tokens = case f tokens of
     Right (e, rest) -> Right (Just e, rest)
     Left e -> Right (Nothing, tokens)
 
+parseOr :: Parser a -> Parser a -> Parser a
+parseOr p1 p2 tokens = case p1 tokens of
+    Right a -> Right a
+    Left _ -> p2 tokens
+
 -- Helper for parse AssignOp
 parseAssignOp :: Parser T.AssignOp
 parseAssignOp ((T.Punctuator (T.AssignOp op), _) : rest) = Right (op, rest)
 parseAssignOp ((token, position) : _) = 
-    errorAt position ("Expected AssignOp, but got: " ++ show token)
-parseAssignOp [] = errorAt (0,0) "Expected AssignOp"
+    errorAt position ("Expected AssignOp" ++ show token)
+parseAssignOp [] = errorAt (1, 1) "Expected AssignOp"
 
 parseBinaryOp :: Parser T.BinaryOp
 parseBinaryOp ((T.Punctuator (T.BinaryOp op), _) : rest) = Right (op, rest)
 parseBinaryOp ((token, position) : _) = 
-    errorAt position ("Expected BinaryOp, but got: " ++ show token)
-parseBinaryOp [] = errorAt (0, 0) "Expected BinaryOp"
+    errorAt position ("Expected BinaryOp" ++ show token)
+parseBinaryOp [] = errorAt (1, 1) "Expected BinaryOp"
 
 -- Helper for parse Literal
 parseLiteral :: Parser T.Literal
 parseLiteral ((T.Literal lit, _) : rest) = Right (lit, rest)
 parseLiteral ((token, position) : _) =
-    errorAt position ("Expected Litteral, but got: " ++ show token)
-parseLiteral [] = errorAt (0,0) "Expected Literal"
+    errorAt position ("Expected Litteral" ++ show token)
+parseLiteral [] = errorAt (1, 1) "Expected Literal"
 
 -- Helper for parse BuiltinType
 parseBuiltinType :: Parser A.BuiltinType
@@ -88,14 +93,14 @@ parseBuiltinType ((T.Keyword T.Char, _) : rest) = Right (A.Character, rest)
 parseBuiltinType ((T.Keyword T.Int, _) : rest) = Right (A.Integer, rest)
 parseBuiltinType ((T.Keyword T.Float, _) : rest) = Right (A.SinglePrecision, rest)
 parseBuiltinType ((token, position) : _) =
-    errorAt position ("Expected builtintype, but got: " ++ show token)
+    errorAt position ("Expected builtintype" ++ show token)
 
 -- Helper for parse Identifier token
 parseIdentifier :: Parser T.Identifier
-parseIdentifier [] = errorAt (0, 0) "Unexpected err"
+parseIdentifier [] = errorAt (1, 1) "Unexpected err"
 parseIdentifier ((T.Identifier id, _) : rest) = Right (id, rest)
 parseIdentifier ((token, position) : _) =
-    errorAt position ("Expected identifier, but got: " ++ show token)
+    errorAt position ("Expected identifier" ++ show token)
 
 -- Helper for parse ParmVarDeclExpr (BuiltinType Identifier)
 parsePVDE :: Parser A.ParmVarDeclExpr
@@ -129,15 +134,33 @@ parseParmCallDecl tokens@((T.Identifier id, _) : rest) =
 parseParmCallDecl tokens@((T.Literal li, _) : rest) =
     Right (A.ParmCallDeclLiteral li, rest)
 parseParmCallDecl ((token, position) : _) =
-    errorAt position ("Expected literal/ident/call-expr, got: " ++ show token)
-parseParmCallDecl [] = errorAt (0, 0) "Expected ParmCallDecl"
+    errorAt position ("Expected literal/ident/call-expr" ++ show token)
+parseParmCallDecl [] = errorAt (1, 1) "Expected ParmCallDecl"
+
+parseSingle :: Parser A.ParmCallDecl
+parseSingle tokens = case tokens of
+    ((T.Punctuator (T.RBracket T.OpenRBracket), _) : rest) -> do
+        (p1, rest1) <- parseParmCallDeclBExpr rest
+        (_, rest2) <- expectToken
+            (T.Punctuator (T.RBracket T.CloseRBracket)) "expected ')'" rest1
+        Right (p1, rest2)
+    _ -> parseParmCallDecl tokens
+
+parseParmCallDeclBExpr :: Parser A.ParmCallDecl
+parseParmCallDeclBExpr tokens = do
+    (p1, rest) <- parseSingle tokens
+    case parseBinaryOp rest of
+        Right (op, rest1) -> do
+            (p2, rest2) <- parseSingle rest1
+            Right (A.ParmCallBExpr (A.BinaryOpParm p1) op (A.BinaryOpParm p2), rest2)
+        Left _ -> Right (p1, rest)
 
 -- Helper for parse a list of ParmCallDecl
 parseParmCallDeclList :: Parser [A.ParmCallDecl]
 parseParmCallDeclList toks@((T.Punctuator (T.RBracket T.CloseRBracket), _) : _)
     = Right ([], toks)
 parseParmCallDeclList tokens = do
-    (arg, rest1) <- parseParmCallDecl tokens
+    (arg, rest1) <- parseOr parseParmCallDeclBExpr parseParmCallDecl tokens
     case rest1 of
         ((T.Punctuator T.Comma, _) : rest2) -> do
             (args, rest3) <- parseParmCallDeclList rest2
@@ -179,4 +202,4 @@ parseDeclStmt tokens@((T.Identifier i, _) : rest1) =
             Right (A.DeclAssignStmtUnary (A.UnaryOperatorExpr i u), rest2)
         _ -> parseDeclAssignStmtLiteral tokens
 parseDeclStmt ((token, position) : _) =
-    errorAt position ("Expected identifier, got: " ++ show token)
+    errorAt position ("Expected identifier" ++ show token)

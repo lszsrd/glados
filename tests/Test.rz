@@ -1,4 +1,4 @@
-fn foo(Int: x) -> Int
+/* fn foo(Int: x) -> Int
 {
     Int y = 42;
  
@@ -28,10 +28,11 @@ fn bar(Int: x) -> Int
     }
     ret y;
 }
+*/
  
 fn baz()
 {
-    while (foo(bar)) {
-        ret (foo(100) + 4 - 5) * 10 + 4 - 5 / 1;
+    while (True) {
+        ret bar(foo(100) + 4 - 5) * 10 + 4 - 5 / 1;
     }
 }
