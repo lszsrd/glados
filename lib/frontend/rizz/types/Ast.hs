@@ -299,6 +299,8 @@ data BuiltinType
     -- ^ Integer type keyword, see Int @'Keyword'@
     | SinglePrecision
     -- ^ Float type keyword, see Float @'Keyword'@
+    | ListType BuiltinType
+    -- ^ List type, expressed in rizz code as @\`[Int]\`@, @\`[[Int]]\`@, etc.
 
     deriving (
         Show

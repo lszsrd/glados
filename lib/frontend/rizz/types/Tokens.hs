@@ -116,7 +116,9 @@ data Literal
     -- ^ Integer literal, expressed in rizz code like @\`42\`@.
     | FloatLiteral Float
     -- ^ Single floating point literal, expressed in rizz code like @\`3.14\`@.
-    
+    | ListLiteral [Literal]
+    -- ^ List literal, expressed in rizz code like @\`[1, 2, 3]\`@.
+
     deriving (
         Show
         -- ^ Allows Literals to be printed.
