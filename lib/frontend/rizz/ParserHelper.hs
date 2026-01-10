@@ -33,13 +33,13 @@ module ParserHelper (
     expectToken,
     parseMaybe,
     getPos,
-    addIfVarExpr
+    addIfVarExpr,
+    findString
 ) where
 
 import qualified Ast as A
 import qualified Tokens as T
 import Data.List
-import Debug.Trace (trace)
 
 type SingleToken = (T.Token, (Int, Int))
 type Parser a = [SingleToken] -> Either String (a, [SingleToken])
@@ -70,12 +70,14 @@ parseMaybe f tokens = case f tokens of
     Right (e, rest) -> Right (Just e, rest)
     Left e -> case findString "Undefined" e of
         Just _ -> Left e
-        Nothing -> trace (show e) Right (Nothing, tokens)
+        Nothing -> Right (Nothing, tokens)
 
 parseOr :: Parser a -> Parser a -> Parser a
 parseOr p1 p2 tokens = case p1 tokens of
     Right a -> Right a
-    Left _ -> p2 tokens
+    Left e -> case findString "Undefined" e of
+        Just _ -> Left e
+        Nothing -> p2 tokens
 
 doesVarExists :: (Int, Int) -> A.Decl -> T.Identifier -> Either String String
 doesVarExists _ _ "True" = Right "OK"
@@ -247,6 +249,7 @@ parseCallExprDecl f tokens = do
 parseDeclAssignStmtLiteral :: A.Decl -> Parser A.DeclStmt
 parseDeclAssignStmtLiteral f tokens = do
     (id, rest1) <- parseIdentifier tokens
+    _ <- doesVarExists (getPos 0 tokens) f id
     (ap, rest2) <- parseAssignOp rest1
     (parmcldl, rest3) <- parseParmCallDecl f rest2
     Right (A.DeclAssignStmtLiteral id ap parmcldl, rest3)
@@ -261,7 +264,8 @@ parseVarDeclStmt f tokens = do
     Right (A.VarDeclStmt typ name op value, rest4)
 
 parseDeclStmt :: A.Decl -> Parser A.DeclStmt
-parseDeclStmt f tokens@((T.Identifier i, _) : rest1) =
+parseDeclStmt f tokens@((T.Identifier i, pos) : rest1) = do
+    _ <- doesVarExists pos f i
     case rest1 of
         ((T.Punctuator (T.UnaryOp u), _) : rest2) -> 
             Right (A.DeclAssignStmtUnary (A.UnaryOperatorExpr i u), rest2)

@@ -2,7 +2,7 @@ fn foo(Int: x) -> Int
 {
     Int y = 42;
  
-    for (Int a = 0; a < 10; z++) {
+    for (Int a = 0; a < 10; a++) {
         ret 0;
     }
     ret y / x;
