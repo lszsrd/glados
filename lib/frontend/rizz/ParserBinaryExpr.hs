@@ -23,7 +23,6 @@ module ParserBinaryExpr (
 import qualified Ast as A
 import qualified Tokens as T
 import qualified ParserHelper as H
-import Debug.Trace (trace)
 
 type SingleToken = (T.Token, (Int, Int))
 type Parser a = [SingleToken] -> Either String (a, [SingleToken])
@@ -107,6 +106,19 @@ getFirstParam (punct : rest) = case punct of
         (param, rest1) <- getFirstParam rest
         Right (punct: param, rest1)
 
+packFirstParam :: Parser [SingleToken]
+packFirstParam t = do
+    (first, rest) <- getFirstParam t
+    case first of
+        (x@(T.Punctuator (T.RBracket T.OpenRBracket),_): xs) -> do
+            (parm, rest1) <- packBinOpExpr xs
+            Right (x : formatBinOpExpr parm ++ rest1,rest)
+        (a@(T.Identifier _, _) :
+            x@(T.Punctuator (T.RBracket T.OpenRBracket),_): xs) -> do
+            (parm, rest1) <- packBinOpExpr xs
+            Right (a: x : formatBinOpExpr parm ++ rest1, rest)
+        _ -> Right (first, rest)
+
 -- | Takes a stream of @'SingleToken'@ as parameter
 --  and returns a __Either __ @'String'@ @'([([SingleToken], Maybe T.BinaryOp)], [SingleToken])'@
 --
@@ -116,7 +128,7 @@ getFirstParam (punct : rest) = case punct of
 -- On failure, this function returns a pretty formatted error message.
 packBinOpExpr :: Parser [([SingleToken], Maybe T.BinaryOp)]
 packBinOpExpr tokens = do
-    (first, rest) <- getFirstParam tokens
+    (first, rest) <- packFirstParam tokens
     case H.parseBinaryOp rest of
         Left _ -> Right ([(first, Nothing)], rest)
         Right (op, rest1) -> do

@@ -108,4 +108,4 @@ parser tokens =
     case parseDecl tokens of
         Left error -> Left error
         Right (decls, []) -> Right decls
-        Right (_, rest) -> Left "0: 0 Parser Exception."
+        Right (_, rest) -> H.errorAt (1, 1) "Parser Exception."
