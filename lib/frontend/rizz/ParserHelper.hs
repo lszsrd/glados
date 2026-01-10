@@ -27,6 +27,8 @@ module ParserHelper (
     parseVarDeclStmt,
     parseDeclStmt,
     parseBinaryOp,
+    parseListLiteral,
+    parseListElements,
     errorAt,
     expectToken,
     parseMaybe
@@ -81,8 +83,36 @@ parseLiteral ((token, position) : _) =
     errorAt position ("Expected Litteral, but got: " ++ show token)
 parseLiteral [] = errorAt (0,0) "Expected Literal"
 
+-- Helper for parse list of Literal elements (similar to parsePVDEList)
+parseListElements :: Parser [T.Literal]
+parseListElements tokens@((T.Punctuator (T.SBracket T.CloseSBracket), _) : _)
+    = Right ([], tokens)
+parseListElements tokens = do
+    (elem, rest1) <- parseLiteral tokens
+    case rest1 of
+        ((T.Punctuator T.Comma, _) : rest2) -> do
+            (elems, rest3) <- parseListElements rest2
+            Right (elem : elems, rest3)
+        _ -> Right ([elem], rest1)
+
+-- Helper for parse list literal (similar to parseCallExprDecl)
+parseListLiteral :: Parser T.Literal
+parseListLiteral ((T.Punctuator (T.SBracket T.OpenSBracket), _) : rest1) = do
+    (elements, rest2) <- parseListElements rest1
+    (_, rest3) <- expectToken (T.Punctuator (T.SBracket T.CloseSBracket))
+        "Expected ']'" rest2
+    Right (T.ListLiteral elements, rest3)
+parseListLiteral ((token, position) : _) =
+    errorAt position ("Expected '[' for list literal, but got: " ++ show token)
+parseListLiteral [] = errorAt (0,0) "Expected list literal"
+
 -- Helper for parse BuiltinType
 parseBuiltinType :: Parser A.BuiltinType
+parseBuiltinType ((T.Punctuator (T.SBracket T.OpenSBracket), _) : rest1) = do
+    (innerType, rest2) <- parseBuiltinType rest1
+    (_, rest3) <- expectToken (T.Punctuator (T.SBracket T.CloseSBracket))
+        "Expected ']' for list type" rest2
+    Right (A.ListType innerType, rest3)
 parseBuiltinType ((T.Keyword T.Bool, _) : rest) = Right (A.Boolean, rest)
 parseBuiltinType ((T.Keyword T.Char, _) : rest) = Right (A.Character, rest)
 parseBuiltinType ((T.Keyword T.Int, _) : rest) = Right (A.Integer, rest)
@@ -120,6 +150,9 @@ parsePVDEList tokens = do
 
 -- Helper for parse ParmCallDecl
 parseParmCallDecl :: Parser A.ParmCallDecl
+parseParmCallDecl tokens@((T.Punctuator (T.SBracket T.OpenSBracket), _) : _) = do
+    (listLit, rest) <- parseListLiteral tokens
+    Right (A.ParmCallDeclLiteral listLit, rest)
 parseParmCallDecl tokens@((T.Identifier _, _) :
     (T.Punctuator (T.RBracket T.OpenRBracket), _) : _) = do
     (call, rest) <- parseCallExprDecl tokens

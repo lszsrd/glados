@@ -71,6 +71,7 @@ parseStmt tokens@((tok, pos) : _) = case tok of
     T.Keyword T.Char    -> parseDeclVarExpr tokens
     T.Keyword T.Int     -> parseDeclVarExpr tokens
     T.Keyword T.Float   -> parseDeclVarExpr tokens
+    T.Punctuator (T.SBracket T.OpenSBracket) -> parseDeclVarExpr tokens
     T.Punctuator (T.RBracket T.OpenRBracket) -> parseTernaryOperation tokens
     _ -> H.errorAt pos "Unexpected token in stmt"
 parseStmt [] = H.errorAt (0, 0) "Unexpected end of input in statement"
