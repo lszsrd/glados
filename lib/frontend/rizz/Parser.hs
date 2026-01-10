@@ -54,8 +54,6 @@ parseVarDecl tokens = do
     (_, rest2) <- H.expectToken (T.Punctuator T.Semicolon) "Expected ';'" rest1
     Right (A.VarDecl vardecl, rest2)
 
-
-
 -- | Takes a @'Parser'@ @'SingleToken'@ list as parameter and returns a __Either__ @'String'@ (@'A.Decl'@, [@'SingleToken'@]).
 --
 -- On success, this function returns a tuple made of the parsed function decl.
@@ -69,7 +67,7 @@ parseFunctionDecl tokens = do
     (pvdelist, rest3)   <- H.parsePVDEList rest2
     (_, rest4)          <- H.expectToken (T.Punctuator (T.RBracket T.CloseRBracket)) "expected ')'" rest3
     (returntype, rest5) <- parseReturnType rest4
-    (compStmt, rest6)   <- PS.parseCompoundStmt rest5
+    (compStmt, rest6)   <- PS.parseCompoundStmt (A.FunctionDecl name pvdelist (A.CompoundStmt []) returntype) rest5
     Right (A.FunctionDecl name pvdelist compStmt returntype, rest6)
 
 

@@ -1,8 +1,8 @@
-/* fn foo(Int: x) -> Int
+fn foo(Int: x) -> Int
 {
     Int y = 42;
  
-    if (x == 0) {
+    for (Int a = 0; a < 10; a++) {
         ret 0;
     }
     ret y / x;
@@ -28,7 +28,6 @@ fn bar(Int: x) -> Int
     }
     ret y;
 }
-*/
  
 fn baz()
 {

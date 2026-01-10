@@ -28,132 +28,134 @@ import ParserBinaryExpr (parseBinaryOpExpr)
 type SingleToken = (T.Token, (Int, Int))
 type Parser a = [SingleToken] -> Either String (a, [SingleToken])
 
-parseTernaryOperation :: Parser A.Stmt
-parseTernaryOperation ((T.Punctuator (T.RBracket T.OpenRBracket), _) : r) = do
+parseTernaryOperation :: A.Decl -> Parser A.Stmt
+parseTernaryOperation f ((T.Punctuator (T.RBracket T.OpenRBracket), _) : r) = do
     (binaryOpExpr, rest2) <- parseBinaryOpExpr r
     (_, rest3) <- H.expectToken
         (T.Punctuator (T.RBracket T.CloseRBracket)) "Expected ')'" rest2
     (_, rest4) <- H.expectToken (T.Punctuator T.QMark) "Expected '?'" rest3
-    (compoundStmt1, rest5) <- parseCompoundStmt rest4
+    (compoundStmt1, rest5) <- parseCompoundStmt f rest4
     (_, rest6) <- H.expectToken (T.Punctuator T.Colon) "Expected ':'" rest5
-    (compoundStmt2, rest7) <- parseCompoundStmt rest6
+    (compoundStmt2, rest7) <- parseCompoundStmt f rest6
     Right (A.IfStmt binaryOpExpr compoundStmt1 (Just compoundStmt2), rest7)
 
-parseStmtList :: Parser [A.Stmt]
-parseStmtList tokens@((T.Punctuator (T.CBracket T.CloseCBracket), _) : _)
+parseStmtList :: A.Decl -> Parser [A.Stmt]
+parseStmtList f tokens@((T.Punctuator (T.CBracket T.CloseCBracket), _) : _)
     = Right ([], tokens)
-parseStmtList tokens = do
-    (stmt, rest1) <- parseStmt tokens
-    (stmts, rest2) <- parseStmtList rest1
+parseStmtList f tokens = do
+    (stmt, rest1) <- parseStmt f tokens
+    (stmts, rest2) <- parseStmtList f rest1
     Right (stmt : stmts, rest2)
 
-parseCompoundStmt :: Parser A.CompoundStmt
-parseCompoundStmt tokens = do
+parseCompoundStmt :: A.Decl -> Parser A.CompoundStmt
+parseCompoundStmt f tokens = do
     (_, rest1) <- H.expectToken (T.Punctuator (T.CBracket T.OpenCBracket))
         "expected '{'" tokens
-    (stmts, rest2) <- parseStmtList rest1
+    (stmts, rest2) <- parseStmtList f rest1
     (_, rest3) <- H.expectToken (T.Punctuator (T.CBracket T.CloseCBracket))
         "expected '}'" rest2
     Right (A.CompoundStmt stmts, rest3)
 
-parseStmt :: Parser A.Stmt
-parseStmt tokens@((tok, pos) : _) = case tok of
+parseStmt :: A.Decl -> Parser A.Stmt
+parseStmt f tokens@((tok, pos) : _) = case tok of
     T.Identifier _ ->
         case tokens of
             ((T.Identifier _, _) : (T.Punctuator (T.RBracket T.OpenRBracket), _) : _) ->
-                parseCallExpr tokens
-            _ -> parseDeclStmtExpr tokens
-    T.Keyword T.Foreach -> parseForeach tokens
-    T.Keyword T.While   -> parseWhile tokens
-    T.Keyword T.Ret     -> parseRet tokens
-    T.Keyword T.If      -> parseIf tokens
-    T.Keyword T.For     -> parseFor tokens
-    T.Keyword T.Bool    -> parseDeclVarExpr tokens
-    T.Keyword T.Char    -> parseDeclVarExpr tokens
-    T.Keyword T.Int     -> parseDeclVarExpr tokens
-    T.Keyword T.Float   -> parseDeclVarExpr tokens
-    T.Punctuator (T.SBracket T.OpenSBracket) -> parseDeclVarExpr tokens
-    T.Punctuator (T.RBracket T.OpenRBracket) -> parseTernaryOperation tokens
+                parseCallExpr f tokens
+            _ -> parseDeclStmtExpr f tokens
+    T.Keyword T.Foreach -> parseForeach f tokens
+    T.Keyword T.While   -> parseWhile f tokens
+    T.Keyword T.Ret     -> parseRet f tokens
+    T.Keyword T.If      -> parseIf f tokens
+    T.Keyword T.For     -> parseFor f tokens
+    T.Keyword T.Bool    -> parseDeclVarExpr f tokens
+    T.Keyword T.Char    -> parseDeclVarExpr f tokens
+    T.Keyword T.Int     -> parseDeclVarExpr f tokens
+    T.Keyword T.Float   -> parseDeclVarExpr f tokens
+    T.Punctuator (T.SBracket T.OpenSBracket) -> parseDeclVarExpr f tokens
+    T.Punctuator (T.RBracket T.OpenRBracket) -> parseTernaryOperation f tokens
     _ -> H.errorAt pos "Unexpected token in stmt"
-parseStmt [] = H.errorAt (1, 1) "Unexpected end of input in statement"
+parseStmt _ [] = H.errorAt (1, 1) "Unexpected end of input in statement"
 
-parseCallExpr :: Parser A.Stmt
-parseCallExpr tokens = do
+parseCallExpr :: A.Decl -> Parser A.Stmt
+parseCallExpr f tokens = do
     (call, rest1) <- H.parseCallExprDecl tokens
     (_, rest2) <- H.expectToken (T.Punctuator T.Semicolon) "Expected ';'" rest1
     Right (A.CallExpr call, rest2)
 
-parseDeclStmtExpr :: Parser A.Stmt
-parseDeclStmtExpr tokens = do
+parseDeclStmtExpr :: A.Decl -> Parser A.Stmt
+parseDeclStmtExpr f tokens = do
     (declstmt, rest1) <- H.parseDeclStmt tokens
     (_, rest2) <- H.expectToken (T.Punctuator T.Semicolon) "Expected ';'" rest1
     Right (A.DeclStmt declstmt, rest2)
 
-parseDeclVarExpr :: Parser A.Stmt
-parseDeclVarExpr tokens = do
+parseDeclVarExpr :: A.Decl -> Parser A.Stmt
+parseDeclVarExpr f tokens = do
     (vardecl, rest1) <- H.parseVarDeclStmt tokens
     (_, rest2) <- H.expectToken (T.Punctuator T.Semicolon) "Expected ';'" rest1
     Right (A.DeclVarExpr vardecl, rest2)
 
-parseRet :: Parser A.Stmt
-parseRet tokens = do
+parseRet :: A.Decl -> Parser A.Stmt
+parseRet (A.FunctionDecl _ _ _ (Just _)) tokens = do
     (_, rest)      <- H.expectToken (T.Keyword T.Ret) "Expected 'ret'" tokens
     (expr, rest1) <- parseBinaryOpExpr rest
     (_, r2) <- H.expectToken (T.Punctuator T.Semicolon) "Expected ';'" rest1
     Right (A.RetStmt expr, r2)
+parseRet (A.FunctionDecl _ _ _ Nothing) ((_, pos): _) =
+    H.errorAt pos "Function return type not specified"
 
-parseIf :: Parser A.Stmt
-parseIf tokens = do
+parseIf :: A.Decl -> Parser A.Stmt
+parseIf f tokens = do
     (_, brkNRest)      <- H.expectToken (T.Keyword T.If) "Expected 'if'" tokens
     (_, rest) <- H.expectToken
         (T.Punctuator (T.RBracket T.OpenRBracket)) "Expected '('" brkNRest
     (cond, rest1)    <- parseBinaryOpExpr rest
     (_, rest2) <- H.expectToken
         (T.Punctuator (T.RBracket T.CloseRBracket)) "Expected ')'" rest1
-    (bdy, rest3)    <- parseCompoundStmt rest2
+    (bdy, rest3)    <- parseCompoundStmt f rest2
     case rest3 of
         (T.Keyword T.Else,_) : elseBdyNrest -> do
-            (elseBdy, rest4) <- parseCompoundStmt elseBdyNrest
+            (elseBdy, rest4) <- parseCompoundStmt f elseBdyNrest
             Right (A.IfStmt cond bdy (Just elseBdy), rest4)
         _ -> Right (A.IfStmt cond bdy Nothing, rest3)
 
-parseForBody :: Parser a -> Parser (Maybe a)
-parseForBody p tokens = do
+parseForBody :: A.Decl -> Parser a -> Parser (Maybe a)
+parseForBody f p tokens = do
     (op, rest) <- H.parseMaybe p tokens
     (_, rest1) <- H.expectToken (T.Punctuator T.Semicolon) "Expected ';'" rest
-    Right (op, rest)
+    Right (op, rest1)
 
-parseFor :: Parser A.Stmt
-parseFor tokens = do
+parseFor :: A.Decl -> Parser A.Stmt
+parseFor f tokens = do
     (_, rest)      <- H.expectToken (T.Keyword T.For) "Expected 'for'" tokens
     (_, vDeclNRest) <- H.expectToken
         (T.Punctuator (T.RBracket T.OpenRBracket)) "Expected '('" rest
-    (varDecl, rest1) <- parseForBody H.parseVarDeclStmt rest
-    (binOp, rest2) <- parseForBody parseBinaryOpExpr rest
+    (varDecl, rest1) <- parseForBody f H.parseVarDeclStmt vDeclNRest
+    (binOp, rest2) <- parseForBody f parseBinaryOpExpr rest1
     (decl, rest3)   <- H.parseMaybe H.parseDeclStmt rest2
     (_, bdyNRest) <- H.expectToken
         (T.Punctuator (T.RBracket T.CloseRBracket)) "Expected ')'" rest3
-    (bdy, rest4)    <- parseCompoundStmt bdyNRest
+    (bdy, rest4)    <- parseCompoundStmt f bdyNRest
     Right (A.ForStmt varDecl binOp decl bdy, rest4)
 
-parseForeach :: Parser A.Stmt
-parseForeach tokens = do
+parseForeach :: A.Decl -> Parser A.Stmt
+parseForeach f tokens = do
     (_, rest1) <- H.expectToken (T.Keyword T.Foreach) "Expected 'foreach'" tokens
     (_, rest2) <- H.expectToken (T.Punctuator (T.RBracket T.OpenRBracket)) "Expected '('" rest1
     (container, rest3) <- H.parseIdentifier rest2
     (_, rest4) <- H.expectToken (T.Punctuator T.Colon) "Expected ':'" rest3
     (iterator, rest5) <- H.parseIdentifier rest4
     (_, rest6) <- H.expectToken (T.Punctuator (T.RBracket T.CloseRBracket)) "Expected ')'" rest5
-    (body, rest7) <- parseCompoundStmt rest6
+    (body, rest7) <- parseCompoundStmt f rest6
     Right (A.ForeachStmt container iterator body, rest7)
 
-parseWhile :: Parser A.Stmt
-parseWhile tokens = do
+parseWhile :: A.Decl -> Parser A.Stmt
+parseWhile f tokens = do
     (_, rest1) <- H.expectToken (T.Keyword T.While) "Expected 'while'" tokens
     (_, binOpNrest) <- H.expectToken
         (T.Punctuator (T.RBracket T.OpenRBracket)) "Expected '('" rest1
     (cond, rest2) <- parseBinaryOpExpr binOpNrest
     (_, bdyNrest) <- H.expectToken
         (T.Punctuator (T.RBracket T.CloseRBracket)) "Expected ')'" rest2
-    (body, rest3) <- parseCompoundStmt bdyNrest
+    (body, rest3) <- parseCompoundStmt f bdyNrest
     Right (A.WhileStmt cond body, rest3)
