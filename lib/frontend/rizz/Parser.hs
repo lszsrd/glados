@@ -48,9 +48,9 @@ parseReturnType toks = Right (Nothing, toks)
 -- On success, this function returns a tuple made of the parsed variable declaration as @'A.VarDecl'@ and the remaining tokens.
 --
 -- On failure, this function returns a pretty formatted error message if invalid syntax or a semicolon is missing.
-parseVarDecl :: Parser A.Decl
-parseVarDecl tokens = do
-    (vardecl, rest1) <- H.parseVarDeclStmt tokens
+parseVarDecl :: A.Decl -> Parser A.Decl
+parseVarDecl f tokens = do
+    (vardecl, rest1) <- H.parseVarDeclStmt f tokens
     (_, rest2) <- H.expectToken (T.Punctuator T.Semicolon) "Expected ';'" rest1
     Right (A.VarDecl vardecl, rest2)
 
@@ -80,7 +80,8 @@ parseTopLevel :: Parser A.Decl
 parseTopLevel tokens@((T.Keyword T.Fn, _) : _) = parseFunctionDecl tokens
 parseTopLevel tokens =
     case H.parseBuiltinType tokens of
-        Right _ -> parseVarDecl tokens
+        Right _ -> parseVarDecl
+            (A.FunctionDecl "" [] (A.CompoundStmt []) Nothing) tokens
         Left error -> Left error
 
 

@@ -30,7 +30,7 @@ type Parser a = [SingleToken] -> Either String (a, [SingleToken])
 
 parseTernaryOperation :: A.Decl -> Parser A.Stmt
 parseTernaryOperation f ((T.Punctuator (T.RBracket T.OpenRBracket), _) : r) = do
-    (binaryOpExpr, rest2) <- parseBinaryOpExpr r
+    (binaryOpExpr, rest2) <- parseBinaryOpExpr f r
     (_, rest3) <- H.expectToken
         (T.Punctuator (T.RBracket T.CloseRBracket)) "Expected ')'" rest2
     (_, rest4) <- H.expectToken (T.Punctuator T.QMark) "Expected '?'" rest3
@@ -42,9 +42,10 @@ parseTernaryOperation f ((T.Punctuator (T.RBracket T.OpenRBracket), _) : r) = do
 parseStmtList :: A.Decl -> Parser [A.Stmt]
 parseStmtList f tokens@((T.Punctuator (T.CBracket T.CloseCBracket), _) : _)
     = Right ([], tokens)
-parseStmtList f tokens = do
+parseStmtList f@(A.FunctionDecl n pvdelist bdy ret) tokens = do
     (stmt, rest1) <- parseStmt f tokens
-    (stmts, rest2) <- parseStmtList f rest1
+    newParms <- H.addIfVarExpr (H.getPos 0 tokens) stmt pvdelist
+    (stmts, rest2) <- parseStmtList (A.FunctionDecl n newParms bdy ret) rest1
     Right (stmt : stmts, rest2)
 
 parseCompoundStmt :: A.Decl -> Parser A.CompoundStmt
@@ -79,26 +80,26 @@ parseStmt _ [] = H.errorAt (1, 1) "Unexpected end of input in statement"
 
 parseCallExpr :: A.Decl -> Parser A.Stmt
 parseCallExpr f tokens = do
-    (call, rest1) <- H.parseCallExprDecl tokens
+    (call, rest1) <- H.parseCallExprDecl f tokens
     (_, rest2) <- H.expectToken (T.Punctuator T.Semicolon) "Expected ';'" rest1
     Right (A.CallExpr call, rest2)
 
 parseDeclStmtExpr :: A.Decl -> Parser A.Stmt
 parseDeclStmtExpr f tokens = do
-    (declstmt, rest1) <- H.parseDeclStmt tokens
+    (declstmt, rest1) <- H.parseDeclStmt f tokens
     (_, rest2) <- H.expectToken (T.Punctuator T.Semicolon) "Expected ';'" rest1
     Right (A.DeclStmt declstmt, rest2)
 
 parseDeclVarExpr :: A.Decl -> Parser A.Stmt
 parseDeclVarExpr f tokens = do
-    (vardecl, rest1) <- H.parseVarDeclStmt tokens
+    (vardecl, rest1) <- H.parseVarDeclStmt f tokens
     (_, rest2) <- H.expectToken (T.Punctuator T.Semicolon) "Expected ';'" rest1
     Right (A.DeclVarExpr vardecl, rest2)
 
 parseRet :: A.Decl -> Parser A.Stmt
-parseRet (A.FunctionDecl _ _ _ (Just _)) tokens = do
+parseRet f@(A.FunctionDecl _ _ _ (Just _)) tokens = do
     (_, rest)      <- H.expectToken (T.Keyword T.Ret) "Expected 'ret'" tokens
-    (expr, rest1) <- parseBinaryOpExpr rest
+    (expr, rest1) <- parseBinaryOpExpr f rest
     (_, r2) <- H.expectToken (T.Punctuator T.Semicolon) "Expected ';'" rest1
     Right (A.RetStmt expr, r2)
 parseRet (A.FunctionDecl _ _ _ Nothing) ((_, pos): _) =
@@ -109,7 +110,7 @@ parseIf f tokens = do
     (_, brkNRest)      <- H.expectToken (T.Keyword T.If) "Expected 'if'" tokens
     (_, rest) <- H.expectToken
         (T.Punctuator (T.RBracket T.OpenRBracket)) "Expected '('" brkNRest
-    (cond, rest1)    <- parseBinaryOpExpr rest
+    (cond, rest1)    <- parseBinaryOpExpr f rest
     (_, rest2) <- H.expectToken
         (T.Punctuator (T.RBracket T.CloseRBracket)) "Expected ')'" rest1
     (bdy, rest3)    <- parseCompoundStmt f rest2
@@ -119,24 +120,34 @@ parseIf f tokens = do
             Right (A.IfStmt cond bdy (Just elseBdy), rest4)
         _ -> Right (A.IfStmt cond bdy Nothing, rest3)
 
-parseForBody :: A.Decl -> Parser a -> Parser (Maybe a)
-parseForBody f p tokens = do
+parseForBody :: Parser a -> Parser (Maybe a)
+parseForBody p tokens = do
     (op, rest) <- H.parseMaybe p tokens
     (_, rest1) <- H.expectToken (T.Punctuator T.Semicolon) "Expected ';'" rest
     Right (op, rest1)
+
+parseTemp :: A.Decl -> Parser (Maybe A.VarDeclStmt, A.Decl)
+parseTemp f@(A.FunctionDecl n parms bdy ret) tokens = do
+    (decl, rest) <- H.parseMaybe (H.parseVarDeclStmt f) tokens
+    (_, rest1) <- H.expectToken (T.Punctuator T.Semicolon) "Expected ';'" rest
+    case decl of
+        Nothing -> Right ((Nothing, f), rest1)
+        Just st -> do
+            newP <- H.addIfVarExpr (H.getPos 0 tokens) (A.DeclVarExpr st) parms
+            Right ((decl, A.FunctionDecl n newP bdy ret), rest1)
 
 parseFor :: A.Decl -> Parser A.Stmt
 parseFor f tokens = do
     (_, rest)      <- H.expectToken (T.Keyword T.For) "Expected 'for'" tokens
     (_, vDeclNRest) <- H.expectToken
         (T.Punctuator (T.RBracket T.OpenRBracket)) "Expected '('" rest
-    (varDecl, rest1) <- parseForBody f H.parseVarDeclStmt vDeclNRest
-    (binOp, rest2) <- parseForBody f parseBinaryOpExpr rest1
-    (decl, rest3)   <- H.parseMaybe H.parseDeclStmt rest2
+    ((vDecl, newF) , rest1) <- parseTemp f vDeclNRest
+    (binOp, rest2) <- parseForBody (parseBinaryOpExpr newF) rest1
+    (decl, rest3)   <- H.parseMaybe (H.parseDeclStmt newF) rest2
     (_, bdyNRest) <- H.expectToken
         (T.Punctuator (T.RBracket T.CloseRBracket)) "Expected ')'" rest3
-    (bdy, rest4)    <- parseCompoundStmt f bdyNRest
-    Right (A.ForStmt varDecl binOp decl bdy, rest4)
+    (bdy, rest4)    <- parseCompoundStmt newF bdyNRest
+    Right (A.ForStmt vDecl binOp decl bdy, rest4)
 
 parseForeach :: A.Decl -> Parser A.Stmt
 parseForeach f tokens = do
@@ -154,7 +165,7 @@ parseWhile f tokens = do
     (_, rest1) <- H.expectToken (T.Keyword T.While) "Expected 'while'" tokens
     (_, binOpNrest) <- H.expectToken
         (T.Punctuator (T.RBracket T.OpenRBracket)) "Expected '('" rest1
-    (cond, rest2) <- parseBinaryOpExpr binOpNrest
+    (cond, rest2) <- parseBinaryOpExpr f binOpNrest
     (_, bdyNrest) <- H.expectToken
         (T.Punctuator (T.RBracket T.CloseRBracket)) "Expected ')'" rest2
     (body, rest3) <- parseCompoundStmt f bdyNrest

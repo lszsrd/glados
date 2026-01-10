@@ -2,7 +2,7 @@ fn foo(Int: x) -> Int
 {
     Int y = 42;
  
-    for (Int a = 0; a < 10; a++) {
+    for (Int a = 0; a < 10; z++) {
         ret 0;
     }
     ret y / x;
@@ -29,9 +29,9 @@ fn bar(Int: x) -> Int
     ret y;
 }
  
-fn baz()
+fn baz() -> Int
 {
     while (True) {
-        ret bar(foo(100) + 4 - 5) * 10 + 4 - 5 / 1;
+        ret bar(foo(100) + 4 - z) * 10 + 4 - 5 / 1;
     }
 }
