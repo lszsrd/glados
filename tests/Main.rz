@@ -21,7 +21,7 @@ fn      foo(Int: x, Int: y) -> Int
 
 /* comment block
             */
-fn main()
+fn main() -> Int
 {
     Int /*  */ x = 42;
     

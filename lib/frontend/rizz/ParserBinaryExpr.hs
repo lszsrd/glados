@@ -59,9 +59,9 @@ parseFormBinaryOpExpr f tokens@(_ : (T.Punctuator (T.BinaryOp op), _) : rest) = 
 parseFormBinaryOpExpr f tokens = do
     (parm1, rest) <- parseBinaryOpParm f tokens
     case H.parseBinaryOp rest of
-        Left err -> do
-            (const, _) <- H.parseParmCallDecl f tokens
-            Right (A.BinaryOpConst const, rest)
+        Left _ -> do
+            (cons, _) <- H.parseParmCallDecl f tokens
+            Right (A.BinaryOpConst cons, rest)
         Right (binop, rest2) -> do
             (parm2, rest3) <- parseBinaryOpParm f rest2
             Right (A.BinaryOpExpr parm1 binop parm2, rest3)
@@ -84,6 +84,7 @@ packBracket (op@(T.Punctuator (T.RBracket T.OpenRBracket), _): rest) = do
 packBracket (op: rest) = do
     (blk, rest1) <- packBracket rest
     Right (op : blk, rest1)
+packBracket [] = Right ([], [])
 
 -- | Takes a stream of @'SingleToken'@ as parameter
 --  and returns a __Either __ @'String'@ @'([SingleToken], [SingleToken])'@
@@ -106,6 +107,14 @@ getFirstParam (punct : rest) = case punct of
         (param, rest1) <- getFirstParam rest
         Right (punct: param, rest1)
 
+packFirstParamH :: [SingleToken] -> Parser [SingleToken]
+packFirstParamH first rest = case first of
+    (a@(T.Identifier _, _) :
+        x@(T.Punctuator (T.RBracket T.OpenRBracket),_): xs) -> do
+        (parm, rest1) <- packBinOpExpr xs
+        Right (a: x : formatBinOpExpr parm ++ rest1, rest)
+    _ -> Right (first, rest)
+
 packFirstParam :: Parser [SingleToken]
 packFirstParam t = do
     (first, rest) <- getFirstParam t
@@ -113,11 +122,7 @@ packFirstParam t = do
         (x@(T.Punctuator (T.RBracket T.OpenRBracket),_): xs) -> do
             (parm, rest1) <- packBinOpExpr xs
             Right (x : formatBinOpExpr parm ++ rest1,rest)
-        (a@(T.Identifier _, _) :
-            x@(T.Punctuator (T.RBracket T.OpenRBracket),_): xs) -> do
-            (parm, rest1) <- packBinOpExpr xs
-            Right (a: x : formatBinOpExpr parm ++ rest1, rest)
-        _ -> Right (first, rest)
+        _ -> packFirstParamH first rest
 
 -- | Takes a stream of @'SingleToken'@ as parameter
 --  and returns a __Either __ @'String'@ @'([([SingleToken], Maybe T.BinaryOp)], [SingleToken])'@
@@ -171,16 +176,19 @@ createBlockParam p =
 -- this function returns a formatted stream of token, representing the formatted BinaryOpExpr.
 formatBinOpExpr :: [([SingleToken], Maybe T.BinaryOp)] -> [SingleToken]
 formatBinOpExpr (first@(p1, Just op1) : second@(p2, Just op2): rest) = 
-    case getPrioOp first second of
-        0 -> createBlockParam (p1 ++ [(T.Punctuator (T.BinaryOp op1),
+    if getPrioOp first second == 0
+        then
+            createBlockParam (p1 ++ [(T.Punctuator (T.BinaryOp op1),
             H.getPos 0 p2)] ++ p2) ++
             [(T.Punctuator (T.BinaryOp op2), H.getPos 1 p2)] ++
             createBlockParam (formatBinOpExpr rest)
-        1 -> p1 ++ [(T.Punctuator (T.BinaryOp op1), H.getPos 1 p1)] ++
+        else
+            p1 ++ [(T.Punctuator (T.BinaryOp op1), H.getPos 1 p1)] ++
             createBlockParam (formatBinOpExpr (second : rest))
 formatBinOpExpr [(t, Nothing)] = t
 formatBinOpExpr [(t, Just op), (t2, Nothing)] =
     t ++ [(T.Punctuator (T.BinaryOp op), H.getPos 0 t2)] ++ t2
+formatBinOpExpr _ = []
 
 -- | Takes a stream of @'SingleToken'@ as parameter
 --  and returns a __Either __ @'String'@ @'(A.BinaryOpExpr, [SingleToken])'@

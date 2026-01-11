@@ -38,7 +38,7 @@ type Parser a = [SingleToken] -> Either String (a, [SingleToken])
 --
 -- On faillure, if an arrow punctuator is found, it expects a builtin type after it. Otherwise, it returns @'Nothing'@ for the return type.
 parseReturnType :: Parser (Maybe A.BuiltinType)
-parseReturnType tokens@((T.Punctuator T.Arrow, _) : rest1) = do
+parseReturnType ((T.Punctuator T.Arrow, _) : rest1) = do
     (returntype, rest2) <- H.parseBuiltinType rest1
     Right(Just returntype, rest2)
 parseReturnType toks = Right (Nothing, toks)
@@ -54,6 +54,14 @@ parseVarDecl f tokens = do
     (_, rest2) <- H.expectToken (T.Punctuator T.Semicolon) "Expected ';'" rest1
     Right (A.VarDecl vardecl, rest2)
 
+
+parseFunctionDeclH :: Parser T.Identifier
+parseFunctionDeclH tokens = do
+    (_ , rest) <- H.expectToken (T.Keyword T.Fn) "Expected 'Fn'" tokens
+    (name, r1)       <- H.parseIdentifier rest
+    (_, rest2) <- H.expectToken (T.Punctuator (T.RBracket T.OpenRBracket))
+        "expected '('" r1
+    Right (name, rest2)
 -- | Takes a @'Parser'@ @'SingleToken'@ list as parameter and returns a __Either__ @'String'@ (@'A.Decl'@, [@'SingleToken'@]).
 --
 -- On success, this function returns a tuple made of the parsed function decl.
@@ -61,14 +69,14 @@ parseVarDecl f tokens = do
 -- On failure, this function returns a pretty formatted error message.
 parseFunctionDecl :: Parser A.Decl
 parseFunctionDecl tokens = do
-    (_, rest0)          <- H.expectToken (T.Keyword T.Fn) "Expected 'Fn'" tokens
-    (name, rest1)       <- H.parseIdentifier rest0
-    (_, rest2)          <- H.expectToken (T.Punctuator (T.RBracket T.OpenRBracket)) "expected '('" rest1
-    (pvdelist, rest3)   <- H.parsePVDEList rest2
-    (_, rest4)          <- H.expectToken (T.Punctuator (T.RBracket T.CloseRBracket)) "expected ')'" rest3
+    (n, rest)        <- parseFunctionDeclH tokens 
+    (pvdelist, rest3)   <- H.parsePVDEList rest
+    (_, rest4) <- H.expectToken (T.Punctuator (T.RBracket T.CloseRBracket))
+        "expected ')'" rest3
     (returntype, rest5) <- parseReturnType rest4
-    (compStmt, rest6)   <- PS.parseCompoundStmt (A.FunctionDecl name pvdelist (A.CompoundStmt []) returntype) rest5
-    Right (A.FunctionDecl name pvdelist compStmt returntype, rest6)
+    (compStmt, rest6)   <- PS.parseCompoundStmt (A.FunctionDecl n pvdelist
+        (A.CompoundStmt []) returntype) rest5
+    Right (A.FunctionDecl n pvdelist compStmt returntype, rest6)
 
 
 -- | Takes a @'Parser'@ @'SingleToken'@ list as parameter and returns a __Either__ @'String'@ (@'A.Decl'@, [@'SingleToken'@]).
@@ -82,7 +90,7 @@ parseTopLevel tokens =
     case H.parseBuiltinType tokens of
         Right _ -> parseVarDecl
             (A.FunctionDecl "" [] (A.CompoundStmt []) Nothing) tokens
-        Left error -> Left error
+        Left err -> Left err
 
 
 -- | Takes a @'Parser'@ @'SingleToken'@ list as parameter and returns a __Either__ @'String'@ ([@'A.Decl'@], [@'SingleToken'@]).
@@ -105,6 +113,6 @@ parseDecl tokens = do
 parser :: [SingleToken] -> Either String [A.Decl]
 parser tokens =
     case parseDecl tokens of
-        Left error -> Left error
+        Left err -> Left err
         Right (decls, []) -> Right decls
-        Right (_, rest) -> H.errorAt (1, 1) "Parser Exception."
+        Right (_, _) -> H.errorAt (1, 1) "Parser Exception."

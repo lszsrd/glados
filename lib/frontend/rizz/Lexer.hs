@@ -78,18 +78,18 @@ lexerWrapper begin ('/': '*': x) (l, c)
     = case parseMultiLineComment begin x (l, c + 2) (l, c + 2) of
         Left e -> Left e
         Right (stream, pos) -> lexerWrapper begin stream pos
-lexerWrapper begin ('/': '/': x) y = lexerWrapper begin (dropWhile (/= '\n') x) y
+lexerWrapper beg ('/': '/': x) y = lexerWrapper beg (dropWhile (/= '\n') x) y
 lexerWrapper begin ('\n': xs) (l, _) = lexerWrapper begin xs (l + 1, 1)
-lexerWrapper begin stream@(x:xs) (l, c) = case parseKeyword stream
-      <|> fmap (\(x,y,z) -> (Identifier x, y, z)) (parseIdentifier stream)
+lexerWrapper begin stream@(x:xs) (l, col) = case parseKeyword stream
+      <|> fmap (\(a,b,c) -> (Identifier a, b, c)) (parseIdentifier stream)
       <|> parseLiteral stream
       <|> parsePunctuator stream of
-        Just (tok, len, rest) -> case lexerWrapper begin rest (l, c + len) of
+        Just (tok, len, res) -> case lexerWrapper begin res (l, col + len) of
             Left e -> Left e
-            Right tokens -> Right $ (tok, (l, c)): tokens
+            Right tokens -> Right $ (tok, (l, col)): tokens
         Nothing -> case parseEscapeSequence stream of
-            Just _  -> lexerWrapper begin xs (l, c + 1)
-            Nothing -> Left $ fError begin (l, c) 1 (unexpectedChar [x])
+            Just _  -> lexerWrapper begin xs (l, col + 1)
+            Nothing -> Left $ fError begin (l, col) 1 (unexpectedChar [x])
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__ (@'Token'@, @'Data.Int'@, @'Stream'@) if the stream starts with a @'BoolLiteral'@.
 --
@@ -125,8 +125,8 @@ parseKeyword _ = Nothing
 -- @'parseKeyword'@'s helper function that checks if the very next character after the token is a space (to properly create a @'Token.Keyword'@ and not an @'Identifier'@) or a @'Colon'@ in case of function's parameter type.
 hParseKeyword :: (Token, Int, Stream) -> Maybe (Token, Int, Stream)
 hParseKeyword (token, tokSize, []) = Just (token, tokSize, [])
-hParseKeyword (token, tokSize, stream@(':': x)) = Just (token, tokSize, stream)
-hParseKeyword (token, tokSize, stream@(']': x)) = Just (token, tokSize, stream)
+hParseKeyword (token, tokSize, stream@(':': _)) = Just (token, tokSize, stream)
+hParseKeyword (token, tokSize, stream@(']': _)) = Just (token, tokSize, stream)
 hParseKeyword (token, tokSize, stream@(x: _))
     | isSpace x = Just (token, tokSize, stream)
     | otherwise = Nothing
@@ -192,11 +192,11 @@ parseMultiLineComment :: Stream -> Stream -> (Int, Int) -> (Int, Int)
     -> Either String (Stream, (Int, Int))
 parseMultiLineComment begin [] _ y
     = Left $ fError begin y 2 "unterminated comment block, missing '\\*'"
-parseMultiLineComment begin ('/': '*': x) y _ = Left $ fError begin y 2
+parseMultiLineComment begin ('/': '*': _) y _ = Left $ fError begin y 2
     "unterminated comment block upon creation of a new one"
-parseMultiLineComment begin ('\n': x) (l, c) y
+parseMultiLineComment begin ('\n': x) (l, _) y
     = parseMultiLineComment begin x (l + 1, 1) y
-parseMultiLineComment begin ('*': '/': xs) (l, c) _ = Right (xs, (l, c + 2))
+parseMultiLineComment _ ('*': '/': xs) (l, c) _ = Right (xs, (l, c + 2))
 parseMultiLineComment begin (_: x) (l, c) y
     = parseMultiLineComment begin x (l, c + 1) y
 
@@ -207,7 +207,7 @@ parseMultiLineComment begin (_: x) (l, c) y
 parseStringLiteral :: Stream -> Maybe (Lexeme, Int, Stream)
 parseStringLiteral ('"': '"': x) = Just ([], 2, x)
 parseStringLiteral ('"': x) = case parseSCharSequence x of
-    Just (x, y, '"': z) -> Just (x, 2 + y, z)
+    Just (a, y, '"': z) -> Just (a, 2 + y, z)
     _ -> Nothing
 parseStringLiteral _ = Nothing
 
@@ -277,7 +277,7 @@ hParseDigitSequence stream = case parseDigit stream of
 parseCharacterConstant :: Stream -> Maybe (Char, Int, Stream)
 parseCharacterConstant ('\'': x: '\'': xs) = case parseChar [x] of
     Nothing -> Nothing
-    Just (x, _, _) -> Just (x, 3, xs)
+    Just (a, _, _) -> Just (a, 3, xs)
 parseCharacterConstant _ = Nothing
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__ (@'Data.Char'@, @'Data.Int'@, @'Stream'@) if the stream starts with a \<s-char\>.
@@ -328,7 +328,7 @@ parseIdentifier stream = case parseNonDigit stream of
 -- On success, this function returns a tuple made of the parsed character, the character length (which is always 1) and the input stream stripped of the parsed character.
 parseNonDigit :: Stream -> Maybe (Char, Int, Stream)
 parseNonDigit ('_': xs) = Just ('_', 1, xs)
-parseNonDigit stream@(x: xs)
+parseNonDigit (x: xs)
     | isLetter x = Just (x, 1, xs)
 parseNonDigit _ = Nothing
 

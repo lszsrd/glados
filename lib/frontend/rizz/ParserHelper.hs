@@ -82,19 +82,20 @@ parseOr p1 p2 tokens = case p1 tokens of
 doesVarExists :: (Int, Int) -> A.Decl -> T.Identifier -> Either String String
 doesVarExists _ _ "True" = Right "OK"
 doesVarExists _ _ "False" = Right "OK"
-doesVarExists pos f@(A.FunctionDecl _ [] _ _) id =
-    errorAt pos ("Undefined reference to " ++ show id)
-doesVarExists pos f@(A.FunctionDecl n (A.ParmVarDeclExpr _ id:xs) bdy ret) id2 =
-    if id == id2 then Right "OK"
+doesVarExists pos (A.FunctionDecl _ [] _ _) iden =
+    errorAt pos ("Undefined reference to " ++ show iden)
+doesVarExists pos (A.FunctionDecl n (A.ParmVarDeclExpr _ id1:xs) bdy ret) id2 =
+    if id1 == id2 then Right "OK"
         else doesVarExists pos (A.FunctionDecl n xs bdy ret) id2
+doesVarExists _ _ _ = Left "1:1 Error"
 
 addIfVarExpr :: (Int, Int) -> A.Stmt -> [A.ParmVarDeclExpr]
     -> Either String [A.ParmVarDeclExpr]
-addIfVarExpr _ (A.DeclVarExpr (A.VarDeclStmt t id _ _)) [] =
-    Right [A.ParmVarDeclExpr t id]
-addIfVarExpr p var@(A.DeclVarExpr (A.VarDeclStmt _ id _ _))
+addIfVarExpr _ (A.DeclVarExpr (A.VarDeclStmt t iden _ _)) [] =
+    Right [A.ParmVarDeclExpr t iden]
+addIfVarExpr p var@(A.DeclVarExpr (A.VarDeclStmt _ iden _ _))
     (x@(A.ParmVarDeclExpr _ id2): xs) =
-    if id == id2 then errorAt p ("Multiple definition of " ++ show id)
+    if iden == id2 then errorAt p ("Multiple definition of " ++ show iden)
         else do
             rest <- addIfVarExpr p var xs
             Right (x:rest)
@@ -125,19 +126,19 @@ parseListElements :: Parser [T.Literal]
 parseListElements tokens@((T.Punctuator (T.SBracket T.CloseSBracket), _) : _)
     = Right ([], tokens)
 parseListElements tokens@((T.Punctuator (T.SBracket T.OpenSBracket), _) : _) = do
-    (elem, rest1) <- parseListLiteral tokens
+    (elt, rest1) <- parseListLiteral tokens
     case rest1 of
         ((T.Punctuator T.Comma, _) : rest2) -> do
             (elems, rest3) <- parseListElements rest2
-            Right (elem : elems, rest3)
-        _ -> Right ([elem], rest1)
+            Right (elt : elems, rest3)
+        _ -> Right ([elt], rest1)
 parseListElements tokens = do
-    (elem, rest1) <- parseLiteral tokens
+    (elt, rest1) <- parseLiteral tokens
     case rest1 of
         ((T.Punctuator T.Comma, _) : rest2) -> do
             (elems, rest3) <- parseListElements rest2
-            Right (elem : elems, rest3)
-        _ -> Right ([elem], rest1)
+            Right (elt : elems, rest3)
+        _ -> Right ([elt], rest1)
 
 -- Helper for parse list literal (similar to parseCallExprDecl)
 parseListLiteral :: Parser T.Literal
@@ -148,7 +149,7 @@ parseListLiteral ((T.Punctuator (T.SBracket T.OpenSBracket), _) : rest1) = do
     Right (T.ListLiteral elements, rest3)
 parseListLiteral ((token, position) : _) =
     errorAt position ("Expected '[' for list literal, got " ++ show token)
-parseListLiteral [] = errorAt (0,0) "Expected list literal"
+parseListLiteral [] = errorAt (1,1) "Expected list literal"
 
 -- Helper for parse BuiltinType
 parseBuiltinType :: Parser A.BuiltinType
@@ -160,14 +161,15 @@ parseBuiltinType ((T.Punctuator (T.SBracket T.OpenSBracket), _) : rest1) = do
 parseBuiltinType ((T.Keyword T.Bool, _) : rest) = Right (A.Boolean, rest)
 parseBuiltinType ((T.Keyword T.Char, _) : rest) = Right (A.Character, rest)
 parseBuiltinType ((T.Keyword T.Int, _) : rest) = Right (A.Integer, rest)
-parseBuiltinType ((T.Keyword T.Float, _) : rest) = Right (A.SinglePrecision, rest)
+parseBuiltinType ((T.Keyword T.Float, _) : r) = Right (A.SinglePrecision, r)
 parseBuiltinType ((token, position) : _) =
     errorAt position ("Expected builtintype, got " ++ show token)
+parseBuiltinType [] = errorAt (1,1) "Expected builtintype, got Nothing"
 
 -- Helper for parse Identifier token
 parseIdentifier :: Parser T.Identifier
 parseIdentifier [] = errorAt (1, 1) "Unexpected err"
-parseIdentifier ((T.Identifier id, _) : rest) = Right (id, rest)
+parseIdentifier ((T.Identifier id1, _) : rest) = Right (id1, rest)
 parseIdentifier ((token, position) : _) =
     errorAt position ("Expected identifier, got " ++ show token)
 
@@ -194,21 +196,21 @@ parsePVDEList tokens = do
 
 -- Helper for parse ParmCallDecl
 parseParmCallDecl :: A.Decl -> Parser A.ParmCallDecl
-parseParmCallDecl f tokens@((T.Punctuator (T.SBracket T.OpenSBracket), _) : _) = do
-    (listLit, rest) <- parseListLiteral tokens
+parseParmCallDecl _ t@((T.Punctuator (T.SBracket T.OpenSBracket), _) : _) = do
+    (listLit, rest) <- parseListLiteral t
     Right (A.ParmCallDeclLiteral listLit, rest)
 parseParmCallDecl f tokens@((T.Identifier _, _) :
     (T.Punctuator (T.RBracket T.OpenRBracket), _) : _) = do
     (call, rest) <- parseCallExprDecl f tokens
     Right (A.ParmCallDeclExpr call, rest)
-parseParmCallDecl f tokens@((T.Identifier id, pos) : rest) = do
-    _ <- doesVarExists pos f id
-    Right (A.ParmCallDeclIdent id, rest)
-parseParmCallDecl f tokens@((T.Literal li, _) : rest) =
+parseParmCallDecl f ((T.Identifier id1, pos) : rest) = do
+    _ <- doesVarExists pos f id1
+    Right (A.ParmCallDeclIdent id1, rest)
+parseParmCallDecl _ ((T.Literal li, _) : rest) =
     Right (A.ParmCallDeclLiteral li, rest)
-parseParmCallDecl f ((token, position) : _) =
+parseParmCallDecl _ ((token, position) : _) =
     errorAt position ("Expected literal/ident/call-expr, got " ++ show token)
-parseParmCallDecl f [] = errorAt (1, 1) "Expected ParmCallDecl, got " 
+parseParmCallDecl _ [] = errorAt (1, 1) "Expected ParmCallDecl, got " 
 
 parseSingle :: A.Decl -> Parser A.ParmCallDecl
 parseSingle f tokens = case tokens of
@@ -224,13 +226,13 @@ parseParmCallDeclBExpr f tokens = do
     (p1, rest) <- parseSingle f tokens
     case parseBinaryOp rest of
         Right (op, rest1) -> do
-            (p2, rest2) <- parseSingle f rest1
-            Right (A.ParmCallBExpr (A.BinaryOpParm p1) op (A.BinaryOpParm p2), rest2)
+            (p2, r) <- parseSingle f rest1
+            Right (A.ParmCallBExpr (A.BinaryOpParm p1)op(A.BinaryOpParm p2),r)
         Left _ -> Right (p1, rest)
 
 -- Helper for parse a list of ParmCallDecl
 parseParmCallDeclList :: A.Decl -> Parser [A.ParmCallDecl]
-parseParmCallDeclList f t@((T.Punctuator (T.RBracket T.CloseRBracket), _) : _)
+parseParmCallDeclList _ t@((T.Punctuator (T.RBracket T.CloseRBracket), _) : _)
     = Right ([], t)
 parseParmCallDeclList f tokens = do
     (arg, rest1) <- parseOr (parseParmCallDeclBExpr f)
@@ -255,11 +257,11 @@ parseCallExprDecl f tokens = do
 -- Helper for parse DeclAssignStmtLiteral
 parseDeclAssignStmtLiteral :: A.Decl -> Parser A.DeclStmt
 parseDeclAssignStmtLiteral f tokens = do
-    (id, rest1) <- parseIdentifier tokens
-    _ <- doesVarExists (getPos 0 tokens) f id
+    (id1, rest1) <- parseIdentifier tokens
+    _ <- doesVarExists (getPos 0 tokens) f id1
     (ap, rest2) <- parseAssignOp rest1
     (parmcldl, rest3) <- parseParmCallDecl f rest2
-    Right (A.DeclAssignStmtLiteral id ap parmcldl, rest3)
+    Right (A.DeclAssignStmtLiteral id1 ap parmcldl, rest3)
 
 -- Helper for parse VarDeclStmt (Type name = value)
 parseVarDeclStmt :: A.Decl -> Parser A.VarDeclStmt
@@ -277,14 +279,16 @@ parseDeclStmt f tokens@((T.Identifier i, pos) : rest1) = do
         ((T.Punctuator (T.UnaryOp u), _) : rest2) -> 
             Right (A.DeclAssignStmtUnary (A.UnaryOperatorExpr i u), rest2)
         _ -> parseDeclAssignStmtLiteral f tokens
-parseDeclStmt f ((token, position) : _) =
+parseDeclStmt _ ((token, position) : _) =
     errorAt position ("Expected identifier, got " ++ show token)
+parseDeclStmt _ _ = errorAt (1, 1) "Expected identifier, got Nothing"
 
 -- | Takes an @'Integer'@ and a stream of @'SingleToken'@ as parameters,
 --  and returns a tuple of @'Integer'@
 --
 -- this function serves as a helper function to get the position of the first or last token in the stream.
 getPos :: Int -> [SingleToken] -> (Int, Int)
-getPos 0 ((t, (l, c)): rest) = (l, c - 1)
-getPos 1 [(t, (l, c))] = (l, c + 1)
-getPos 1 (x : xs) = getPos 1 xs
+getPos 0 ((_, (l, c)): _) = (l, c - 1)
+getPos 1 [(_, (l, c))] = (l, c + 1)
+getPos 1 (_ : xs) = getPos 1 xs
+getPos _ _ = (1, 1)

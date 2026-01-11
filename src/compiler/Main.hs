@@ -61,6 +61,7 @@ main = do
         Left e -> if "USAGE" `isPrefixOf` e
             then printUsage extension progName
             else hPutStrLn stderr (progName ++ e) >> exitFailure
-        Right (_, []) -> hPutStrLn stderr (progName ++ ": " ++ Format.error ++ ": no input files") >> exitFailure
+        Right (_, []) -> hPutStrLn stderr (progName ++ ": " ++ Format.error ++
+            ": no input files") >> exitFailure
         Right (opts, files) -> compile
             opts (map head . group . sort $ files) lexer parser compileDecl

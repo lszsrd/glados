@@ -24,8 +24,12 @@ ENDFUNC
 FUNC bar 1
 PUSH_INT 1
 STORE y
+LOAD y
+CALL feur 1
+STORE q
 LABEL for_start
 LOAD y
+CALL feur 1
 LOAD x
 LT
 JMP_IF_FALSE for_end
@@ -64,6 +68,9 @@ STORE y
 JMP for_start
 LABEL for_end
 LOAD y
+CALL feur 1
+STORE y
+LOAD y
 RET
 ENDFUNC
 FUNC baz 0
@@ -80,6 +87,7 @@ SUB
 STORE x
 CALL bar 1
 PUSH_INT 10
+CALL feur 1
 MUL
 PUSH_INT 4
 PUSH_INT 5
