@@ -24,9 +24,9 @@ instance Show Token where
     show (RBracket Close) = "')'"
     show (Atom (Bool False)) = "'#f'"
     show (Atom (Bool True)) = "'#t'"
-    show (Atom (Integer x)) = show x
-    show (Atom (Float x)) = show x
-    show (Atom (Identifier x)) = x
+    show (Atom (Integer x)) = show $ show x
+    show (Atom (Float x)) = show $ show x
+    show (Atom (Identifier x)) = show x
     show (Atom (Operator Define)) = "'define'"
     show (Atom (Operator Lambda)) = "'lambda'"
     show (Atom (Operator Add)) = "'+'"

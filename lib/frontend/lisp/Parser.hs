@@ -6,46 +6,57 @@
 -}
 
 module Parser (
-    parser
+    expect
+    , parser
+    , hParser
+    , parseDecl
+    , hParseDecl
+    , parseExpr
+    , parseConstExpr
+    , parseIfExpr
+    , parseCallExpr
+    , hParseCallExpr
+    , parseBinaryExpr
+    , hParseBinaryExpr
+    , parseLambdaExpr
 ) where
 
 import Tokens
 import Ast
 
--- TODO: check for unbound variables, codingding style
-
-parser :: Tokens -> Either String [Expr]
-parser [] = Right []
-parser x = case parseDecl x of
-    Left [] -> case parseExpr x of
-        Left e -> Left e
-        Right (y, ys) -> case parser ys of
-            Left e -> Left e
-            Right z -> Right $ y: z
-    Left e -> Left e
-    Right (y, ys) -> case parser ys of
-        Left e -> Left e
-        Right z -> Right $ y: z
+-- TODO: check for unbound variables
 
 expect :: (Int, Int) -> String -> String -> String
 expect (x, x') y z = show x ++ ":" ++ show x' ++ " expected " ++ y
     ++ ", got " ++ z
 
--- fetch all identifiers for a named define (define (foo [<Identifier>]))
-hParseDecl :: (Int, Int) -> Tokens -> Either String ([Identifier], Tokens)
-hParseDecl x [] = Left $ expect x "')'" "<EOF>"
-hParseDecl x ((Atom (Tokens.Identifier y), _): ys) = case hParseDecl x ys of
+parser :: Tokens -> Either String [Expr]
+parser [] = Right []
+parser x = case parseDecl x of
+    Left [] -> hParser x
     Left e -> Left e
-    Right (z, zs) -> Right (y: z, zs)
-hParseDecl _ ((RBracket Close, _): xs) = Right ([], xs)
-hParseDecl _ ((x, y): _) = Left $ expect y "')'" $ show x
+    Right (y, ys) -> case parser ys of
+        Left e -> Left e
+        Right z -> Right $ y: z
+
+hParser :: Tokens -> Either String [Expr]
+hParser x = case parseExpr x of
+    Left e -> Left e
+    Right (y@(Const (Ast.Identifier _)), ys) -> case parser ys of
+        Left e -> Left e
+        Right z -> Right $ y: z
+    Right (Const _, _)
+        -> Left $ expect (snd $ head x) "<expression>" $ show (fst $ head x)
+    Right (y, ys) -> case parser ys of
+        Left e -> Left e
+        Right z -> Right $ y: z
 
 parseDecl :: Tokens -> Either String (Expr, Tokens)
 -- (define <Identifier> (lambda ...)) which is a special case
 parseDecl ((RBracket Open, _): (Atom (Operator Tokens.Define), _):
   (Atom (Tokens.Identifier x), _): xs@((RBracket Open, _):
   (Atom (Operator Tokens.Lambda), _): xs'))
-    = case parseLambda xs of
+    = case parseLambdaExpr xs of
         Left e -> Left e
         Right (y, ys) -> case ys of
             ((RBracket Close, _): zs) -> Right (Defun $ Ast.Define x y, zs)
@@ -75,9 +86,18 @@ parseDecl ((RBracket Open, _): (Atom (Operator Tokens.Define), _):
             ((z, zs): _) -> Left $ expect zs "')'" $ show z
 parseDecl _ = Left []
 
+-- fetch all identifiers for a named define (define (foo [<Identifier>]))
+hParseDecl :: (Int, Int) -> Tokens -> Either String ([Identifier], Tokens)
+hParseDecl x [] = Left $ expect x "')'" "<EOF>"
+hParseDecl x ((Atom (Tokens.Identifier y), _): ys) = case hParseDecl x ys of
+    Left e -> Left e
+    Right (z, zs) -> Right (y: z, zs)
+hParseDecl _ ((RBracket Close, _): xs) = Right ([], xs)
+hParseDecl _ ((x, y): _) = Left $ expect y "')'" $ show x
+
 parseExpr :: Tokens -> Either String (Expr, Tokens)
 parseExpr tokens = case parseConstExpr tokens of
-    Nothing -> case parseLambda tokens of
+    Nothing -> case parseLambdaExpr tokens of
         Left [] -> case parseIfExpr tokens of
             Left [] -> case parseBinaryExpr tokens of
                 Left [] -> parseCallExpr tokens
@@ -113,14 +133,11 @@ parseIfExpr ((RBracket Open, _): (Atom (Operator Tokens.If), _): xs)
         _ -> Left $ expect (snd $ head xs) "<condition>" $ show (fst $ head xs)
 parseIfExpr _ = Left []
 
-hParseCallExpr :: Tokens -> Either String ([Expr], Tokens)
-hParseCallExpr xs = case parseExpr xs of
-    Left e -> Left e
-    Right (y, ys) -> case hParseCallExpr ys of
-        Left _ -> Right ([y], ys)
-        Right (z, zs) -> Right (y: z, zs)
-
 parseCallExpr :: Tokens -> Either String (Expr, Tokens)
+parseCallExpr ((Atom (Tokens.Identifier x), _): xs) = Right (Call x [], xs)
+parseCallExpr (a@(Atom x, y): _) = case parseConstExpr [a] of
+    Nothing -> Left []
+    Just _ -> Left $ expect y "<expression>" $ show x
 parseCallExpr ((RBracket Open, _): (Atom (Tokens.Identifier x), _): xs)
     = case hParseCallExpr xs of
         Left e -> Left e
@@ -130,15 +147,12 @@ parseCallExpr ((RBracket Open, _): (Atom (Tokens.Identifier x), _): xs)
             ((z, zs): _) -> Left $ expect zs "')'" $ show z
 parseCallExpr _ = Left []
 
-hParseBinaryExpr :: Operator -> Maybe BinaryOperator
-hParseBinaryExpr Add = Just (ArithExpr OpAdd)
-hParseBinaryExpr Sub = Just (ArithExpr OpSub)
-hParseBinaryExpr Mul = Just (ArithExpr OpMul)
-hParseBinaryExpr Div = Just (ArithExpr OpDiv)
-hParseBinaryExpr Mod = Just (ArithExpr OpMod)
-hParseBinaryExpr Lt = Just (CondExpr OpLt)
-hParseBinaryExpr Eq = Just (CondExpr OpEq)
-hParseBinaryExpr _ = Nothing
+hParseCallExpr :: Tokens -> Either String ([Expr], Tokens)
+hParseCallExpr xs = case parseExpr xs of
+    Left e -> Left e
+    Right (y, ys) -> case hParseCallExpr ys of
+        Left _ -> Right ([y], ys)
+        Right (z, zs) -> Right (y: z, zs)
 
 parseBinaryExpr :: Tokens -> Either String (Expr, Tokens)
 parseBinaryExpr ((RBracket Open, _): (Atom (Operator x), y): xs) = do
@@ -152,9 +166,19 @@ parseBinaryExpr ((RBracket Open, _): (Atom (Operator x), y): xs) = do
         ((z, zs): _) -> Left $ expect zs "')'" $ show z
 parseBinaryExpr _ = Left []
 
+hParseBinaryExpr :: Operator -> Maybe BinaryOperator
+hParseBinaryExpr Add = Just (ArithExpr OpAdd)
+hParseBinaryExpr Sub = Just (ArithExpr OpSub)
+hParseBinaryExpr Mul = Just (ArithExpr OpMul)
+hParseBinaryExpr Div = Just (ArithExpr OpDiv)
+hParseBinaryExpr Mod = Just (ArithExpr OpMod)
+hParseBinaryExpr Lt = Just (CondExpr OpLt)
+hParseBinaryExpr Eq = Just (CondExpr OpEq)
+hParseBinaryExpr _ = Nothing
+
 -- (lambda ([<Identifier>]) Expr)
-parseLambda :: Tokens -> Either String (Expr, Tokens)
-parseLambda ((RBracket Open, _): (Atom (Operator Tokens.Lambda), _):
+parseLambdaExpr :: Tokens -> Either String (Expr, Tokens)
+parseLambdaExpr ((RBracket Open, _): (Atom (Operator Tokens.Lambda), _):
   (RBracket Open, x): xs)
     = case hParseDecl x xs of
         Left e -> Left e
@@ -163,4 +187,4 @@ parseLambda ((RBracket Open, _): (Atom (Operator Tokens.Lambda), _):
             Right (z, (RBracket Close, _): zs)
                 -> Right (Defun $ Ast.Lambda y z, zs)
             _ -> Left $ expect (snd $ head ys) "')'" $ show (fst $ head ys)
-parseLambda _ = Left []
+parseLambdaExpr _ = Left []

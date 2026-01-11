@@ -1,6 +1,5 @@
 (+ (- 1 2) (* 3 (/ 4 (remainder 5 6))))
-(eq? (+ 1 2) (/ 6 2))
-1
+(eq? (+ 3.0 2) (/ 6 2))
 foo
 (add 1 2)
 (define foo (add a b)
