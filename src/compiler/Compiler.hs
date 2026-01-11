@@ -46,10 +46,10 @@ compile opts (x: xs) lexer parser transpiler = do
 postCompile :: (Show a, Show b) => Options -> FilePath -> [(a, (Int, Int))]
     -> b -> IO ()
 postCompile (Options True x) filepath tokens decl
-    = print tokens
+    = putStrLn ("\ESC[1;32mTokens\ESC[0m (" ++ filepath ++ ")\n" ++ show tokens)
     >> postCompile Options {dumpToks = False, dumpAst = x} filepath tokens decl
 postCompile (Options x True) filepath tokens decl
-    = print decl
+    = putStrLn ("\ESC[1;33mAST\ESC[0m (" ++ filepath ++ ")\n" ++ show decl)
     >> postCompile Options {dumpToks = x, dumpAst = False} filepath tokens decl
 postCompile _ filepath _ _ = putStrLn $ "(OK) Compiled '" ++ filepath ++ "'"
 

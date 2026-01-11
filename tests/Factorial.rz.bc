@@ -4,11 +4,10 @@ STORE x
 CALL factorial 1
 RET
 ENDFUNC
-
 FUNC factorial 1
 LOAD x
 PUSH_INT 1
-LT_EQ
+EQ
 JMP_IF_FALSE endif
 PUSH_INT 1
 RET

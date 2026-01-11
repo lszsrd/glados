@@ -39,6 +39,7 @@ warning = "\ESC[1;35mwarning\ESC[0m"
 --
 -- The first @'String'@ is the formatted error type, the second @'String'@ represents the current stream of bytes to display (giving the user some context), the tuple represents the line and column at which the error was detected, the integer is the token's size and the second @'String'@ is the informational message to display.
 fString :: String -> String -> (Int, Int) -> Int -> String -> String
+fString level _ (0, 0) _ message = " " ++ level ++ ": " ++ message
 fString level s (l, c) size message
     = show l ++ ":" ++ show c ++ ": " ++ level ++ ": " ++ message
     ++ "\n    " ++ show l ++ " | "

@@ -271,3 +271,6 @@ pop2 x = case unsnoc x of
     Just (y, op1) -> case unsnoc y of
         Nothing -> Left "missing one operand"
         Just (z, op2) -> Right (op2, op1, z)
+
+{- operate :: Operand -> Operand -> (a -> a -> a) -> Operand
+operate ( -}

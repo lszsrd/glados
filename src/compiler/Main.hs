@@ -24,13 +24,13 @@ import Options (Options (..))
 import Compiler (compile)
 
 parseArgs :: String -> [String] -> Either String (Options, [FilePath])
-parseArgs _ [] = Left $ ": " ++ Format.error ++ ": no input files"
+parseArgs _ [] = Right (Options {dumpToks = False, dumpAst = False}, [])
 parseArgs extension ("--dump-tokens": x) = case parseArgs extension x of
     Left e -> Left e
-    Right (Options y _, z) -> Right (Options {dumpToks = True, dumpAst = y}, z)
+    Right (Options _ y, z) -> Right (Options {dumpToks = True, dumpAst = y}, z)
 parseArgs extension ("--dump-ast": x) = case parseArgs extension x of
     Left e -> Left e
-    Right (Options _ y, z) -> Right (Options {dumpToks = y, dumpAst = True}, z)
+    Right (Options y _, z) -> Right (Options {dumpToks = y, dumpAst = True}, z)
 parseArgs _ (('-': _): _) = Left "USAGE"
 parseArgs extension (x: xs)
     | takeExtension x /= extension
@@ -60,5 +60,6 @@ main = do
         Left e -> if "USAGE" `isPrefixOf` e
             then printUsage extension progName
             else hPutStrLn stderr (progName ++ e) >> exitFailure
+        Right (_, []) -> hPutStrLn stderr (progName ++ ": " ++ Format.error ++ ": no input files") >> exitFailure
         Right (opts, files) -> compile
             opts (map head . group . sort $ files) lexer parser compileDecl

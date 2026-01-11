@@ -126,6 +126,7 @@ parseKeyword _ = Nothing
 hParseKeyword :: (Token, Int, Stream) -> Maybe (Token, Int, Stream)
 hParseKeyword (token, tokSize, []) = Just (token, tokSize, [])
 hParseKeyword (token, tokSize, stream@(':': x)) = Just (token, tokSize, stream)
+hParseKeyword (token, tokSize, stream@(']': x)) = Just (token, tokSize, stream)
 hParseKeyword (token, tokSize, stream@(x: _))
     | isSpace x = Just (token, tokSize, stream)
     | otherwise = Nothing

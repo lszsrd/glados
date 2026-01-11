@@ -42,6 +42,63 @@ module Tokens (
 -- $bnf
 -- For the full rizz lexical syntax definition, see the [BNF definition](https://github.com/lszsrd/glados/blob/main/docs/BNF/rizz-lexical.md) here.
 
+instance Show Token where
+    show (Keyword Bool) = "Bool"
+    show (Keyword Char) = "Char"
+    show (Keyword Int) = "Int"
+    show (Keyword Float) = "Float"
+    show (Keyword Double) = "Double"
+    show (Keyword Fn) = "fn"
+    show (Keyword If) = "if"
+    show (Keyword Else) = "else"
+    show (Keyword While) = "while"
+    show (Keyword For) = "for"
+    show (Keyword Foreach) = "foreach"
+    show (Keyword Ret) = "ret"
+
+    show (Identifier x) = x
+
+    show (Literal (BoolLiteral True)) = "True"
+    show (Literal (BoolLiteral False)) = "False"
+    show (Literal (CharLiteral x)) = show x
+    show (Literal (IntLiteral x)) = show x
+    show (Literal (FloatLiteral x)) = show x
+    show (Literal (ListLiteral x)) = show x
+
+    show (Punctuator (SBracket OpenSBracket)) = "["
+    show (Punctuator (SBracket CloseSBracket)) = "]"
+    show (Punctuator (RBracket OpenRBracket)) = "("
+    show (Punctuator (RBracket CloseRBracket)) = ")"
+    show (Punctuator (CBracket OpenCBracket)) = "{"
+    show (Punctuator (CBracket CloseCBracket)) = "}"
+    show (Punctuator Dot) = "."
+    show (Punctuator Arrow) = "->"
+    show (Punctuator (UnaryOp IdentIncrement)) = "++"
+    show (Punctuator (UnaryOp IdentDecrement)) = "--"
+    show (Punctuator (BinaryOp Mul)) = "*"
+    show (Punctuator (BinaryOp Add)) = "+"
+    show (Punctuator (BinaryOp Sub)) = "-"
+    show (Punctuator (BinaryOp Div)) = "/"
+    show (Punctuator (BinaryOp Mod)) = "%"
+    show (Punctuator (BinaryOp Lt)) = "<"
+    show (Punctuator (BinaryOp Gt)) = ">"
+    show (Punctuator (BinaryOp LEq)) = "<="
+    show (Punctuator (BinaryOp GEq)) = ">="
+    show (Punctuator (BinaryOp Eq)) = "=="
+    show (Punctuator (BinaryOp NEq)) = "!="
+    show (Punctuator (BinaryOp And)) = "&&"
+    show (Punctuator (BinaryOp Or)) = "||"
+    show (Punctuator Colon) = ":"
+    show (Punctuator Semicolon) = ";"
+    show (Punctuator Comma) = ","
+    show (Punctuator QMark) = "?"
+    show (Punctuator (AssignOp Equal)) = "="
+    show (Punctuator (AssignOp MulEqual)) = "*="
+    show (Punctuator (AssignOp DivEqual)) = "/="
+    show (Punctuator (AssignOp ModEqual)) = "%="
+    show (Punctuator (AssignOp AddEqual)) = "+="
+    show (Punctuator (AssignOp SubEqual)) = "-="
+
 -- | Defines @'Stream'@ type as a string representing a finite byte array.
 type Stream = String
 
@@ -66,9 +123,7 @@ data Token
     -- ^ Punctuator definition.
 
     deriving (
-        Show
-        -- ^ Allows @'Token'@ to be printed.
-        , Eq
+        Eq
         -- ^ Allows @'Token'@ to be compared, needed for unit tests.
     )
 
