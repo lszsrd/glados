@@ -52,6 +52,13 @@ printUsage x y = putStrLn $
     ++ "linker (i.e. ld on linux).\nTo use compiled files, you need to pass "
     ++ "them to the GLaDOS interpreter (glados-interpreter binary)."
 
+dealWithIt :: (Options, [FilePath]) -> String -> IO ()
+dealWithIt e progName = case e of
+    (_, []) -> hPutStrLn stderr (progName ++ ": " ++ Format.error ++
+        ": no input files") >> exitFailure
+    (opts, files) -> compile
+        opts (map head . group . sort $ files) lexer parser compileDecl
+
 main :: IO ()
 main = do
     let extension = ".rz"
@@ -61,7 +68,4 @@ main = do
         Left e -> if "USAGE" `isPrefixOf` e
             then printUsage extension progName
             else hPutStrLn stderr (progName ++ e) >> exitFailure
-        Right (_, []) -> hPutStrLn stderr (progName ++ ": " ++ Format.error ++
-            ": no input files") >> exitFailure
-        Right (opts, files) -> compile
-            opts (map head . group . sort $ files) lexer parser compileDecl
+        Right e -> dealWithIt e progName

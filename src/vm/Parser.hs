@@ -124,16 +124,16 @@ parseInstruction ("LT": x) = case hParseInstruction "LT" x 0 of
 parseInstruction ("GT": x) = case hParseInstruction "GT" x 0 of
     Left e -> Left e
     Right _ -> Right Gt
-parseInstruction ("LT_EQ": x) = case hParseInstruction "LT_EQ" x 0 of
+parseInstruction ("LE": x) = case hParseInstruction "LE" x 0 of
     Left e -> Left e
     Right _ -> Right LEq
-parseInstruction ("GT_EQ": x) = case hParseInstruction "GT_EQ" x 0 of
+parseInstruction ("GE": x) = case hParseInstruction "GE" x 0 of
     Left e -> Left e
     Right _ -> Right GEq
 parseInstruction ("EQ": x) = case hParseInstruction "EQ" x 0 of
     Left e -> Left e
     Right _ -> Right Eq
-parseInstruction ("NOT_EQ": x) = case hParseInstruction "NOT_EQ" x 0 of
+parseInstruction ("NEQ": x) = case hParseInstruction "NEQ" x 0 of
     Left e -> Left e
     Right _ -> Right NEq
 parseInstruction ("AND": x) = case hParseInstruction "AND" x 0 of

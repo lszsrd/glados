@@ -81,151 +81,61 @@ exec symtab bOps (Mul: ops) stack env = case pop2 stack of
     Left e -> Left ("MUL: " ++ e)
     Right (Integer x, Integer y, z) ->
         exec symtab bOps ops (z ++ [Integer (x * y)]) env
-    Right (Integer x, Float y, z) ->
-        exec symtab bOps ops (z ++ [Float (fromIntegral x * y)]) env
-    Right (Float x, Integer y, z) ->
-        exec symtab bOps ops (z ++ [Float (x * fromIntegral y)]) env
-    Right (Float x, Float y, z) ->
-        exec symtab bOps ops (z ++ [Float (x * y)]) env
-    Right _ -> Left "MUL: non-numeric operands"
+    Right (x, y, rest) -> do
+        res <- mulOperand x y
+        exec symtab bOps ops (rest ++ [Float res]) env
 exec symtab bOps (Add: ops) stack env = case pop2 stack of
     Left e -> Left ("ADD: " ++ e)
     Right (Integer x, Integer y, z) ->
         exec symtab bOps ops (z ++ [Integer (x + y)]) env
-    Right (Integer x, Float y, z) ->
-        exec symtab bOps ops (z ++ [Float (fromIntegral x + y)]) env
-    Right (Float x, Integer y, z) ->
-        exec symtab bOps ops (z ++ [Float (x + fromIntegral y)]) env
-    Right (Float x, Float y, z) ->
-        exec symtab bOps ops (z ++ [Float (x + y)]) env
-    Right _ -> Left "ADD: non-numeric operands"
+    Right (x, y, rest) -> do
+        res <- addOperand x y
+        exec symtab bOps ops (rest ++ [Float res]) env
 exec symtab bOps (Sub: ops) stack env = case pop2 stack of
     Left e -> Left ("SUB: " ++ e)
     Right (Integer x, Integer y, z) ->
         exec symtab bOps ops (z ++ [Integer (x - y)]) env
-    Right (Integer x, Float y, z) ->
-        exec symtab bOps ops (z ++ [Float (fromIntegral x - y)]) env
-    Right (Float x, Integer y, z) ->
-        exec symtab bOps ops (z ++ [Float (x - fromIntegral y)]) env
-    Right (Float x, Float y, z) ->
-        exec symtab bOps ops (z ++ [Float (x - y)]) env
-    Right _ -> Left "SUB: non-numeric operands"
+    Right (x, y, rest) -> do
+        res <- subOperand x y
+        exec symtab bOps ops (rest ++ [Float res]) env
 exec symtab bOps (Div: ops) stack env = case pop2 stack of
     Left e -> Left ("DIV: " ++ e)
-    Right (Integer x, Integer y, z) -> exec symtab bOps ops
-        (z ++ [Float (fromIntegral x / fromIntegral y)]) env
-    Right (Integer x, Float y, z) ->
-        exec symtab bOps ops (z ++ [Float (fromIntegral x / y)]) env
-    Right (Float x, Integer y, z) ->
-        exec symtab bOps ops (z ++ [Float (x / fromIntegral y)]) env
-    Right (Float x, Float y, z) ->
-        exec symtab bOps ops (z ++ [Float (x / y)]) env
     Right (_, Integer 0, _) -> Left "DIV: 0 division"
     Right (_, Float 0, _) -> Left "DIV: 0 division"
-    Right _ -> Left "DIV : non-numeric operands"
+    Right (x, y, rest) -> do
+        res <- divOperand x y
+        exec symtab bOps ops (rest ++ [Float res]) env
 exec symtab bOps (Mod: ops) stack env = case pop2 stack of
     Left e -> Left ("MOD: " ++ e)
-    Right (Integer x, Integer y, z) ->exec symtab bOps ops
-        (z ++ [Float (fromIntegral x / fromIntegral y)]) env
-    Right (Integer x, Float y, z) -> exec symtab bOps ops
-        (z ++ [Float (fromIntegral x / y)]) env
-    Right (Float x, Integer y, z) -> exec symtab bOps ops
-        (z ++ [Float (x / fromIntegral y)]) env
-    Right (Float x, Float y, z) -> exec symtab bOps ops
-        (z ++ [Float (x / y)]) env
     Right (_, Integer 0, _) -> Left "MOD: 0 modulo"
     Right (_, Float 0, _) -> Left "MOD: 0 modulo"
-    Right _ -> Left "MOD: non-numeric operands"
+    Right (x, y, rest) -> do
+        res <- modOperand x y
+        exec symtab bOps ops (rest ++ [Float res]) env
 exec symtab bOps (Lt: ops) stack env = case pop2 stack of
     Left e -> Left ("LT: " ++ e)
-    Right (Integer x, Float y, z) ->
-        exec symtab bOps ops (z ++ [Bool (fromIntegral x < y)]) env
-    Right (Float x, Integer y, z) ->
-        exec symtab bOps ops (z ++ [Bool (x < fromIntegral y)]) env
-    Right (Bool x, Integer y, z) ->
-        exec symtab bOps ops (z ++ [Bool (fromBool x < y)]) env
-    Right (Integer x, Bool y, z) ->
-        exec symtab bOps ops (z ++ [Bool (x < fromBool y)]) env
-    Right (Bool x, Float y, z) ->
-        exec symtab bOps ops (z ++ [Bool (fromBool x < y)]) env
-    Right (Float x, Bool y, z) ->
-        exec symtab bOps ops (z ++ [Bool (x < fromBool y)]) env
-    Right (x, y, z) -> exec symtab bOps ops (z ++ [Bool ( x < y)]) env
+    Right (x, y, rest) ->
+        exec symtab bOps ops (rest ++ [Bool (ltOperand x y)]) env 
 exec symtab bOps (Gt: ops) stack env = case pop2 stack of
     Left e -> Left ("GT: " ++ e)
-    Right (Integer x, Float y, z) ->
-        exec symtab bOps ops (z ++ [Bool (fromIntegral x > y)]) env
-    Right (Float x, Integer y, z) ->
-        exec symtab bOps ops (z ++ [Bool (x > fromIntegral y)]) env
-    Right (Bool x, Integer y, z) ->
-        exec symtab bOps ops (z ++ [Bool (fromBool x > y)]) env
-    Right (Integer x, Bool y, z) ->
-        exec symtab bOps ops (z ++ [Bool (x > fromBool y)]) env
-    Right (Bool x, Float y, z) ->
-        exec symtab bOps ops (z ++ [Bool (fromBool x > y)]) env
-    Right (Float x, Bool y, z) ->
-        exec symtab bOps ops (z ++ [Bool (x > fromBool y)]) env
-    Right (x, y, z) -> exec symtab bOps ops (z ++ [Bool ( x > y)]) env
+    Right (x, y, rest) ->
+        exec symtab bOps ops (rest ++ [Bool (gtOperand x y)]) env 
 exec symtab bOps (LEq: ops) stack env = case pop2 stack of
     Left e -> Left ("LT_EQ: " ++ e)
-    Right (Integer x, Float y, z) ->
-        exec symtab bOps ops (z ++ [Bool (fromIntegral x <= y)]) env
-    Right (Float x, Integer y, z) ->
-        exec symtab bOps ops (z ++ [Bool (x <= fromIntegral y)]) env
-    Right (Bool x, Integer y, z) ->
-        exec symtab bOps ops (z ++ [Bool (fromBool x <= y)]) env
-    Right (Integer x, Bool y, z) ->
-        exec symtab bOps ops (z ++ [Bool (x <= fromBool y)]) env
-    Right (Bool x, Float y, z) ->
-        exec symtab bOps ops (z ++ [Bool (fromBool x <= y)]) env
-    Right (Float x, Bool y, z) ->
-        exec symtab bOps ops (z ++ [Bool (x <= fromBool y)]) env
-    Right (x, y, z) -> exec symtab bOps ops (z ++ [Bool ( x <= y)]) env
+    Right (x, y, rest) ->
+        exec symtab bOps ops (rest ++ [Bool (leOperand x y)]) env 
 exec symtab bOps (GEq: ops) stack env = case pop2 stack of
     Left e -> Left ("GT_EQ: " ++ e)
-    Right (Integer x, Float y, z) ->
-        exec symtab bOps ops (z ++ [Bool (fromIntegral x >= y)]) env
-    Right (Float x, Integer y, z) ->
-        exec symtab bOps ops (z ++ [Bool (x >= fromIntegral y)]) env
-    Right (Bool x, Integer y, z) ->
-        exec symtab bOps ops (z ++ [Bool (fromBool x >= y)]) env
-    Right (Integer x, Bool y, z) ->
-        exec symtab bOps ops (z ++ [Bool (x >= fromBool y)]) env
-    Right (Bool x, Float y, z) ->
-        exec symtab bOps ops (z ++ [Bool (fromBool x >= y)]) env
-    Right (Float x, Bool y, z) ->
-        exec symtab bOps ops (z ++ [Bool (x >= fromBool y)]) env
-    Right (x, y, z) -> exec symtab bOps ops (z ++ [Bool ( x >= y)]) env
+    Right (x, y, rest) ->
+        exec symtab bOps ops (rest ++ [Bool (geOperand x y)]) env 
 exec symtab bOps (Eq: ops) stack env = case pop2 stack of
     Left e -> Left ("EQ: " ++ e)
-    Right (Integer x, Float y, z) ->
-        exec symtab bOps ops (z ++ [Bool (fromIntegral x == y)]) env
-    Right (Float x, Integer y, z) ->
-        exec symtab bOps ops (z ++ [Bool (x == fromIntegral y)]) env
-    Right (Bool x, Integer y, z) ->
-        exec symtab bOps ops (z ++ [Bool (fromBool x == y)]) env
-    Right (Integer x, Bool y, z) ->
-        exec symtab bOps ops (z ++ [Bool (x == fromBool y)]) env
-    Right (Bool x, Float y, z) ->
-        exec symtab bOps ops (z ++ [Bool (fromBool x == y)]) env
-    Right (Float x, Bool y, z) ->
-        exec symtab bOps ops (z ++ [Bool (x == fromBool y)]) env
-    Right (x, y, z) -> exec symtab bOps ops (z ++ [Bool ( x == y)]) env
+    Right (x, y, rest) ->
+        exec symtab bOps ops (rest ++ [Bool (eqOperand x y)]) env 
 exec symtab bOps (NEq: ops) stack env = case pop2 stack of
     Left e -> Left ("NOT_EQ: " ++ e)
-    Right (Integer x, Float y, z) ->
-        exec symtab bOps ops (z ++ [Bool (fromIntegral x /= y)]) env
-    Right (Float x, Integer y, z) ->
-        exec symtab bOps ops (z ++ [Bool (x /= fromIntegral y)]) env
-    Right (Bool x, Integer y, z) ->
-        exec symtab bOps ops (z ++ [Bool (fromBool x /= y)]) env
-    Right (Integer x, Bool y, z) ->
-        exec symtab bOps ops (z ++ [Bool (x /= fromBool y)]) env
-    Right (Bool x, Float y, z) ->
-        exec symtab bOps ops (z ++ [Bool (fromBool x /= y)]) env
-    Right (Float x, Bool y, z) ->
-        exec symtab bOps ops (z ++ [Bool (x /= fromBool y)]) env
-    Right (x, y, z) -> exec symtab bOps ops (z ++ [Bool ( x /= y)]) env
+    Right (x, y, rest) ->
+        exec symtab bOps ops (rest ++ [Bool (neqOperand x y)]) env 
 exec symtab bOps (And: ops) stack env = case pop2 stack of
     Left e -> Left ("AND: " ++ e)
     Right (Bool x, Bool y, z)
@@ -241,6 +151,97 @@ exec _ _ (Ret: _) stack _ = Right $ Just (last stack)
 exec _ _ x _ _
     | null x = Right Nothing
     | otherwise = Left ("unknwon instruction: " ++ show (head x))
+
+addOperand :: Operand -> Operand -> Either String Float
+addOperand (Integer x)  (Float y)   = Right (fromIntegral x + y)
+addOperand (Float x)    (Integer y) = Right (x + fromIntegral y)
+addOperand (Float x)    (Float y)   = Right (x + y)
+addOperand _ _                      =
+     Left "ADD: non-numeric operands"
+
+subOperand :: Operand -> Operand -> Either String Float
+subOperand (Integer x)  (Float y)   = Right (fromIntegral x - y)
+subOperand (Float x)    (Integer y) = Right (x - fromIntegral y)
+subOperand (Float x)    (Float y)   = Right (x - y)
+subOperand _ _                      =
+     Left "SUB: non-numeric operands"
+
+mulOperand :: Operand -> Operand -> Either String Float
+mulOperand (Integer x)  (Float y)   = Right (fromIntegral x * y)
+mulOperand (Float x)    (Integer y) = Right (x * fromIntegral y)
+mulOperand (Float x)    (Float y)   = Right (x * y)
+mulOperand _ _                      =
+     Left "Div: non-numeric operands"
+
+divOperand :: Operand -> Operand -> Either String Float
+divOperand (Integer x)  (Integer y) = Right (fromIntegral x / fromIntegral y)
+divOperand (Integer x)  (Float y)   = Right (fromIntegral x / y)
+divOperand (Float x)    (Integer y) = Right (x / fromIntegral y)
+divOperand (Float x)    (Float y)   = Right (x / y)
+divOperand _ _                      =
+     Left "Div: non-numeric operands"
+
+modOperand :: Operand -> Operand -> Either String Float
+modOperand (Integer x)  (Integer y) = Right (fromIntegral x / fromIntegral y)
+modOperand (Integer x)  (Float y)   = Right (fromIntegral x / y)
+modOperand (Float x)    (Integer y) = Right (x / fromIntegral y)
+modOperand (Float x)    (Float y)   = Right (x / y)
+modOperand _ _                      =
+     Left "MOD: non-numeric operands or stack error"
+
+ltOperand :: Operand -> Operand -> Bool
+ltOperand (Integer x)  (Float y)   = fromIntegral x < y
+ltOperand (Float x)    (Integer y) = x < fromIntegral y
+ltOperand (Bool x)     (Integer y) = fromBool x < y
+ltOperand (Integer x)  (Bool y)    = x < fromBool y
+ltOperand (Bool x)     (Float y)   = fromBool x < y
+ltOperand (Float x)    (Bool y)    = x < fromBool y
+ltOperand x y                      = x < y
+
+gtOperand :: Operand -> Operand -> Bool
+gtOperand (Integer x)  (Float y)   = fromIntegral x > y
+gtOperand (Float x)    (Integer y) = x > fromIntegral y
+gtOperand (Bool x)     (Integer y) = fromBool x > y
+gtOperand (Integer x)  (Bool y)    = x > fromBool y
+gtOperand (Bool x)     (Float y)   = fromBool x > y
+gtOperand (Float x)    (Bool y)    = x > fromBool y
+gtOperand x y                      = x > y
+
+leOperand :: Operand -> Operand -> Bool
+leOperand (Integer x)  (Float y)   = fromIntegral x <= y
+leOperand (Float x)    (Integer y) = x <= fromIntegral y
+leOperand (Bool x)     (Integer y) = fromBool x <= y
+leOperand (Integer x)  (Bool y)    = x <= fromBool y
+leOperand (Bool x)     (Float y)   = fromBool x <= y
+leOperand (Float x)    (Bool y)    = x <= fromBool y
+leOperand x y                      = x <= y
+
+geOperand :: Operand -> Operand -> Bool
+geOperand (Integer x)  (Float y)   = fromIntegral x >= y
+geOperand (Float x)    (Integer y) = x >= fromIntegral y
+geOperand (Bool x)     (Integer y) = fromBool x >= y
+geOperand (Integer x)  (Bool y)    = x >= fromBool y
+geOperand (Bool x)     (Float y)   = fromBool x >= y
+geOperand (Float x)    (Bool y)    = x >= fromBool y
+geOperand x y                      = x >= y
+
+eqOperand :: Operand -> Operand -> Bool
+eqOperand (Integer x)  (Float y)   = fromIntegral x == y
+eqOperand (Float x)    (Integer y) = x == fromIntegral y
+eqOperand (Bool x)     (Integer y) = fromBool x == y
+eqOperand (Integer x)  (Bool y)    = x == fromBool y
+eqOperand (Bool x)     (Float y)   = fromBool x == y
+eqOperand (Float x)    (Bool y)    = x == fromBool y
+eqOperand x y                      = x == y
+
+neqOperand :: Operand -> Operand -> Bool
+neqOperand (Integer x)  (Float y)   = fromIntegral x /= y
+neqOperand (Float x)    (Integer y) = x /= fromIntegral y
+neqOperand (Bool x)     (Integer y) = fromBool x /= y
+neqOperand (Integer x)  (Bool y)    = x /= fromBool y
+neqOperand (Bool x)     (Float y)   = fromBool x /= y
+neqOperand (Float x)    (Bool y)    = x /= fromBool y
+neqOperand x y                      = x /= y
 
 -- Big L that we cannot use base-4.19 or newer
 -- https://github.com/haskell/core-libraries-committee/issues/165 

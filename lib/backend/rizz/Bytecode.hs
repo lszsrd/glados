@@ -93,7 +93,7 @@ compileStmt env (IfStmt cond (CompoundStmt body) mElse) =
         elseCode = maybe ""
             (\(CompoundStmt b) -> concatMap (compileStmt env) b) mElse
         endif = "LABEL endif\n"
-    in condCode ++ "JMP_IF_FALSE endif\n" ++ thenCode ++ elseCode ++ endif
+    in condCode ++ "JMP_IF_FALSE endif\n" ++ thenCode ++ endif ++ elseCode
 
 compileStmt env (WhileStmt cond (CompoundStmt body)) =
     "LABEL while_start\n" ++

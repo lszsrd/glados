@@ -1,31 +1,15 @@
-/* fn feur(Int: a, Int: b) -> Int
-{
-    fn kk(Int: z)-> Int
-    {
-        Int oiiai = z * 12;
-        ret oiiai;
-    }
 
-    ret kk(a);
-} */
-
-// divide two integers
-fn      foo(Int: x, Int: y) -> Int
-{
-    [Int] i = [1, 2, 3];
-    if (y == 0) {
-        ret 0; // returns 0 to avoid div by 0
-    }
-    ret x / y;
-}
 
 /* comment block
             */
 fn main() -> Int
 {
-    Int /*  */ x = 42;
-    
-    baz();
-    ret foo(x, 2);
+    Int x = 42;
+
+    if (x == 42) {
+        ret 2 * 4 + 3;
+    } else {
+        ret -1 / 1.5;
+    }
 }
 //endof file
