@@ -40,7 +40,8 @@ compileDeclWithEnv env (FunctionDecl name params body _ret) =
 compileDeclWithEnv _ _ = ""
 
 
-compileFunctionWithEnv :: FuncEnv -> Identifier -> [ParmVarDeclExpr] -> CompoundStmt -> String
+compileFunctionWithEnv :: FuncEnv -> Identifier -> [ParmVarDeclExpr] ->
+    CompoundStmt -> String
 compileFunctionWithEnv env name params (CompoundStmt stmts) =
     let header = "FUNC " ++ name ++ " " ++ show (length params) ++ "\n"
         body = concatMap (compileStmt env) stmtsWithNames
@@ -48,9 +49,11 @@ compileFunctionWithEnv env name params (CompoundStmt stmts) =
         stmtsWithNames = map id stmts
     in header ++ body ++ footer
 
-compileFunctionDecl :: Identifier -> [ParmVarDeclExpr] -> CompoundStmt -> String
-compileFunctionDecl name params body =
-    compileFunctionWithEnv (Map.singleton name (map (\(ParmVarDeclExpr _ ident) -> ident) params)) name params body
+compileFunctionDecl :: Identifier -> [ParmVarDeclExpr] -> CompoundStmt
+    -> String
+compileFunctionDecl name params =
+    compileFunctionWithEnv (Map.singleton name
+        (map (\(ParmVarDeclExpr _ ident) -> ident) params)) name params
 
 
 compileStmt :: FuncEnv -> Stmt -> String
@@ -62,18 +65,16 @@ compileStmt env (DeclStmt (DeclAssignStmtLiteral ident _ rhs)) =
     compileParmCall env rhs ++
     "STORE " ++ ident ++ "\n"
 
-compileStmt env (DeclStmt (DeclAssignStmtUnary (UnaryOperatorExpr ident op))) =
+compileStmt _ (DeclStmt (DeclAssignStmtUnary (UnaryOperatorExpr ident op))) =
     case op of
         IdentIncrement ->
             "LOAD " ++ ident ++ "\n" ++
             "PUSH_INT 1\n" ++
-            "ADD\n" ++
-            "STORE " ++ ident ++ "\n"
+            "ADD\n" ++ "STORE " ++ ident ++ "\n"
         IdentDecrement ->
             "LOAD " ++ ident ++ "\n" ++
             "PUSH_INT 1\n" ++
-            "SUB\n" ++
-            "STORE " ++ ident ++ "\n"
+            "SUB\n" ++ "STORE " ++ ident ++ "\n"
 
 compileStmt env (CallExpr (CallExprDecl fname args)) =
     compileCallWithNamedParams env fname args
@@ -89,7 +90,8 @@ compileStmt env (RetStmt expr) =
 compileStmt env (IfStmt cond (CompoundStmt body) mElse) =
     let condCode = compileBinaryOpExpr env cond
         thenCode = concatMap (compileStmt env) body
-        elseCode = maybe "" (\(CompoundStmt b) -> concatMap (compileStmt env) b) mElse
+        elseCode = maybe ""
+            (\(CompoundStmt b) -> concatMap (compileStmt env) b) mElse
         endif = "LABEL endif\n"
     in condCode ++ "JMP_IF_FALSE endif\n" ++ thenCode ++ elseCode ++ endif
 
@@ -120,9 +122,10 @@ compileCallWithNamedParams env fname args =
         Nothing ->
             argsCode ++ "CALL " ++ fname ++ " " ++ show (length args) ++ "\n"
         Just params ->
-            let
-                storeCode = concatMap (\p -> "STORE " ++ p ++ "\n") (reverse params)
-            in argsCode ++ storeCode ++ "CALL " ++ fname ++ " " ++ show (length args) ++ "\n"
+            let storeCode = concatMap (\p -> "STORE " ++ p ++ "\n")
+                    (reverse params)
+            in argsCode ++ storeCode ++ "CALL " ++ fname ++ " " ++
+                show (length args) ++ "\n"
 
 
 compileBinaryOpExpr :: FuncEnv -> BinaryOpExpr -> String
@@ -157,7 +160,8 @@ compileForInit env (Just vds) = compileStmt env (DeclVarExpr vds)
 
 compileForCond :: FuncEnv -> Maybe BinaryOpExpr -> String
 compileForCond _   Nothing = ""
-compileForCond env (Just cond) = compileBinaryOpExpr env cond ++ "JMP_IF_FALSE for_end\n"
+compileForCond env (Just cond) = compileBinaryOpExpr env
+    cond ++ "JMP_IF_FALSE for_end\n"
 
 compileForStep :: FuncEnv -> Maybe DeclStmt -> String
 compileForStep _   Nothing = ""
@@ -166,7 +170,8 @@ compileForStep env (Just ds) = compileStmt env (DeclStmt ds)
 
 compileLiteral :: Literal -> String
 compileLiteral (IntLiteral i)   = "PUSH_INT " ++ show i ++ "\n"
-compileLiteral (BoolLiteral b)  = "PUSH_BOOL " ++ (if b then "true\n" else "false\n")
+compileLiteral (BoolLiteral b)  = "PUSH_BOOL " ++
+    (if b then "true\n" else "false\n")
 compileLiteral (FloatLiteral f) = "PUSH_FLOAT " ++ show f ++ "\n"
 compileLiteral _                = "PUSH_UNKNOWN\n"
 
