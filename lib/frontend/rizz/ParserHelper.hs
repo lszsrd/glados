@@ -124,6 +124,13 @@ parseLiteral [] = errorAt (1, 1) "Expected Literal, got "
 parseListElements :: Parser [T.Literal]
 parseListElements tokens@((T.Punctuator (T.SBracket T.CloseSBracket), _) : _)
     = Right ([], tokens)
+parseListElements tokens@((T.Punctuator (T.SBracket T.OpenSBracket), _) : _) = do
+    (elem, rest1) <- parseListLiteral tokens
+    case rest1 of
+        ((T.Punctuator T.Comma, _) : rest2) -> do
+            (elems, rest3) <- parseListElements rest2
+            Right (elem : elems, rest3)
+        _ -> Right ([elem], rest1)
 parseListElements tokens = do
     (elem, rest1) <- parseLiteral tokens
     case rest1 of
