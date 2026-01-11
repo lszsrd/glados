@@ -23,6 +23,7 @@ import Bytecode (compileDecl)
 import Options (Options (..))
 import Compiler (compile)
 
+-- TODO: [(FilePath, lexer, parser, compiler)]
 parseArgs :: String -> [String] -> Either String (Options, [FilePath])
 parseArgs _ [] = Right (Options {dumpToks = False, dumpAst = False}, [])
 parseArgs extension ("--dump-tokens": x) = case parseArgs extension x of

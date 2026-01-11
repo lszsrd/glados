@@ -101,12 +101,14 @@ parseOperator :: Stream -> Maybe (Atom, Int, Stream)
 parseOperator ('+': x) = Just (Operator Add, 1, x)
 parseOperator ('-': x) = Just (Operator Sub, 1, x)
 parseOperator ('*': x) = Just (Operator Mul, 1, x)
+parseOperator ('/': x) = Just (Operator Div, 1, x)
 parseOperator ('<': x) = Just (Operator Lt, 1, x)
 parseOperator stream
     | "define" `isPrefixOf` stream = hparseOperator stream "define" Define
     | "lambda" `isPrefixOf` stream = hparseOperator stream "lambda" Lambda
     | "div" `isPrefixOf` stream = hparseOperator stream "div" Div
     | "mod" `isPrefixOf` stream = hparseOperator stream "mod" Mod
+    | "remainder" `isPrefixOf` stream = hparseOperator stream "remainder" Mod
     | "eq?" `isPrefixOf` stream = hparseOperator stream "eq?" Eq
     | "if" `isPrefixOf` stream = hparseOperator stream "if" If
     | otherwise = Nothing

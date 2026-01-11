@@ -20,6 +20,7 @@ type Identifier = String
 data Decl
     = Define Identifier Expr
     | Func Identifier [Identifier] Expr
+    | Lambda [Identifier] Expr
 
     deriving (
         Show
