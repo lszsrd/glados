@@ -2,9 +2,9 @@
 (eq? (+ 1 2) (/ 6 2))
 1
 foo
+(add 1 2)
 (define foo (add a b)
     (+ a b))
-(add 1 2)
 (define add
     (lambda (a b)
         (+ a b)))

@@ -20,23 +20,23 @@ type Stream = String
 type Tokens = [(Token, (Int, Int))]
 
 instance Show Token where
-    show (RBracket Open) = "("
-    show (RBracket Close) = ")"
-    show (Atom (Bool False)) = "#f"
-    show (Atom (Bool True)) = "#t"
+    show (RBracket Open) = "'('"
+    show (RBracket Close) = "')'"
+    show (Atom (Bool False)) = "'#f'"
+    show (Atom (Bool True)) = "'#t'"
     show (Atom (Integer x)) = show x
     show (Atom (Float x)) = show x
     show (Atom (Identifier x)) = x
-    show (Atom (Operator Define)) = "define"
-    show (Atom (Operator Lambda)) = "lambda"
-    show (Atom (Operator Add)) = "+"
-    show (Atom (Operator Sub)) = "-"
-    show (Atom (Operator Mul)) = "*"
-    show (Atom (Operator Div)) = "div"
-    show (Atom (Operator Mod)) = "mod"
-    show (Atom (Operator Lt)) = "<"
-    show (Atom (Operator Eq)) = "eq?"
-    show (Atom (Operator If)) = "if"
+    show (Atom (Operator Define)) = "'define'"
+    show (Atom (Operator Lambda)) = "'lambda'"
+    show (Atom (Operator Add)) = "'+'"
+    show (Atom (Operator Sub)) = "'-'"
+    show (Atom (Operator Mul)) = "'*'"
+    show (Atom (Operator Div)) = "'div'"
+    show (Atom (Operator Mod)) = "'mod'"
+    show (Atom (Operator Lt)) = "'<'"
+    show (Atom (Operator Eq)) = "'eq?'"
+    show (Atom (Operator If)) = "'if'"
 
 data Token
     = RBracket RBracket
