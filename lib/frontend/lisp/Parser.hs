@@ -42,9 +42,8 @@ hParseDecl _ ((x, y): _) = Left $ errorAt y "expected ')', got " ++ show x
 
 parseDecl :: Tokens -> Either String (Expr, Tokens)
 -- (define <Identifier> ([<Identifier>]) Expr)
-parseDecl ((RBracket Open, _): (Atom (Operator Tokens.Define), _):
-    (Atom (Tokens.Identifier y), _): (RBracket Open, p'): xs)
-    = case hParseDecl p' xs of
+parseDecl ((RBracket Open, _): (Atom (Operator Tokens.Define), _): (Atom (
+ Tokens.Identifier y), _): (RBracket Open, p'): xs) = case hParseDecl p' xs of
         Left e -> Left e
         Right ([], _) -> Left $ errorAt (snd $ head xs) "expected arguments"
         Right (y': y'', xs') -> case parseExpr xs' of
@@ -93,7 +92,7 @@ parseIfExpr ((RBracket Open, _): (Atom (Operator Tokens.If), _):
             ((RBracket Close, _): zs') -> Right (Ast.If (OpBool x) y z, zs')
             [] -> Left $ errorAt (snd $ head zs) "expected ')' #EOF"
             ((tok, p): _) -> Left $ errorAt p "expected ')', got " ++ show tok
-parseIfExpr ((RBracket Open, _): (Atom (Operator Tokens.If), _): xs) = do
+parseIfExpr ((RBracket Open, _): (Atom (Operator Tokens.If), _): xs) =
     case parseBinaryExpr xs of
         Left e -> Left e
         Right (BinaryOp x ifExpr elseExpr, xs') -> case x of
