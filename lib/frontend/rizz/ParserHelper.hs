@@ -403,7 +403,7 @@ parseDeclAssignStmtLiteral f tokens = do
     (id1, rest1) <- parseIdentifier tokens
     _ <- doesVarExists (getPos 0 tokens) f id1
     (ap, rest2) <- parseAssignOp rest1
-    (parmcldl, rest3) <- parseParmCallDecl f rest2
+    (parmcldl, rest3) <- parseOr (parseParmCallDeclBExpr f) (parseParmCallDecl f) rest2
     Right (A.DeclAssignStmtLiteral id1 ap parmcldl, rest3)
 
 -- | Takes an @'A.Decl'@ and a @'[SingleToken]'@ as parameter and
