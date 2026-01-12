@@ -68,12 +68,7 @@ parseDecl ((RBracket Open, _): (Atom (Operator Tokens.Define), _):
     = case hParseDecl x xs of
         Left e -> Left e
         Right ([], _) -> Left $ expect (snd $ head xs) "<argument(s)>" "<none>"
-        Right (y: y', ys) -> case parseExpr ys of
-            Left e -> Left e
-            Right (z, zs) -> case zs of
-                ((RBracket Close, _): zs')
-                    -> Right (Defun $ Ast.Define a (Defun $ Func y y' z), zs')
-                _ -> Left $ expect (snd $ head xs) "')'" $ show z
+        Right (y: y', ys) -> hParseDecl' ys a y y'
 -- (define <Identifier> <Atom>)
 parseDecl ((RBracket Open, _): (Atom (Operator Tokens.Define), _):
   (Atom (Tokens.Identifier x), _): xs)
@@ -84,6 +79,16 @@ parseDecl ((RBracket Open, _): (Atom (Operator Tokens.Define), _):
             [] -> Left $ expect (snd $ head ys) "')" "<EOF>"
             ((z, zs): _) -> Left $ expect zs "')'" $ show z
 parseDecl _ = Left []
+
+hParseDecl' :: Tokens -> Identifier -> Identifier -> [Identifier]
+  -> Either String (Expr, Tokens)
+hParseDecl' ys a y y' = case parseExpr ys of
+    Left e -> Left e
+    Right (z, zs) -> case zs of
+        ((RBracket Close, _): zs')
+            -> Right (Defun $ Ast.Define a (Defun $ Func y y' z), zs')
+        [] -> Left $ expect (snd $ head zs) "')'" "<EOF>"
+        ((z', zs'): _) -> Left $ expect zs' "')'" $ show z'
 
 -- fetch all identifiers for a named define (define (foo [<Identifier>]))
 hParseDecl :: (Int, Int) -> Tokens -> Either String ([Identifier], Tokens)
