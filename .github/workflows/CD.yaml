@@ -17,6 +17,7 @@ jobs:
     if: github.repository == 'lszsrd/glados' && github.event.workflow_run.conclusion == 'success'
     name: Generating documentation
     runs-on: ubuntu-24.04
+    container: epitechcontent/epitest-docker:latest
 
     steps:
     - name: Cloning repository
@@ -25,14 +26,14 @@ jobs:
 
     - name: Generating Haddock documentation
       run: |
-        echo "DOC_PATH="`cabal haddock --haddock-all | grep "Documentation created" -A1 | grep -v "Documentation created"` >> $GITHUB_ENV
-      timeout-minutes: 2
+        ./build_doc.sh GLaDOS autogen
+      timeout-minutes: 5
 
     - name: Deploy documentation
       uses: peaceiris/actions-gh-pages@v3
       with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ${{ env.DOC_PATH }}
+          publish_dir: autogen
           publish_branch: documentation
       timeout-minutes: 2
 
