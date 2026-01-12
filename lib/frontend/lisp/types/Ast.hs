@@ -66,6 +66,7 @@ data CondOperator
     = OpLt
     | OpEq
     | OpBool Bool
+    | OpIdentifier Identifier
 
     deriving (
         Show

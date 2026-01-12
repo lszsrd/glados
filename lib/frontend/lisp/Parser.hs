@@ -124,6 +124,14 @@ parseIfExpr ((RBracket Open, _): (Atom (Operator Tokens.If), _):
             ((RBracket Close, _): zs') -> Right (Ast.If (OpBool x) y z, zs')
             [] -> Left $ expect (snd $ head zs) "')'" "<EOF>"
             ((z', zs'): _) -> Left $ expect zs' "')'" $ show z'
+parseIfExpr ((RBracket Open, _): (Atom (Operator Tokens.If), _):
+  (Atom (Tokens.Identifier x), _): xs) = do
+    (y, ys) <- parseExpr xs
+    (z, zs) <- parseExpr ys
+    case zs of
+        ((RBracket Close, _): zs') -> Right (Ast.If (OpIdentifier x) y z, zs')
+        [] -> Left $ expect (snd $ head zs) "')'" "<EOF>"
+        ((z', zs'): _) -> Left $ expect zs' "')'" $ show z'
 parseIfExpr ((RBracket Open, _): (Atom (Operator Tokens.If), _): xs)
     = case parseBinaryExpr xs of
         Left e -> Left e
