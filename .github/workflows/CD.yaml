@@ -25,7 +25,7 @@ jobs:
 
     - name: Generating Haddock documentation
       run: |
-        ./build_doc GLaDOS autogen
+        ./build_doc.sh GLaDOS autogen
       timeout-minutes: 5
 
     - name: Deploy documentation
