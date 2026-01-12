@@ -5,5 +5,5 @@
 *~
 compile_commands*
 dist-newstyle
-glados
+glados-*
 coding-style-reports.log

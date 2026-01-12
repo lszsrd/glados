@@ -1,13 +1,48 @@
-{- 
--- EPITECH PROJECT, 2025
--- GENERIC LANGUAGE AND DATA OPERAND SYNTAX
--- File description:
--- src/Main.hs
--}
-
 module Main where
 
 import System.Environment (getArgs)
+<<<<<<< HEAD
+import System.IO (stderr, hPutStrLn)
+import System.Exit (exitFailure)
+
+import Lexer
+import Parser
+import Format (fError)
+import Data.List (isPrefixOf)
+import Text.Read (readMaybe)
+
+findString :: String -> String -> Maybe String
+findString [] _ = Nothing
+findString string@(_: x) needle
+    | needle `isPrefixOf` string = Just string
+    | otherwise = findString x needle
+
+fixMe :: String
+fixMe = " (fixez votre manière d'écrire une erreur parce que y'en a 3 "
+    ++ "différentes là, rappel => LIGNE: COLONNE MESSAGE)"
+
+formatParserError :: String -> String -> String
+formatParserError content string = case words string of
+    [] -> string ++ fixMe
+    (x: xs) -> case break (== ':') x of
+        (y, z) -> case readMaybe y :: Maybe Int of
+            Just l -> case readMaybe $ drop 1 z :: Maybe Int of
+                Just c -> fError content (l, c) 1 $ unwords xs
+                _ -> string ++ fixMe
+            _ -> string ++ fixMe
+
+format :: String
+    -> String -> String
+format [] _ = []
+format string content
+    = case findString string "error" of
+        Just _ -> string
+        _ -> case findString string "warning" of
+            Just _ -> string
+            _ -> case break (== ':') string of
+                (_, []) -> string
+                (_, x) -> formatParserError content $ drop 1 x
+=======
 import System.Exit (exitSuccess, exitWith, ExitCode (ExitFailure))
 
 import Lexer (lexer)
@@ -41,10 +76,20 @@ printResult (Just (Expression a)) =
         (Int a) -> print a
         _ -> putStrLn "#\\<procedure\\>"
 printResult _ = putStrLn "Error happened: sorry not sorry"
+>>>>>>> e65e5aa1daf8eb8db5e1284194cec20bc09c513b
 
--- Entrypoint of the program, Coordinate every parts
 main :: IO ()
 main = do
+<<<<<<< HEAD
+    x <- head <$> getArgs
+    buffer <- readFile x
+    case lexer buffer of
+        Left e -> hPutStrLn stderr (x ++ ":" ++ e) >> exitFailure
+        Right tokens -> case parser tokens of
+            Left e -> hPutStrLn stderr (x ++ ":" ++ format (x ++ ":" ++ e) buffer)
+                >> exitFailure
+            Right ast -> print ast
+=======
     args <- getArgs
     buffer <- getBuffer args
     let tokenList = lexer buffer
@@ -54,3 +99,4 @@ main = do
     case res of
         Left e -> print e >> exitWith (ExitFailure 84)
         Right content -> printResult content >> exitSuccess
+>>>>>>> e65e5aa1daf8eb8db5e1284194cec20bc09c513b

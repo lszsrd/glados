@@ -1,0 +1,12 @@
+fn main() -> Int
+{
+    ret factorial(5);
+}
+
+fn factorial(Int: x) -> Int
+{
+    if (x == 1) {
+        ret 1;
+    }
+    ret x * factorial(x - 1);
+}

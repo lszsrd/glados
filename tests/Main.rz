@@ -1,0 +1,15 @@
+
+
+/* comment block
+            */
+fn main() -> Int
+{
+    Int x = 42;
+
+    if (x == 42) {
+        ret 2 * 4 + 3;
+    } else {
+        ret -1 / 1.5;
+    }
+}
+//endof file

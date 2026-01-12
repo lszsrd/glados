@@ -1,0 +1,23 @@
+FUNC main 0
+PUSH_INT 5
+STORE x
+CALL factorial 1
+RET
+ENDFUNC
+FUNC factorial 1
+LOAD x
+PUSH_INT 1
+EQ
+JMP_IF_FALSE endif
+PUSH_INT 1
+RET
+LABEL endif
+LOAD x
+LOAD x
+PUSH_INT 1
+SUB
+STORE x
+CALL factorial 1
+MUL
+RET
+ENDFUNC

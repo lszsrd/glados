@@ -7,11 +7,20 @@ on:
       - 'v*'
 
 env:
+<<<<<<< HEAD
+  TARGET1: glados-compiler
+  TARGET2: glados-vm
+
+jobs:
+  build-windows-targets:
+    name: Building Windows targets
+=======
   TARGET: glados
 
 jobs:
   build-target-windows:
     name: Building Windows target
+>>>>>>> e65e5aa1daf8eb8db5e1284194cec20bc09c513b
     runs-on: windows-2022
 
     steps:
@@ -19,17 +28,37 @@ jobs:
         uses: actions/checkout@v4
         timeout-minutes: 2
 
+<<<<<<< HEAD
+      - name: Building `${{ env.TARGET1 }}` and `${{ env.TARGET2 }}` binaries
+        run: |
+          cabal update
+          make
+          mv ${{ env.TARGET1 }}.exe ${{ env.TARGET1 }}-windows.exe
+          mv ${{ env.TARGET2 }}.exe ${{ env.TARGET2 }}-windows.exe
+          7z a glados.zip ${{ env.TARGET1 }}-windows.exe ${{ env.TARGET2 }}-windows.exe LICENSE.md docs/README.md
+=======
       - name: Building ${{ env.TARGET }}
         run: |
           cabal update
           make
           mv ${{ env.TARGET }}.exe ${{ env.TARGET }}-windows.exe
           7z a ${{ env.TARGET }}.zip ${{ env.TARGET }}-windows.exe LICENSE.md docs/README.md
+>>>>>>> e65e5aa1daf8eb8db5e1284194cec20bc09c513b
         timeout-minutes: 10
 
       - name: Uploading Windows binary
         uses: actions/upload-artifact@v4
         with:
+<<<<<<< HEAD
+          name: glados-windows
+          path: glados.zip
+        timeout-minutes: 2
+
+  build-linux-targets:
+    name: Building Linux targets
+    runs-on: ubuntu-24.04
+    needs: build-windows-targets
+=======
           name: ${{ env.TARGET }}-windows
           path: ${{ env.TARGET }}.zip
         timeout-minutes: 2
@@ -38,6 +67,7 @@ jobs:
     name: Building Linux target
     runs-on: ubuntu-24.04
     needs: build-target-windows
+>>>>>>> e65e5aa1daf8eb8db5e1284194cec20bc09c513b
 
     steps:
       - name: Cloning repository
@@ -47,6 +77,18 @@ jobs:
       - name: Downloading Windows binary
         uses: actions/download-artifact@v5
         with:
+<<<<<<< HEAD
+          name: glados-windows
+        timeout-minutes: 2
+
+      - name: Building `${{ env.TARGET1 }}` and `${{ env.TARGET2 }}` binaries
+        run: |
+          cabal update
+          make
+          mv ${{ env.TARGET1 }} ${{ env.TARGET1 }}-linux
+          mv ${{ env.TARGET2 }} ${{ env.TARGET2 }}-linux
+          zip --junk-paths glados ${{ env.TARGET1 }}-linux ${{ env.TARGET2 }}-linux
+=======
           name: ${{ env.TARGET }}-windows
         timeout-minutes: 2
 
@@ -56,11 +98,22 @@ jobs:
           make
           mv ${{ env.TARGET }} ${{ env.TARGET }}-linux
           zip --junk-paths ${{ env.TARGET }} ${{ env.TARGET }}-linux
+>>>>>>> e65e5aa1daf8eb8db5e1284194cec20bc09c513b
         timeout-minutes: 10
 
       - name: Uploading Linux binary
         uses: actions/upload-artifact@v4
         with:
+<<<<<<< HEAD
+          name: glados-linux
+          path: glados.zip
+        timeout-minutes: 2
+
+  build-mac-targets:
+    name: Building Macintosh targets
+    runs-on: self-hosted
+    needs: build-linux-targets
+=======
           name: ${{ env.TARGET }}-linux
           path: ${{ env.TARGET }}.zip
         timeout-minutes: 2
@@ -69,6 +122,7 @@ jobs:
     name: Building Macintosh target
     runs-on: self-hosted
     needs: build-target-linux
+>>>>>>> e65e5aa1daf8eb8db5e1284194cec20bc09c513b
 
     steps:
       - name: Cloning repository
@@ -78,6 +132,18 @@ jobs:
       - name: Downloading Linux binary
         uses: actions/download-artifact@v5
         with:
+<<<<<<< HEAD
+          name: glados-linux
+        timeout-minutes: 2
+
+      - name: Building `${{ env.TARGET1 }}` and `${{ env.TARGET2 }}` binaries
+        run: |
+          cabal update
+          make
+          mv ${{ env.TARGET1 }} ${{ env.TARGET1 }}-macos
+          mv ${{ env.TARGET2 }} ${{ env.TARGET2 }}-macos
+          zip --junk-paths glados ${{ env.TARGET1 }}-macos ${{ env.TARGET2 }}-macos
+=======
           name: ${{ env.TARGET }}-linux
         timeout-minutes: 2
 
@@ -87,19 +153,29 @@ jobs:
           make
           mv ${{ env.TARGET }} ${{ env.TARGET }}-macos
           zip --junk-paths ${{ env.TARGET }} ${{ env.TARGET }}-macos
+>>>>>>> e65e5aa1daf8eb8db5e1284194cec20bc09c513b
         timeout-minutes: 10
 
       - name: Uploading Macintosh binary
         uses: actions/upload-artifact@v4
         with:
+<<<<<<< HEAD
+          name: glados-macos
+          path: glados.zip
+=======
           name: ${{ env.TARGET }}-macos
           path: ${{ env.TARGET }}.zip
+>>>>>>> e65e5aa1daf8eb8db5e1284194cec20bc09c513b
         timeout-minutes: 2
 
   build-release:
     name: Building release for tag ${{ github.ref }}
     runs-on: ubuntu-24.04
+<<<<<<< HEAD
+    needs: build-mac-targets
+=======
     needs: build-target-mac
+>>>>>>> e65e5aa1daf8eb8db5e1284194cec20bc09c513b
 
     steps:
       - name: Cloning repository
@@ -109,7 +185,11 @@ jobs:
       - name: Downloading Windows and Linux binaries
         uses: actions/download-artifact@v5
         with:
+<<<<<<< HEAD
+          name: glados-macos
+=======
           name: ${{ env.TARGET }}-macos
+>>>>>>> e65e5aa1daf8eb8db5e1284194cec20bc09c513b
         timeout-minutes: 2
 
       - name: Creating Release
@@ -128,8 +208,13 @@ jobs:
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.creating_release.outputs.upload_url }}
+<<<<<<< HEAD
+          asset_path: ./glados.zip
+          asset_name: glados.zip
+=======
           asset_path: ./${{ env.TARGET }}.zip
           asset_name: ${{ env.TARGET }}.zip
+>>>>>>> e65e5aa1daf8eb8db5e1284194cec20bc09c513b
           asset_content_type: application/zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

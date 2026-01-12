@@ -1,0 +1,38 @@
+fn foo(Int: x) -> Int
+{
+    Int y = 42;
+ 
+    for (Int a = 0; a < 10; a++) {
+        ret 0;
+    }
+    ret y / x;
+}
+ 
+fn bar(Int: x) -> Int
+{
+    Int y = 1;
+ 
+    for (Int q = feur(y); feur(y) < x; y++) {
+        if (foo(y) == 0) {
+            ret 10;
+        }
+        if (0) {
+            ret 0;
+        }
+        if ((4 > 2) == 0) {
+            ret 1;
+        }
+        if (True) {
+            ret 12;
+        }
+    }
+    y = feur(y);
+    ret y;
+}
+ 
+fn baz() -> Int
+{
+    while (True) {
+        ret bar(foo(100) + 4 - 5) * feur(10) + 4 - 5 / 1;
+    }
+}
