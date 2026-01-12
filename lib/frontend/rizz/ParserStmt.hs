@@ -90,7 +90,6 @@ parseCompoundStmt f tokens = do
         "expected '}'" rest2
     Right (A.CompoundStmt stmts, rest3)
 
-
 -- | Takes an @'A.Decl'@ and a @'[SingleToken]'@ as parameter and
 -- returns a __Either__ @'String'@ @'A.Stmt'@.
 --
