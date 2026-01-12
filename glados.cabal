@@ -23,6 +23,7 @@ library frontend-lisp
         Ast
         Lexer
         Parser
+<<<<<<< HEAD
     build-depends:      base, format
 
 library frontend-rizz
@@ -53,6 +54,15 @@ library format
     ghc-options:        -Wall -O2
     exposed-modules:
         Format
+=======
+
+        AbstractTree
+        Builtins
+        EnvStoreRetrieve
+        Interpretor
+
+        Error
+>>>>>>> e65e5aa1daf8eb8db5e1284194cec20bc09c513b
     build-depends:      base
 
 executable gladick
@@ -93,6 +103,13 @@ test-suite unit_tests
     main-is:            Main.hs
     hs-source-dirs:     tests/hunit, tests/hunit/lib/frontend/rizz
     other-modules:
+<<<<<<< HEAD
         TestsLexer
         TestsParser
     build-depends:      base, HUnit, frontend-rizz
+=======
+        LexerTests
+        InterpretorTests
+        ParserTests
+    build-depends:      base, lisp, HUnit
+>>>>>>> e65e5aa1daf8eb8db5e1284194cec20bc09c513b

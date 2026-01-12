@@ -65,19 +65,33 @@ jobs:
   run-tests:
     name: Running tests
     runs-on: ubuntu-24.04
+<<<<<<< HEAD
+=======
+    #container: epitechcontent/epitest-docker:latest
+>>>>>>> e65e5aa1daf8eb8db5e1284194cec20bc09c513b
     needs: check-compilation
 
     steps:
       - name: Cloning repository
         uses: actions/checkout@v4
 
+<<<<<<< HEAD
       - name: Running unit tests
+=======
+      - name: Running unit tests on `${{ env.TARGET }}`
+>>>>>>> e65e5aa1daf8eb8db5e1284194cec20bc09c513b
         run: |
           cabal update
           make tests_run
         timeout-minutes: 2
 
+<<<<<<< HEAD
       - name: Running functional tests
         run: |
           exit 0
+=======
+      - name: Running functional tests on `${{ env.TARGET }}`
+        run: |
+          ./tests/functionaltests.sh
+>>>>>>> e65e5aa1daf8eb8db5e1284194cec20bc09c513b
         timeout-minutes: 2
