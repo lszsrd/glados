@@ -1,3 +1,8 @@
+struct foo {
+    Int: x,
+    Int: j
+}
+
 fn foo(Int: x) -> Int
 {
     Int y = 42;

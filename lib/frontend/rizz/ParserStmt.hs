@@ -62,7 +62,6 @@ parseCompoundStmt f tokens = do
         "expected '}'" rest2
     Right (A.CompoundStmt stmts, rest3)
 
-
 parseBuiltinTypes :: A.Decl -> Parser A.Stmt
 parseBuiltinTypes f tokens@((tok, pos) : _) = case tok of
     T.Keyword T.Bool    -> parseDeclVarExpr f tokens
