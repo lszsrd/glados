@@ -106,32 +106,4 @@ perl -i -pe "s|file:///nix/store/[^\"]+-doc/share/doc/([^\"]+)/html/src/([^\"]+)
 # fix links to doc files for Hackage libraries stored in the Nix store
 perl -i -pe "s|file:///nix/store/[^\"]+-doc/share/doc/([^\"]+)/html/src|https://hackage.haskell.org/package/\$1/docs/src|g" ${GEN_DOC_PATH}
 
-# generate Cabal package short ID to package name mapping
-bold_print "Generating Cabal package short ID to package name mapping"
-SHORT_IDS_FILE=$(mktemp)
-temp_files+=("$SHORT_IDS_FILE")
-
-grep -h -o -P "href=\"file://[^\"]+/\.cabal/store/ghc-${GHC_VERSION}/.+?/" ${GEN_SRC_PATH} ${GEN_DOC_PATH} | \
-  sort -u | grep -h -o -P "\.cabal/store/ghc-${GHC_VERSION}/.+?/" | cut -d '/' -f 4 > "${SHORT_IDS_FILE}"
-
-PKG_NAMES_FILE=$(mktemp)
-temp_files+=("$PKG_NAMES_FILE")
-
-grep -h -o -P "href=\"file://[^\"]+/\.cabal/store/ghc-${GHC_VERSION}/.+?/" ${GEN_SRC_PATH} ${GEN_DOC_PATH} | sort -u | \
-  cut -c 14- | xargs -I {} cat {}cabal-hash.txt | grep "pkgid:" | cut -d ' ' -f 2 > "${PKG_NAMES_FILE}"
-
-CMD_FILE2=$(mktemp)
-temp_files+=("$CMD_FILE2")
-
-echo "set -euo pipefail" > "${CMD_FILE2}"
-paste -d " " "${SHORT_IDS_FILE}" "${PKG_NAMES_FILE}" | awk "{print \"perl -i -pe \\\"s|\"\$1\"|\"\$2\"|g\\\" ${GEN_SRC_PATH} ${GEN_DOC_PATH}\"}" >> "${CMD_FILE2}"
-bash "${CMD_FILE2}"
-
-# fix links to doc and source files of libraries stored in the Cabal store
-bold_print "Fixing links to libraries in Cabal store"
-perl -i -pe "s|href=\"file://[^\"]+/\.cabal/store/ghc-${GHC_VERSION}/(.+?)/share/doc/html/([^\"]+)|href=\"https://hackage.haskell.org/package/\$1/docs/src/\$2|g" ${GEN_DOC_PATH}
-perl -i -pe "s|href=\"file://[^\"]+/\.cabal/store/ghc-${GHC_VERSION}/(.+?)/share/doc/html/src|href=\"https://hackage.haskell.org/package/\$1/docs/src/|g" ${GEN_SRC_PATH}
-
-rm "${OUTPUT}/${PKG_NAME}/${PKG_NAME}.haddock"
-
 bold_print "Done"
