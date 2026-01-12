@@ -49,14 +49,16 @@ findString search str = findIndex (isPrefixOf search) (tails str)
 
 -- | Takes a (@'Data.Int'@, @'Data.Int'@) position and a @'String'@ message as parameters and returns a __Either__ @'String'@ a.
 --
--- On failure, this function returns a pretty formatted error message with line & col position.
+-- This function returns a pretty formatted error message with line & col position.
+--
+-- NOTE: This function is used as an helper to format error messages.
 errorAt :: (Int, Int) -> String -> Either String a
 errorAt (ligne, colonne) message =
     Left (show ligne ++ ":" ++ show colonne ++ " " ++ message)
 
 -- | Takes a @'T.Token'@, a @'String'@ message and a @'Parser'@ @'SingleToken'@ list as parameters and returns a __Either__ @'String'@ ((), [@'SingleToken'@]).
 --
--- On success, this function returns a tuple...
+-- On success, this function returns a tuple containing the rest of the stream
 --
 -- On failure, this function returns a pretty formatted error message with line & col position.
 expectToken :: T.Token -> String -> Parser()
@@ -65,6 +67,15 @@ expectToken expected message ((token, position) : xs)
     | token == expected = Right((), xs)
     | otherwise         = errorAt position (message ++ ", got " ++ show token)
 
+-- | Takes a @'Parser'@ @'a'@ and a list as parameters and
+-- returns a __Either__ @'String'@ (__Maybe__ @'a'@, [@'SingleToken'@]).
+--
+-- On success, this function returns a tuple containing __Just__ @'a'@ and the rest of the stream.
+--
+-- On failure, this function returns a tuple containing __Nothing__ and the rest of the stream.
+--
+-- This function is used to parse a expression that can be empty.
+-- (e.g.: a forExpr can either be "for(Int a = 0; a < 0; a++)" and "for(;;)" )
 parseMaybe :: Parser a -> Parser (Maybe a)
 parseMaybe f tokens = case f tokens of 
     Right (e, rest) -> Right (Just e, rest)
@@ -72,6 +83,14 @@ parseMaybe f tokens = case f tokens of
         Just _ -> Left e
         Nothing -> Right (Nothing, tokens)
 
+-- | Takes two @'Parser'@ @'a'@ and a list as parameters and
+-- returns a __Either__ @'String'@ (@'a'@, [@'SingleToken'@]).
+--
+-- On success, this function returns a tuple containing @'a'@ and the rest of the stream.
+--
+-- On failure, this function returns a the result of the second parser passed as parameter.
+--
+-- This function is used to parse an expression that can be two different things.
 parseOr :: Parser a -> Parser a -> Parser a
 parseOr p1 p2 tokens = case p1 tokens of
     Right a -> Right a
@@ -79,6 +98,14 @@ parseOr p1 p2 tokens = case p1 tokens of
         Just _ -> Left e
         Nothing -> p2 tokens
 
+-- | Takes a (@'Data.Int'@, @'Data.Int'@), an @'A.Decl'@ and an @'T.Identifier'@ as parameters and
+-- returns a __Either__ @'String'@ @'String'@.
+--
+-- On success, this function returns a String, to signify that the var exists.
+--
+-- On failure, this function returns a pretty formatted message error.
+--
+-- This function is used to verify that a variable used is defined before.
 doesVarExists :: (Int, Int) -> A.Decl -> T.Identifier -> Either String String
 doesVarExists _ _ "True" = Right "OK"
 doesVarExists _ _ "False" = Right "OK"
@@ -89,6 +116,14 @@ doesVarExists pos (A.FunctionDecl n (A.ParmVarDeclExpr _ id1:xs) bdy ret) id2 =
         else doesVarExists pos (A.FunctionDecl n xs bdy ret) id2
 doesVarExists _ _ _ = Left "1:1 Error"
 
+-- | Takes a (@'Data.Int'@, @'Data.Int'@), an @'A.Stmt@ and a list of @'A.ParmVarDeclExpr'@ as parameters and
+-- returns a __Either__ @'String'@ @'[A.ParmVarDeclExpr]'@.
+--
+-- On success, this function returns a @'[A.ParmVarDeclExpr]'@, with the newly added variable in the list.
+--
+-- On failure, this function returns a pretty formatted message error.
+--
+-- This function is used to add a variable to the defined variables.
 addIfVarExpr :: (Int, Int) -> A.Stmt -> [A.ParmVarDeclExpr]
     -> Either String [A.ParmVarDeclExpr]
 addIfVarExpr _ (A.DeclVarExpr (A.VarDeclStmt t iden _ _)) [] =
@@ -101,27 +136,56 @@ addIfVarExpr p var@(A.DeclVarExpr (A.VarDeclStmt _ iden _ _))
             Right (x:rest)
 addIfVarExpr _ _ parms = Right parms
 
--- Helper for parse AssignOp
+-- | Takes a @'[SingleToken]'@ as parameter and
+-- returns a __Either__ @'String'@ @'[T.AssignOp]'@.
+--
+-- On success, this function returns a @'T.AssignOp'@.
+--
+-- On failure, this function returns a pretty formatted message error.
+--
+-- This function is used to parse an assignment operator.
 parseAssignOp :: Parser T.AssignOp
 parseAssignOp ((T.Punctuator (T.AssignOp op), _) : rest) = Right (op, rest)
 parseAssignOp ((token, position) : _) = 
     errorAt position ("Expected AssignOp, got " ++ show token)
 parseAssignOp [] = errorAt (1, 1) "Expected AssignOp, got "
 
+-- | Takes a @'[SingleToken]'@ as parameter and
+-- returns a __Either__ @'String'@ @'[T.BinaryOp]'@.
+--
+-- On success, this function returns a @'T.BinaryOp'@.
+--
+-- On failure, this function returns a pretty formatted message error.
+--
+-- This function is used to parse a binary operator.
 parseBinaryOp :: Parser T.BinaryOp
 parseBinaryOp ((T.Punctuator (T.BinaryOp op), _) : rest) = Right (op, rest)
 parseBinaryOp ((token, position) : _) = 
     errorAt position ("Expected BinaryOp, got " ++ show token)
 parseBinaryOp [] = errorAt (1, 1) "Expected BinaryOp, got "
 
--- Helper for parse Literal
+-- | Takes a @'[SingleToken]'@ as parameter and
+-- returns a __Either__ @'String'@ @'T.Literal'@.
+--
+-- On success, this function returns a @'T.Literal'@.
+--
+-- On failure, this function returns a pretty formatted message error.
+--
+-- This function is used to parse a literal value.
 parseLiteral :: Parser T.Literal
 parseLiteral ((T.Literal lit, _) : rest) = Right (lit, rest)
 parseLiteral ((token, position) : _) =
     errorAt position ("Expected Litteral, got " ++ show token)
 parseLiteral [] = errorAt (1, 1) "Expected Literal, got "
 
--- Helper for parse list of Literal elements (similar to parsePVDEList)
+-- | Takes a @'[SingleToken]'@ as parameter and
+-- returns a __Either__ @'String'@ @'[T.Literal]'@.
+--
+-- On success, this function returns a @'[T.Litteral]'@.
+--
+-- On failure, this function returns a pretty formatted message error.
+--
+-- This function is used to parse a list of literal values.
 parseListElements :: Parser [T.Literal]
 parseListElements tokens@((T.Punctuator (T.SBracket T.CloseSBracket), _) : _)
     = Right ([], tokens)
@@ -140,7 +204,14 @@ parseListElements tokens = do
             Right (elt : elems, rest3)
         _ -> Right ([elt], rest1)
 
--- Helper for parse list literal (similar to parseCallExprDecl)
+-- | Takes a @'[SingleToken]'@ as parameter and
+-- returns a __Either__ @'String'@ @'T.Literal'@.
+--
+-- On success, this function returns a @'T.Litteral'@.
+--
+-- On failure, this function returns a pretty formatted message error.
+--
+-- This function is used to parse a list of literal values.
 parseListLiteral :: Parser T.Literal
 parseListLiteral ((T.Punctuator (T.SBracket T.OpenSBracket), _) : rest1) = do
     (elements, rest2) <- parseListElements rest1
@@ -151,7 +222,14 @@ parseListLiteral ((token, position) : _) =
     errorAt position ("Expected '[' for list literal, got " ++ show token)
 parseListLiteral [] = errorAt (1,1) "Expected list literal"
 
--- Helper for parse BuiltinType
+-- | Takes a @'[SingleToken]'@ as parameter and
+-- returns a __Either__ @'String'@ @'A.BuiltinType'@.
+--
+-- On success, this function returns a @'A.BuiltinType'@.
+--
+-- On failure, this function returns a pretty formatted message error.
+--
+-- This function is used to parse a Rizz Builtin type (Int, Bool, Char, ...).
 parseBuiltinType :: Parser A.BuiltinType
 parseBuiltinType ((T.Punctuator (T.SBracket T.OpenSBracket), _) : rest1) = do
     (innerType, rest2) <- parseBuiltinType rest1
@@ -166,14 +244,28 @@ parseBuiltinType ((token, position) : _) =
     errorAt position ("Expected builtintype, got " ++ show token)
 parseBuiltinType [] = errorAt (1,1) "Expected builtintype, got Nothing"
 
--- Helper for parse Identifier token
+-- | Takes a @'[SingleToken]'@ as parameter and
+-- returns a __Either__ @'String'@ @'T.Identifier'@.
+--
+-- On success, this function returns a @'T.Identifier'@.
+--
+-- On failure, this function returns a pretty formatted message error.
+--
+-- This function is used to parse an Identifier (e.g.: foo, bar, a, ...).
 parseIdentifier :: Parser T.Identifier
 parseIdentifier [] = errorAt (1, 1) "Unexpected err"
 parseIdentifier ((T.Identifier id1, _) : rest) = Right (id1, rest)
 parseIdentifier ((token, position) : _) =
     errorAt position ("Expected identifier, got " ++ show token)
 
--- Helper for parse ParmVarDeclExpr (BuiltinType Identifier)
+-- | Takes a @'[SingleToken]'@ as parameter and
+-- returns a __Either__ @'String'@ @'A.ParmVarDeclExpr'@.
+--
+-- On success, this function returns a @'A.ParmVarDeclExpr'@.
+--
+-- On failure, this function returns a pretty formatted message error.
+--
+-- This function is used to parse a ParmVarDeclExpr (composed of a BuiltinType and an Identifier).
 parsePVDE :: Parser A.ParmVarDeclExpr
 parsePVDE token = do
     (btype, rest1) <- parseBuiltinType token
@@ -182,7 +274,14 @@ parsePVDE token = do
     (identifier, rest3) <- parseIdentifier rest2
     Right(A.ParmVarDeclExpr btype identifier, rest3)
 
--- Helper for parse list of ParmVarDeclExpr [BuiltinType Identifier]
+-- | Takes a @'[SingleToken]'@ as parameter and
+-- returns a __Either__ @'String'@ @'[A.ParmVarDeclExpr]'@.
+--
+-- On success, this function returns a @'[A.ParmVarDeclExpr]'@.
+--
+-- On failure, this function returns a pretty formatted message error.
+--
+-- This function is used to parse a list of ParmVarDeclExpr, typically function parameters.
 parsePVDEList :: Parser [A.ParmVarDeclExpr]
 parsePVDEList tokens@((T.Punctuator (T.RBracket T.CloseRBracket), _) : _)
     = Right ([], tokens)
@@ -194,7 +293,14 @@ parsePVDEList tokens = do
             Right(param : params, rest3)
         _ -> Right ([param], rest1)
 
--- Helper for parse ParmCallDecl
+-- | Takes an @'A.Decl'@ and a @'[SingleToken]'@ as parameter and
+-- returns a __Either__ @'String'@ @'A.ParmCallDecl'@.
+--
+-- On success, this function returns a @'A.ParmCallDecl'@.
+--
+-- On failure, this function returns a pretty formatted message error.
+--
+-- This function is used to parse the a single parameter of a function call (e.g.: 4, 'c', foo(), ...).
 parseParmCallDecl :: A.Decl -> Parser A.ParmCallDecl
 parseParmCallDecl _ t@((T.Punctuator (T.SBracket T.OpenSBracket), _) : _) = do
     (listLit, rest) <- parseListLiteral t
@@ -212,6 +318,14 @@ parseParmCallDecl _ ((token, position) : _) =
     errorAt position ("Expected literal/ident/call-expr, got " ++ show token)
 parseParmCallDecl _ [] = errorAt (1, 1) "Expected ParmCallDecl, got " 
 
+-- | Takes an @'A.Decl'@ and a @'[SingleToken]'@ as parameter and
+-- returns a __Either__ @'String'@ @'A.ParmCallDecl'@.
+--
+-- On success, this function returns a @'A.ParmCallDecl'@.
+--
+-- On failure, this function returns a pretty formatted message error.
+--
+-- This function is used to parse a single parameter of a function call Either a BinaryOpExpr or a simple parameter.
 parseSingle :: A.Decl -> Parser A.ParmCallDecl
 parseSingle f tokens = case tokens of
     ((T.Punctuator (T.RBracket T.OpenRBracket), _) : rest) -> do
@@ -221,6 +335,14 @@ parseSingle f tokens = case tokens of
         Right (p1, rest2)
     _ -> parseParmCallDecl f tokens
 
+-- | Takes an @'A.Decl'@ and a @'[SingleToken]'@ as parameter and
+-- returns a __Either__ @'String'@ @'A.ParmCallDecl'@.
+--
+-- On success, this function returns a @'A.ParmCallDecl'@.
+--
+-- On failure, this function returns a pretty formatted message error.
+--
+-- This function is used to parse a BinaryOpExpr in a function (e.g.: 6 - 4, foo(4) * 14 - 67).
 parseParmCallDeclBExpr :: A.Decl -> Parser A.ParmCallDecl
 parseParmCallDeclBExpr f tokens = do
     (p1, rest) <- parseSingle f tokens
@@ -230,7 +352,14 @@ parseParmCallDeclBExpr f tokens = do
             Right (A.ParmCallBExpr (A.BinaryOpParm p1)op(A.BinaryOpParm p2),r)
         Left _ -> Right (p1, rest)
 
--- Helper for parse a list of ParmCallDecl
+-- | Takes an @'A.Decl'@ and a @'[SingleToken]'@ as parameter and
+-- returns a __Either__ @'String'@ @'A.ParmCallDecl'@.
+--
+-- On success, this function returns a @'A.ParmCallDecl'@.
+--
+-- On failure, this function returns a pretty formatted message error.
+--
+-- This function is used to parse all the parameters of a function call.
 parseParmCallDeclList :: A.Decl -> Parser [A.ParmCallDecl]
 parseParmCallDeclList _ t@((T.Punctuator (T.RBracket T.CloseRBracket), _) : _)
     = Right ([], t)
@@ -243,7 +372,14 @@ parseParmCallDeclList f tokens = do
             Right (arg : args, rest3)
         _ -> Right ([arg], rest1)
 
--- Helper for parse CallExprDecl
+-- | Takes an @'A.Decl'@ and a @'[SingleToken]'@ as parameter and
+-- returns a __Either__ @'String'@ @'A.CallExprDecl'@.
+--
+-- On success, this function returns a @'A.CallExprDecl'@.
+--
+-- On failure, this function returns a pretty formatted message error.
+--
+-- This function is used to parse a function call.
 parseCallExprDecl :: A.Decl -> Parser A.CallExprDecl
 parseCallExprDecl f tokens = do
     (fname, rest1) <- parseIdentifier tokens
@@ -254,7 +390,14 @@ parseCallExprDecl f tokens = do
         (T.RBracket T.CloseRBracket)) "Expected ')'" rest3
     Right (A.CallExprDecl fname parmcldllist, rest4)
 
--- Helper for parse DeclAssignStmtLiteral
+-- | Takes an @'A.Decl'@ and a @'[SingleToken]'@ as parameter and
+-- returns a __Either__ @'String'@ @'A.DeclStmt'@.
+--
+-- On success, this function returns a @'A.DeclStmt'@.
+--
+-- On failure, this function returns a pretty formatted message error.
+--
+-- This function is used to parse an assignment statement.
 parseDeclAssignStmtLiteral :: A.Decl -> Parser A.DeclStmt
 parseDeclAssignStmtLiteral f tokens = do
     (id1, rest1) <- parseIdentifier tokens
@@ -263,7 +406,14 @@ parseDeclAssignStmtLiteral f tokens = do
     (parmcldl, rest3) <- parseParmCallDecl f rest2
     Right (A.DeclAssignStmtLiteral id1 ap parmcldl, rest3)
 
--- Helper for parse VarDeclStmt (Type name = value)
+-- | Takes an @'A.Decl'@ and a @'[SingleToken]'@ as parameter and
+-- returns a __Either__ @'String'@ @'A.VarDeclStmt'@.
+--
+-- On success, this function returns a @'A.VarDeclStmt'@.
+--
+-- On failure, this function returns a pretty formatted message error.
+--
+-- This function is used to parse a variable declaration statement.
 parseVarDeclStmt :: A.Decl -> Parser A.VarDeclStmt
 parseVarDeclStmt f tokens = do
     (typ, rest1) <- parseBuiltinType tokens
@@ -272,6 +422,14 @@ parseVarDeclStmt f tokens = do
     (value, rest4) <- parseParmCallDecl f rest3
     Right (A.VarDeclStmt typ name op value, rest4)
 
+-- | Takes an @'A.Decl'@ and a @'[SingleToken]'@ as parameter and
+-- returns a __Either__ @'String'@ @'A.DeclStmt'@.
+--
+-- On success, this function returns a @'A.DeclStmt'@.
+--
+-- On failure, this function returns a pretty formatted message error.
+--
+-- This function is used to parse an operation on an existing variable.
 parseDeclStmt :: A.Decl -> Parser A.DeclStmt
 parseDeclStmt f tokens@((T.Identifier i, pos) : rest1) = do
     _ <- doesVarExists pos f i
