@@ -97,6 +97,7 @@ hparseOperator stream x operator = case drop (length x) stream of
         then Just (Operator operator, length x, stream')
         else Nothing
 
+
 parseOperator :: Stream -> Maybe (Atom, Int, Stream)
 parseOperator ('+': x) = Just (Operator Add, 1, x)
 parseOperator ('-': x) = Just (Operator Sub, 1, x)
