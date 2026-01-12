@@ -104,6 +104,8 @@ parseBooleanConstant x
 --
 -- On success, this function returns a tuple made of the parsed @'Keyword'@, the @'Lexeme'@ length and the input stream stripped of the parsed @'Token'@.
 parseKeyword :: Stream -> Maybe (Token, Int, Stream)
+parseKeyword ('s': 't': 'r': 'u' : 'c': 't': x)
+    = hParseKeyword (Keyword Struct, 6, x)
 parseKeyword ('B': 'o': 'o': 'l' : x) = hParseKeyword (Keyword Bool, 4, x)
 parseKeyword ('C': 'h': 'a': 'r' : x) = hParseKeyword (Keyword Char, 4, x)
 parseKeyword ('I': 'n': 't': x) = hParseKeyword (Keyword Int, 3, x)

@@ -153,6 +153,8 @@ data Keyword
     -- ^ Foreach loop keyword, expressed in rizz code as @\`foreach\`@.
     | Ret
     -- ^ Return (from function) keyword, expressed in rizz code as @\`ret\`@.
+    | Struct
+    -- ^ Struct keyword, expressed in rizz code as @\`struct Foo = {...}\`@.
     
     deriving (
         Show

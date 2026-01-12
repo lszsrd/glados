@@ -73,8 +73,7 @@ parseDecl ((RBracket Open, _): (Atom (Operator Tokens.Define), _):
             Right (z, zs) -> case zs of
                 ((RBracket Close, _): zs')
                     -> Right (Defun $ Ast.Define a (Defun $ Func y y' z), zs')
-                [] -> Left $ expect (snd $ head zs) "')'" "<EOF>"
-                ((z', zs'): _) -> Left $ expect zs' "')'" $ show z'
+                _ -> Left $ expect (snd $ head xs) "')'" $ show z
 -- (define <Identifier> <Atom>)
 parseDecl ((RBracket Open, _): (Atom (Operator Tokens.Define), _):
   (Atom (Tokens.Identifier x), _): xs)
