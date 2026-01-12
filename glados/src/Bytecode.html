@@ -1,0 +1,784 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-comment">{- 
+-- EPITECH PROJECT, 2025
+-- Generic Language And Data Operand Syntax
+-- File description:
+-- lib/backend/rizz/Bytecode.hs
+-}</span><span>
+</span><span id="line-7"></span><span>
+</span><span id="line-8"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Bytecode</span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-9"></span><span>    </span><span class="annot"><a href="Bytecode.html#compileDecl"><span class="hs-identifier">compileDecl</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-10"></span><span>    </span><span class="annot"><a href="Bytecode.html#compileFunctionDecl"><span class="hs-identifier">compileFunctionDecl</span></a></span><span>
+</span><span id="line-11"></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-12"></span><span>
+</span><span id="line-13"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Ast.html"><span class="hs-identifier">Ast</span></a></span><span>
+</span><span id="line-14"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Tokens.html"><span class="hs-identifier">Tokens</span></a></span><span>
+</span><span id="line-15"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Map</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Map</span></span><span class="hs-special">)</span><span>
+</span><span id="line-16"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><span class="hs-identifier">Data.Map</span></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Map</span></span><span>
+</span><span id="line-17"></span><span>
+</span><span id="line-18"></span><span>
+</span><span id="line-19"></span><span class="hs-keyword">type</span><span> </span><span id="FuncEnv"><span class="annot"><a href="Bytecode.html#FuncEnv"><span class="hs-identifier hs-var">FuncEnv</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><a href="Tokens.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Tokens.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-20"></span><span>
+</span><span id="line-21"></span><span class="annot"><a href="Bytecode.html#buildFuncEnv"><span class="hs-identifier hs-type">buildFuncEnv</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Ast.html#Decl"><span class="hs-identifier hs-type">Decl</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Bytecode.html#FuncEnv"><span class="hs-identifier hs-type">FuncEnv</span></a></span><span>
+</span><span id="line-22"></span><span id="buildFuncEnv"><span class="annot"><span class="annottext">buildFuncEnv :: [Decl] -&gt; FuncEnv
+</span><a href="Bytecode.html#buildFuncEnv"><span class="hs-identifier hs-var hs-var">buildFuncEnv</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Decl -&gt; FuncEnv -&gt; FuncEnv) -&gt; FuncEnv -&gt; [Decl] -&gt; FuncEnv
+forall a b. (a -&gt; b -&gt; b) -&gt; b -&gt; [a] -&gt; b
+forall (t :: * -&gt; *) a b.
+Foldable t =&gt;
+(a -&gt; b -&gt; b) -&gt; b -&gt; t a -&gt; b
+</span><span class="hs-identifier hs-var">foldr</span></span><span> </span><span class="annot"><span class="annottext">Decl -&gt; FuncEnv -&gt; FuncEnv
+</span><a href="#local-6989586621679018559"><span class="hs-identifier hs-var">collect</span></a></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+forall k a. Map k a
+</span><span class="hs-identifier hs-var">Map.empty</span></span><span>
+</span><span id="line-23"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-24"></span><span>    </span><span id="local-6989586621679018559"><span class="annot"><span class="annottext">collect :: Decl -&gt; FuncEnv -&gt; FuncEnv
+</span><a href="#local-6989586621679018559"><span class="hs-identifier hs-var hs-var">collect</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Ast.html#FunctionDecl"><span class="hs-identifier hs-type">FunctionDecl</span></a></span><span> </span><span id="local-6989586621679018564"><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018564"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span id="local-6989586621679018565"><span class="annot"><span class="annottext">[ParmVarDeclExpr]
+</span><a href="#local-6989586621679018565"><span class="hs-identifier hs-var">params</span></a></span></span><span> </span><span class="annot"><span class="annottext">CompoundStmt
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Maybe BuiltinType
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679018566"><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018566"><span class="hs-identifier hs-var">acc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-25"></span><span>        </span><span class="annot"><span class="annottext">Identifier -&gt; [Identifier] -&gt; FuncEnv -&gt; FuncEnv
+forall k a. Ord k =&gt; k -&gt; a -&gt; Map k a -&gt; Map k a
+</span><span class="hs-identifier hs-var">Map.insert</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018564"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(ParmVarDeclExpr -&gt; Identifier)
+-&gt; [ParmVarDeclExpr] -&gt; [Identifier]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">ParmVarDeclExpr -&gt; Identifier
+</span><a href="#local-6989586621679018568"><span class="hs-identifier hs-var">paramName</span></a></span><span> </span><span class="annot"><span class="annottext">[ParmVarDeclExpr]
+</span><a href="#local-6989586621679018565"><span class="hs-identifier hs-var">params</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018566"><span class="hs-identifier hs-var">acc</span></a></span><span>
+</span><span id="line-26"></span><span>    </span><span class="annot"><a href="#local-6989586621679018559"><span class="hs-identifier hs-var">collect</span></a></span><span> </span><span class="annot"><span class="annottext">Decl
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679018569"><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018569"><span class="hs-identifier hs-var">acc</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018569"><span class="hs-identifier hs-var">acc</span></a></span><span>
+</span><span id="line-27"></span><span>
+</span><span id="line-28"></span><span>    </span><span class="annot"><a href="#local-6989586621679018568"><span class="hs-identifier hs-type">paramName</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Ast.html#ParmVarDeclExpr"><span class="hs-identifier hs-type">ParmVarDeclExpr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Tokens.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
+</span><span id="line-29"></span><span>    </span><span id="local-6989586621679018568"><span class="annot"><span class="annottext">paramName :: ParmVarDeclExpr -&gt; Identifier
+</span><a href="#local-6989586621679018568"><span class="hs-identifier hs-var hs-var">paramName</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Ast.html#ParmVarDeclExpr"><span class="hs-identifier hs-type">ParmVarDeclExpr</span></a></span><span> </span><span class="annot"><span class="annottext">BuiltinType
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679018571"><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018571"><span class="hs-identifier hs-var">ident</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018571"><span class="hs-identifier hs-var">ident</span></a></span><span>
+</span><span id="line-30"></span><span>
+</span><span id="line-31"></span><span>
+</span><span id="line-32"></span><span class="annot"><a href="Bytecode.html#compileDecl"><span class="hs-identifier hs-type">compileDecl</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Ast.html#Decl"><span class="hs-identifier hs-type">Decl</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-33"></span><span id="compileDecl"><span class="annot"><span class="annottext">compileDecl :: [Decl] -&gt; Identifier
+</span><a href="Bytecode.html#compileDecl"><span class="hs-identifier hs-var hs-var">compileDecl</span></a></span></span><span> </span><span id="local-6989586621679018572"><span class="annot"><span class="annottext">[Decl]
+</span><a href="#local-6989586621679018572"><span class="hs-identifier hs-var">decls</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-34"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679018573"><span class="annot"><span class="annottext">env :: FuncEnv
+</span><a href="#local-6989586621679018573"><span class="hs-identifier hs-var hs-var">env</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">[Decl] -&gt; FuncEnv
+</span><a href="Bytecode.html#buildFuncEnv"><span class="hs-identifier hs-var">buildFuncEnv</span></a></span><span> </span><span class="annot"><span class="annottext">[Decl]
+</span><a href="#local-6989586621679018572"><span class="hs-identifier hs-var">decls</span></a></span><span>
+</span><span id="line-35"></span><span>    </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">(Decl -&gt; Identifier) -&gt; [Decl] -&gt; Identifier
+forall (t :: * -&gt; *) a b. Foldable t =&gt; (a -&gt; [b]) -&gt; t a -&gt; [b]
+</span><span class="hs-identifier hs-var">concatMap</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FuncEnv -&gt; Decl -&gt; Identifier
+</span><a href="Bytecode.html#compileDeclWithEnv"><span class="hs-identifier hs-var">compileDeclWithEnv</span></a></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018573"><span class="hs-identifier hs-var">env</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Decl]
+</span><a href="#local-6989586621679018572"><span class="hs-identifier hs-var">decls</span></a></span><span>
+</span><span id="line-36"></span><span>
+</span><span id="line-37"></span><span class="annot"><a href="Bytecode.html#compileDeclWithEnv"><span class="hs-identifier hs-type">compileDeclWithEnv</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Bytecode.html#FuncEnv"><span class="hs-identifier hs-type">FuncEnv</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Ast.html#Decl"><span class="hs-identifier hs-type">Decl</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-38"></span><span id="compileDeclWithEnv"><span class="annot"><span class="annottext">compileDeclWithEnv :: FuncEnv -&gt; Decl -&gt; Identifier
+</span><a href="Bytecode.html#compileDeclWithEnv"><span class="hs-identifier hs-var hs-var">compileDeclWithEnv</span></a></span></span><span> </span><span id="local-6989586621679018576"><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018576"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Ast.html#FunctionDecl"><span class="hs-identifier hs-type">FunctionDecl</span></a></span><span> </span><span id="local-6989586621679018577"><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018577"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span id="local-6989586621679018578"><span class="annot"><span class="annottext">[ParmVarDeclExpr]
+</span><a href="#local-6989586621679018578"><span class="hs-identifier hs-var">params</span></a></span></span><span> </span><span id="local-6989586621679018579"><span class="annot"><span class="annottext">CompoundStmt
+</span><a href="#local-6989586621679018579"><span class="hs-identifier hs-var">body</span></a></span></span><span> </span><span id="local-6989586621679018580"><span class="annot"><span class="annottext">Maybe BuiltinType
+</span><a href="#local-6989586621679018580"><span class="hs-identifier hs-var">_ret</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-39"></span><span>    </span><span class="annot"><span class="annottext">FuncEnv
+-&gt; Identifier -&gt; [ParmVarDeclExpr] -&gt; CompoundStmt -&gt; Identifier
+</span><a href="Bytecode.html#compileFunctionWithEnv"><span class="hs-identifier hs-var">compileFunctionWithEnv</span></a></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018576"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018577"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">[ParmVarDeclExpr]
+</span><a href="#local-6989586621679018578"><span class="hs-identifier hs-var">params</span></a></span><span> </span><span class="annot"><span class="annottext">CompoundStmt
+</span><a href="#local-6989586621679018579"><span class="hs-identifier hs-var">body</span></a></span><span>
+</span><span id="line-40"></span><span class="annot"><a href="Bytecode.html#compileDeclWithEnv"><span class="hs-identifier hs-var">compileDeclWithEnv</span></a></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Decl
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;&quot;</span></span><span>
+</span><span id="line-41"></span><span>
+</span><span id="line-42"></span><span>
+</span><span id="line-43"></span><span class="annot"><a href="Bytecode.html#compileFunctionWithEnv"><span class="hs-identifier hs-type">compileFunctionWithEnv</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Bytecode.html#FuncEnv"><span class="hs-identifier hs-type">FuncEnv</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Tokens.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Ast.html#ParmVarDeclExpr"><span class="hs-identifier hs-type">ParmVarDeclExpr</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-44"></span><span>    </span><span class="annot"><a href="Ast.html#CompoundStmt"><span class="hs-identifier hs-type">CompoundStmt</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-45"></span><span id="compileFunctionWithEnv"><span class="annot"><span class="annottext">compileFunctionWithEnv :: FuncEnv
+-&gt; Identifier -&gt; [ParmVarDeclExpr] -&gt; CompoundStmt -&gt; Identifier
+</span><a href="Bytecode.html#compileFunctionWithEnv"><span class="hs-identifier hs-var hs-var">compileFunctionWithEnv</span></a></span></span><span> </span><span id="local-6989586621679018582"><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018582"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span id="local-6989586621679018583"><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018583"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span id="local-6989586621679018584"><span class="annot"><span class="annottext">[ParmVarDeclExpr]
+</span><a href="#local-6989586621679018584"><span class="hs-identifier hs-var">params</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Ast.html#CompoundStmt"><span class="hs-identifier hs-type">CompoundStmt</span></a></span><span> </span><span id="local-6989586621679018586"><span class="annot"><span class="annottext">[Stmt]
+</span><a href="#local-6989586621679018586"><span class="hs-identifier hs-var">stmts</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-46"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679018589"><span class="annot"><span class="annottext">header :: Identifier
+</span><a href="#local-6989586621679018589"><span class="hs-identifier hs-var hs-var">header</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;FUNC &quot;</span></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018583"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot; &quot;</span></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Identifier
+forall a. Show a =&gt; a -&gt; Identifier
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[ParmVarDeclExpr] -&gt; Int
+forall a. [a] -&gt; Int
+forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Int
+</span><span class="hs-identifier hs-var">length</span></span><span> </span><span class="annot"><span class="annottext">[ParmVarDeclExpr]
+</span><a href="#local-6989586621679018584"><span class="hs-identifier hs-var">params</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;\n&quot;</span></span><span>
+</span><span id="line-47"></span><span>        </span><span id="local-6989586621679018593"><span class="annot"><span class="annottext">body :: Identifier
+</span><a href="#local-6989586621679018593"><span class="hs-identifier hs-var hs-var">body</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Stmt -&gt; Identifier) -&gt; [Stmt] -&gt; Identifier
+forall (t :: * -&gt; *) a b. Foldable t =&gt; (a -&gt; [b]) -&gt; t a -&gt; [b]
+</span><span class="hs-identifier hs-var">concatMap</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FuncEnv -&gt; Stmt -&gt; Identifier
+</span><a href="Bytecode.html#compileStmt"><span class="hs-identifier hs-var">compileStmt</span></a></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018582"><span class="hs-identifier hs-var">env</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Stmt]
+</span><a href="#local-6989586621679018595"><span class="hs-identifier hs-var">stmtsWithNames</span></a></span><span>
+</span><span id="line-48"></span><span>        </span><span id="local-6989586621679018596"><span class="annot"><span class="annottext">footer :: Identifier
+</span><a href="#local-6989586621679018596"><span class="hs-identifier hs-var hs-var">footer</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;ENDFUNC\n&quot;</span></span><span>
+</span><span id="line-49"></span><span>        </span><span id="local-6989586621679018595"><span class="annot"><span class="annottext">stmtsWithNames :: [Stmt]
+</span><a href="#local-6989586621679018595"><span class="hs-identifier hs-var hs-var">stmtsWithNames</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Stmt -&gt; Stmt) -&gt; [Stmt] -&gt; [Stmt]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="annot"><span class="annottext">Stmt -&gt; Stmt
+forall a. a -&gt; a
+</span><span class="hs-identifier hs-var">id</span></span><span> </span><span class="annot"><span class="annottext">[Stmt]
+</span><a href="#local-6989586621679018586"><span class="hs-identifier hs-var">stmts</span></a></span><span>
+</span><span id="line-50"></span><span>    </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018589"><span class="hs-identifier hs-var">header</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018593"><span class="hs-identifier hs-var">body</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018596"><span class="hs-identifier hs-var">footer</span></a></span><span>
+</span><span id="line-51"></span><span>
+</span><span id="line-52"></span><span class="annot"><a href="Bytecode.html#compileFunctionDecl"><span class="hs-identifier hs-type">compileFunctionDecl</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Tokens.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Ast.html#ParmVarDeclExpr"><span class="hs-identifier hs-type">ParmVarDeclExpr</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Ast.html#CompoundStmt"><span class="hs-identifier hs-type">CompoundStmt</span></a></span><span>
+</span><span id="line-53"></span><span>    </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-54"></span><span id="compileFunctionDecl"><span class="annot"><span class="annottext">compileFunctionDecl :: Identifier -&gt; [ParmVarDeclExpr] -&gt; CompoundStmt -&gt; Identifier
+</span><a href="Bytecode.html#compileFunctionDecl"><span class="hs-identifier hs-var hs-var">compileFunctionDecl</span></a></span></span><span> </span><span id="local-6989586621679018598"><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018598"><span class="hs-identifier hs-var">name</span></a></span></span><span> </span><span id="local-6989586621679018599"><span class="annot"><span class="annottext">[ParmVarDeclExpr]
+</span><a href="#local-6989586621679018599"><span class="hs-identifier hs-var">params</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-55"></span><span>    </span><span class="annot"><span class="annottext">FuncEnv
+-&gt; Identifier -&gt; [ParmVarDeclExpr] -&gt; CompoundStmt -&gt; Identifier
+</span><a href="Bytecode.html#compileFunctionWithEnv"><span class="hs-identifier hs-var">compileFunctionWithEnv</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Identifier -&gt; [Identifier] -&gt; FuncEnv
+forall k a. k -&gt; a -&gt; Map k a
+</span><span class="hs-identifier hs-var">Map.singleton</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018598"><span class="hs-identifier hs-var">name</span></a></span><span>
+</span><span id="line-56"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(ParmVarDeclExpr -&gt; Identifier)
+-&gt; [ParmVarDeclExpr] -&gt; [Identifier]
+forall a b. (a -&gt; b) -&gt; [a] -&gt; [b]
+</span><span class="hs-identifier hs-var">map</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="annot"><a href="Ast.html#ParmVarDeclExpr"><span class="hs-identifier hs-type">ParmVarDeclExpr</span></a></span><span> </span><span class="annot"><span class="annottext">BuiltinType
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679018601"><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018601"><span class="hs-identifier hs-var">ident</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018601"><span class="hs-identifier hs-var">ident</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[ParmVarDeclExpr]
+</span><a href="#local-6989586621679018599"><span class="hs-identifier hs-var">params</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018598"><span class="hs-identifier hs-var">name</span></a></span><span> </span><span class="annot"><span class="annottext">[ParmVarDeclExpr]
+</span><a href="#local-6989586621679018599"><span class="hs-identifier hs-var">params</span></a></span><span>
+</span><span id="line-57"></span><span>
+</span><span id="line-58"></span><span>
+</span><span id="line-59"></span><span class="annot"><a href="Bytecode.html#compileStmt"><span class="hs-identifier hs-type">compileStmt</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Bytecode.html#FuncEnv"><span class="hs-identifier hs-type">FuncEnv</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Ast.html#Stmt"><span class="hs-identifier hs-type">Stmt</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-60"></span><span id="compileStmt"><span class="annot"><span class="annottext">compileStmt :: FuncEnv -&gt; Stmt -&gt; Identifier
+</span><a href="Bytecode.html#compileStmt"><span class="hs-identifier hs-var hs-var">compileStmt</span></a></span></span><span> </span><span id="local-6989586621679018602"><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018602"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Ast.html#DeclVarExpr"><span class="hs-identifier hs-type">DeclVarExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Ast.html#VarDeclStmt"><span class="hs-identifier hs-type">VarDeclStmt</span></a></span><span> </span><span class="annot"><span class="annottext">BuiltinType
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679018605"><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018605"><span class="hs-identifier hs-var">ident</span></a></span></span><span> </span><span class="annot"><span class="annottext">AssignOp
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679018606"><span class="annot"><span class="annottext">ParmCallDecl
+</span><a href="#local-6989586621679018606"><span class="hs-identifier hs-var">rhs</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-61"></span><span>    </span><span class="annot"><span class="annottext">FuncEnv -&gt; ParmCallDecl -&gt; Identifier
+</span><a href="Bytecode.html#compileParmCall"><span class="hs-identifier hs-var">compileParmCall</span></a></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018602"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="annot"><span class="annottext">ParmCallDecl
+</span><a href="#local-6989586621679018606"><span class="hs-identifier hs-var">rhs</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span>
+</span><span id="line-62"></span><span>    </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;STORE &quot;</span></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018605"><span class="hs-identifier hs-var">ident</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;\n&quot;</span></span><span>
+</span><span id="line-63"></span><span>
+</span><span id="line-64"></span><span class="annot"><a href="Bytecode.html#compileStmt"><span class="hs-identifier hs-var">compileStmt</span></a></span><span> </span><span id="local-6989586621679018608"><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018608"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Ast.html#DeclStmt"><span class="hs-identifier hs-type">DeclStmt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Ast.html#DeclAssignStmtLiteral"><span class="hs-identifier hs-type">DeclAssignStmtLiteral</span></a></span><span> </span><span id="local-6989586621679018611"><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018611"><span class="hs-identifier hs-var">ident</span></a></span></span><span> </span><span class="annot"><span class="annottext">AssignOp
+</span><span class="hs-identifier">_</span></span><span> </span><span id="local-6989586621679018612"><span class="annot"><span class="annottext">ParmCallDecl
+</span><a href="#local-6989586621679018612"><span class="hs-identifier hs-var">rhs</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-65"></span><span>    </span><span class="annot"><span class="annottext">FuncEnv -&gt; ParmCallDecl -&gt; Identifier
+</span><a href="Bytecode.html#compileParmCall"><span class="hs-identifier hs-var">compileParmCall</span></a></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018608"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="annot"><span class="annottext">ParmCallDecl
+</span><a href="#local-6989586621679018612"><span class="hs-identifier hs-var">rhs</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span>
+</span><span id="line-66"></span><span>    </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;STORE &quot;</span></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018611"><span class="hs-identifier hs-var">ident</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;\n&quot;</span></span><span>
+</span><span id="line-67"></span><span>
+</span><span id="line-68"></span><span class="annot"><a href="Bytecode.html#compileStmt"><span class="hs-identifier hs-var">compileStmt</span></a></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Ast.html#DeclStmt"><span class="hs-identifier hs-type">DeclStmt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Ast.html#DeclAssignStmtUnary"><span class="hs-identifier hs-type">DeclAssignStmtUnary</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Ast.html#UnaryOperatorExpr"><span class="hs-identifier hs-type">UnaryOperatorExpr</span></a></span><span> </span><span id="local-6989586621679018615"><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018615"><span class="hs-identifier hs-var">ident</span></a></span></span><span> </span><span id="local-6989586621679018616"><span class="annot"><span class="annottext">UnaryOp
+</span><a href="#local-6989586621679018616"><span class="hs-identifier hs-var">op</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-69"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">UnaryOp
+</span><a href="#local-6989586621679018616"><span class="hs-identifier hs-var">op</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-70"></span><span>        </span><span class="annot"><span class="annottext">UnaryOp
+</span><a href="Tokens.html#IdentIncrement"><span class="hs-identifier hs-var">IdentIncrement</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-71"></span><span>            </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;LOAD &quot;</span></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018615"><span class="hs-identifier hs-var">ident</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;\n&quot;</span></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span>
+</span><span id="line-72"></span><span>            </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;PUSH_INT 1\n&quot;</span></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span>
+</span><span id="line-73"></span><span>            </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;ADD\n&quot;</span></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;STORE &quot;</span></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018615"><span class="hs-identifier hs-var">ident</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;\n&quot;</span></span><span>
+</span><span id="line-74"></span><span>        </span><span class="annot"><span class="annottext">UnaryOp
+</span><a href="Tokens.html#IdentDecrement"><span class="hs-identifier hs-var">IdentDecrement</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-75"></span><span>            </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;LOAD &quot;</span></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018615"><span class="hs-identifier hs-var">ident</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;\n&quot;</span></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span>
+</span><span id="line-76"></span><span>            </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;PUSH_INT 1\n&quot;</span></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span>
+</span><span id="line-77"></span><span>            </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;SUB\n&quot;</span></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;STORE &quot;</span></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018615"><span class="hs-identifier hs-var">ident</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;\n&quot;</span></span><span>
+</span><span id="line-78"></span><span>
+</span><span id="line-79"></span><span class="annot"><a href="Bytecode.html#compileStmt"><span class="hs-identifier hs-var">compileStmt</span></a></span><span> </span><span id="local-6989586621679018619"><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018619"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Ast.html#CallExpr"><span class="hs-identifier hs-type">CallExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Ast.html#CallExprDecl"><span class="hs-identifier hs-type">CallExprDecl</span></a></span><span> </span><span id="local-6989586621679018622"><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018622"><span class="hs-identifier hs-var">fname</span></a></span></span><span> </span><span id="local-6989586621679018623"><span class="annot"><span class="annottext">[ParmCallDecl]
+</span><a href="#local-6989586621679018623"><span class="hs-identifier hs-var">args</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-80"></span><span>    </span><span class="annot"><span class="annottext">FuncEnv -&gt; Identifier -&gt; [ParmCallDecl] -&gt; Identifier
+</span><a href="Bytecode.html#compileCallWithNamedParams"><span class="hs-identifier hs-var">compileCallWithNamedParams</span></a></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018619"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018622"><span class="hs-identifier hs-var">fname</span></a></span><span> </span><span class="annot"><span class="annottext">[ParmCallDecl]
+</span><a href="#local-6989586621679018623"><span class="hs-identifier hs-var">args</span></a></span><span>
+</span><span id="line-81"></span><span>
+</span><span id="line-82"></span><span class="annot"><a href="Bytecode.html#compileStmt"><span class="hs-identifier hs-var">compileStmt</span></a></span><span> </span><span id="local-6989586621679018625"><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018625"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Ast.html#BinaryOperator"><span class="hs-identifier hs-type">BinaryOperator</span></a></span><span> </span><span id="local-6989586621679018627"><span class="annot"><span class="annottext">BinaryOpExpr
+</span><a href="#local-6989586621679018627"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-83"></span><span>    </span><span class="annot"><span class="annottext">FuncEnv -&gt; BinaryOpExpr -&gt; Identifier
+</span><a href="Bytecode.html#compileBinaryOpExpr"><span class="hs-identifier hs-var">compileBinaryOpExpr</span></a></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018625"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="annot"><span class="annottext">BinaryOpExpr
+</span><a href="#local-6989586621679018627"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span>
+</span><span id="line-84"></span><span>    </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;POP\n&quot;</span></span><span>
+</span><span id="line-85"></span><span>
+</span><span id="line-86"></span><span class="annot"><a href="Bytecode.html#compileStmt"><span class="hs-identifier hs-var">compileStmt</span></a></span><span> </span><span id="local-6989586621679018629"><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018629"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Ast.html#RetStmt"><span class="hs-identifier hs-type">RetStmt</span></a></span><span> </span><span id="local-6989586621679018631"><span class="annot"><span class="annottext">BinaryOpExpr
+</span><a href="#local-6989586621679018631"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-87"></span><span>    </span><span class="annot"><span class="annottext">FuncEnv -&gt; BinaryOpExpr -&gt; Identifier
+</span><a href="Bytecode.html#compileBinaryOpExpr"><span class="hs-identifier hs-var">compileBinaryOpExpr</span></a></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018629"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="annot"><span class="annottext">BinaryOpExpr
+</span><a href="#local-6989586621679018631"><span class="hs-identifier hs-var">expr</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span>
+</span><span id="line-88"></span><span>    </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;RET\n&quot;</span></span><span>
+</span><span id="line-89"></span><span>
+</span><span id="line-90"></span><span class="annot"><a href="Bytecode.html#compileStmt"><span class="hs-identifier hs-var">compileStmt</span></a></span><span> </span><span id="local-6989586621679018632"><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018632"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Ast.html#IfStmt"><span class="hs-identifier hs-type">IfStmt</span></a></span><span> </span><span id="local-6989586621679018634"><span class="annot"><span class="annottext">BinaryOpExpr
+</span><a href="#local-6989586621679018634"><span class="hs-identifier hs-var">cond</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Ast.html#CompoundStmt"><span class="hs-identifier hs-type">CompoundStmt</span></a></span><span> </span><span id="local-6989586621679018635"><span class="annot"><span class="annottext">[Stmt]
+</span><a href="#local-6989586621679018635"><span class="hs-identifier hs-var">body</span></a></span></span><span class="hs-special">)</span><span> </span><span id="local-6989586621679018636"><span class="annot"><span class="annottext">Maybe CompoundStmt
+</span><a href="#local-6989586621679018636"><span class="hs-identifier hs-var">mElse</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-91"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679018637"><span class="annot"><span class="annottext">condCode :: Identifier
+</span><a href="#local-6989586621679018637"><span class="hs-identifier hs-var hs-var">condCode</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FuncEnv -&gt; BinaryOpExpr -&gt; Identifier
+</span><a href="Bytecode.html#compileBinaryOpExpr"><span class="hs-identifier hs-var">compileBinaryOpExpr</span></a></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018632"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="annot"><span class="annottext">BinaryOpExpr
+</span><a href="#local-6989586621679018634"><span class="hs-identifier hs-var">cond</span></a></span><span>
+</span><span id="line-92"></span><span>        </span><span id="local-6989586621679018639"><span class="annot"><span class="annottext">thenCode :: Identifier
+</span><a href="#local-6989586621679018639"><span class="hs-identifier hs-var hs-var">thenCode</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Stmt -&gt; Identifier) -&gt; [Stmt] -&gt; Identifier
+forall (t :: * -&gt; *) a b. Foldable t =&gt; (a -&gt; [b]) -&gt; t a -&gt; [b]
+</span><span class="hs-identifier hs-var">concatMap</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FuncEnv -&gt; Stmt -&gt; Identifier
+</span><a href="Bytecode.html#compileStmt"><span class="hs-identifier hs-var">compileStmt</span></a></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018632"><span class="hs-identifier hs-var">env</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Stmt]
+</span><a href="#local-6989586621679018635"><span class="hs-identifier hs-var">body</span></a></span><span>
+</span><span id="line-93"></span><span>        </span><span id="local-6989586621679018641"><span class="annot"><span class="annottext">elseCode :: Identifier
+</span><a href="#local-6989586621679018641"><span class="hs-identifier hs-var hs-var">elseCode</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier
+-&gt; (CompoundStmt -&gt; Identifier) -&gt; Maybe CompoundStmt -&gt; Identifier
+forall b a. b -&gt; (a -&gt; b) -&gt; Maybe a -&gt; b
+</span><span class="hs-identifier hs-var">maybe</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;&quot;</span></span><span>
+</span><span id="line-94"></span><span>            </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span class="hs-special">(</span><span class="annot"><a href="Ast.html#CompoundStmt"><span class="hs-identifier hs-type">CompoundStmt</span></a></span><span> </span><span id="local-6989586621679018643"><span class="annot"><span class="annottext">[Stmt]
+</span><a href="#local-6989586621679018643"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(Stmt -&gt; Identifier) -&gt; [Stmt] -&gt; Identifier
+forall (t :: * -&gt; *) a b. Foldable t =&gt; (a -&gt; [b]) -&gt; t a -&gt; [b]
+</span><span class="hs-identifier hs-var">concatMap</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FuncEnv -&gt; Stmt -&gt; Identifier
+</span><a href="Bytecode.html#compileStmt"><span class="hs-identifier hs-var">compileStmt</span></a></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018632"><span class="hs-identifier hs-var">env</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Stmt]
+</span><a href="#local-6989586621679018643"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Maybe CompoundStmt
+</span><a href="#local-6989586621679018636"><span class="hs-identifier hs-var">mElse</span></a></span><span>
+</span><span id="line-95"></span><span>        </span><span id="local-6989586621679018644"><span class="annot"><span class="annottext">endif :: Identifier
+</span><a href="#local-6989586621679018644"><span class="hs-identifier hs-var hs-var">endif</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;LABEL endif\n&quot;</span></span><span>
+</span><span id="line-96"></span><span>    </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018637"><span class="hs-identifier hs-var">condCode</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;JMP_IF_FALSE endif\n&quot;</span></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018639"><span class="hs-identifier hs-var">thenCode</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018644"><span class="hs-identifier hs-var">endif</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018641"><span class="hs-identifier hs-var">elseCode</span></a></span><span>
+</span><span id="line-97"></span><span>
+</span><span id="line-98"></span><span class="annot"><a href="Bytecode.html#compileStmt"><span class="hs-identifier hs-var">compileStmt</span></a></span><span> </span><span id="local-6989586621679018645"><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018645"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Ast.html#WhileStmt"><span class="hs-identifier hs-type">WhileStmt</span></a></span><span> </span><span id="local-6989586621679018647"><span class="annot"><span class="annottext">BinaryOpExpr
+</span><a href="#local-6989586621679018647"><span class="hs-identifier hs-var">cond</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Ast.html#CompoundStmt"><span class="hs-identifier hs-type">CompoundStmt</span></a></span><span> </span><span id="local-6989586621679018648"><span class="annot"><span class="annottext">[Stmt]
+</span><a href="#local-6989586621679018648"><span class="hs-identifier hs-var">body</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-99"></span><span>    </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;LABEL while_start\n&quot;</span></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span>
+</span><span id="line-100"></span><span>    </span><span class="annot"><span class="annottext">FuncEnv -&gt; BinaryOpExpr -&gt; Identifier
+</span><a href="Bytecode.html#compileBinaryOpExpr"><span class="hs-identifier hs-var">compileBinaryOpExpr</span></a></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018645"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="annot"><span class="annottext">BinaryOpExpr
+</span><a href="#local-6989586621679018647"><span class="hs-identifier hs-var">cond</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span>
+</span><span id="line-101"></span><span>    </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;JMP_IF_FALSE while_end\n&quot;</span></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span>
+</span><span id="line-102"></span><span>    </span><span class="annot"><span class="annottext">(Stmt -&gt; Identifier) -&gt; [Stmt] -&gt; Identifier
+forall (t :: * -&gt; *) a b. Foldable t =&gt; (a -&gt; [b]) -&gt; t a -&gt; [b]
+</span><span class="hs-identifier hs-var">concatMap</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FuncEnv -&gt; Stmt -&gt; Identifier
+</span><a href="Bytecode.html#compileStmt"><span class="hs-identifier hs-var">compileStmt</span></a></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018645"><span class="hs-identifier hs-var">env</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Stmt]
+</span><a href="#local-6989586621679018648"><span class="hs-identifier hs-var">body</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span>
+</span><span id="line-103"></span><span>    </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;JMP while_start\n&quot;</span></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span>
+</span><span id="line-104"></span><span>    </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;LABEL while_end\n&quot;</span></span><span>
+</span><span id="line-105"></span><span>
+</span><span id="line-106"></span><span class="annot"><a href="Bytecode.html#compileStmt"><span class="hs-identifier hs-var">compileStmt</span></a></span><span> </span><span id="local-6989586621679018649"><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018649"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Ast.html#ForStmt"><span class="hs-identifier hs-type">ForStmt</span></a></span><span> </span><span id="local-6989586621679018651"><span class="annot"><span class="annottext">Maybe VarDeclStmt
+</span><a href="#local-6989586621679018651"><span class="hs-identifier hs-var">mInit</span></a></span></span><span> </span><span id="local-6989586621679018652"><span class="annot"><span class="annottext">Maybe BinaryOpExpr
+</span><a href="#local-6989586621679018652"><span class="hs-identifier hs-var">mCond</span></a></span></span><span> </span><span id="local-6989586621679018653"><span class="annot"><span class="annottext">Maybe DeclStmt
+</span><a href="#local-6989586621679018653"><span class="hs-identifier hs-var">mStep</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Ast.html#CompoundStmt"><span class="hs-identifier hs-type">CompoundStmt</span></a></span><span> </span><span id="local-6989586621679018654"><span class="annot"><span class="annottext">[Stmt]
+</span><a href="#local-6989586621679018654"><span class="hs-identifier hs-var">body</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-107"></span><span>    </span><span class="annot"><span class="annottext">FuncEnv -&gt; Maybe VarDeclStmt -&gt; Identifier
+</span><a href="Bytecode.html#compileForInit"><span class="hs-identifier hs-var">compileForInit</span></a></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018649"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe VarDeclStmt
+</span><a href="#local-6989586621679018651"><span class="hs-identifier hs-var">mInit</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span>
+</span><span id="line-108"></span><span>    </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;LABEL for_start\n&quot;</span></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span>
+</span><span id="line-109"></span><span>    </span><span class="annot"><span class="annottext">FuncEnv -&gt; Maybe BinaryOpExpr -&gt; Identifier
+</span><a href="Bytecode.html#compileForCond"><span class="hs-identifier hs-var">compileForCond</span></a></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018649"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe BinaryOpExpr
+</span><a href="#local-6989586621679018652"><span class="hs-identifier hs-var">mCond</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span>
+</span><span id="line-110"></span><span>    </span><span class="annot"><span class="annottext">(Stmt -&gt; Identifier) -&gt; [Stmt] -&gt; Identifier
+forall (t :: * -&gt; *) a b. Foldable t =&gt; (a -&gt; [b]) -&gt; t a -&gt; [b]
+</span><span class="hs-identifier hs-var">concatMap</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FuncEnv -&gt; Stmt -&gt; Identifier
+</span><a href="Bytecode.html#compileStmt"><span class="hs-identifier hs-var">compileStmt</span></a></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018649"><span class="hs-identifier hs-var">env</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[Stmt]
+</span><a href="#local-6989586621679018654"><span class="hs-identifier hs-var">body</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span>
+</span><span id="line-111"></span><span>    </span><span class="annot"><span class="annottext">FuncEnv -&gt; Maybe DeclStmt -&gt; Identifier
+</span><a href="Bytecode.html#compileForStep"><span class="hs-identifier hs-var">compileForStep</span></a></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018649"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe DeclStmt
+</span><a href="#local-6989586621679018653"><span class="hs-identifier hs-var">mStep</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span>
+</span><span id="line-112"></span><span>    </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;JMP for_start\n&quot;</span></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span>
+</span><span id="line-113"></span><span>    </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;LABEL for_end\n&quot;</span></span><span>
+</span><span id="line-114"></span><span>
+</span><span id="line-115"></span><span class="annot"><a href="Bytecode.html#compileStmt"><span class="hs-identifier hs-var">compileStmt</span></a></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Stmt
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;NOP\n&quot;</span></span><span>
+</span><span id="line-116"></span><span>
+</span><span id="line-117"></span><span>
+</span><span id="line-118"></span><span class="annot"><a href="Bytecode.html#compileCallWithNamedParams"><span class="hs-identifier hs-type">compileCallWithNamedParams</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Bytecode.html#FuncEnv"><span class="hs-identifier hs-type">FuncEnv</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Tokens.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Ast.html#ParmCallDecl"><span class="hs-identifier hs-type">ParmCallDecl</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-119"></span><span id="compileCallWithNamedParams"><span class="annot"><span class="annottext">compileCallWithNamedParams :: FuncEnv -&gt; Identifier -&gt; [ParmCallDecl] -&gt; Identifier
+</span><a href="Bytecode.html#compileCallWithNamedParams"><span class="hs-identifier hs-var hs-var">compileCallWithNamedParams</span></a></span></span><span> </span><span id="local-6989586621679018658"><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018658"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span id="local-6989586621679018659"><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018659"><span class="hs-identifier hs-var">fname</span></a></span></span><span> </span><span id="local-6989586621679018660"><span class="annot"><span class="annottext">[ParmCallDecl]
+</span><a href="#local-6989586621679018660"><span class="hs-identifier hs-var">args</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-120"></span><span>    </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679018662"><span class="annot"><span class="annottext">argsCode :: Identifier
+</span><a href="#local-6989586621679018662"><span class="hs-identifier hs-var hs-var">argsCode</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(ParmCallDecl -&gt; Identifier) -&gt; [ParmCallDecl] -&gt; Identifier
+forall (t :: * -&gt; *) a b. Foldable t =&gt; (a -&gt; [b]) -&gt; t a -&gt; [b]
+</span><span class="hs-identifier hs-var">concatMap</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">FuncEnv -&gt; ParmCallDecl -&gt; Identifier
+</span><a href="Bytecode.html#compileParmCall"><span class="hs-identifier hs-var">compileParmCall</span></a></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018658"><span class="hs-identifier hs-var">env</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[ParmCallDecl]
+</span><a href="#local-6989586621679018660"><span class="hs-identifier hs-var">args</span></a></span><span>
+</span><span id="line-121"></span><span>    </span><span class="hs-keyword">in</span><span> </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; FuncEnv -&gt; Maybe [Identifier]
+forall k a. Ord k =&gt; k -&gt; Map k a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Map.lookup</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018659"><span class="hs-identifier hs-var">fname</span></a></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018658"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-122"></span><span>        </span><span class="annot"><span class="annottext">Maybe [Identifier]
+</span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-123"></span><span>            </span><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018662"><span class="hs-identifier hs-var">argsCode</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;CALL &quot;</span></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018659"><span class="hs-identifier hs-var">fname</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot; &quot;</span></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Identifier
+forall a. Show a =&gt; a -&gt; Identifier
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[ParmCallDecl] -&gt; Int
+forall a. [a] -&gt; Int
+forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Int
+</span><span class="hs-identifier hs-var">length</span></span><span> </span><span class="annot"><span class="annottext">[ParmCallDecl]
+</span><a href="#local-6989586621679018660"><span class="hs-identifier hs-var">args</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;\n&quot;</span></span><span>
+</span><span id="line-124"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679018664"><span class="annot"><span class="annottext">[Identifier]
+</span><a href="#local-6989586621679018664"><span class="hs-identifier hs-var">params</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-125"></span><span>            </span><span class="hs-keyword">let</span><span> </span><span id="local-6989586621679018666"><span class="annot"><span class="annottext">storeCode :: Identifier
+</span><a href="#local-6989586621679018666"><span class="hs-identifier hs-var hs-var">storeCode</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Identifier -&gt; Identifier) -&gt; [Identifier] -&gt; Identifier
+forall (t :: * -&gt; *) a b. Foldable t =&gt; (a -&gt; [b]) -&gt; t a -&gt; [b]
+</span><span class="hs-identifier hs-var">concatMap</span></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">\</span><span id="local-6989586621679018667"><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018667"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;STORE &quot;</span></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018667"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;\n&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-126"></span><span>                    </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Identifier] -&gt; [Identifier]
+forall a. [a] -&gt; [a]
+</span><span class="hs-identifier hs-var">reverse</span></span><span> </span><span class="annot"><span class="annottext">[Identifier]
+</span><a href="#local-6989586621679018664"><span class="hs-identifier hs-var">params</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-127"></span><span>            </span><span class="hs-keyword">in</span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018662"><span class="hs-identifier hs-var">argsCode</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018666"><span class="hs-identifier hs-var">storeCode</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;CALL &quot;</span></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018659"><span class="hs-identifier hs-var">fname</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot; &quot;</span></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span>
+</span><span id="line-128"></span><span>                </span><span class="annot"><span class="annottext">Int -&gt; Identifier
+forall a. Show a =&gt; a -&gt; Identifier
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[ParmCallDecl] -&gt; Int
+forall a. [a] -&gt; Int
+forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Int
+</span><span class="hs-identifier hs-var">length</span></span><span> </span><span class="annot"><span class="annottext">[ParmCallDecl]
+</span><a href="#local-6989586621679018660"><span class="hs-identifier hs-var">args</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;\n&quot;</span></span><span>
+</span><span id="line-129"></span><span>
+</span><span id="line-130"></span><span>
+</span><span id="line-131"></span><span class="annot"><a href="Bytecode.html#compileBinaryOpExpr"><span class="hs-identifier hs-type">compileBinaryOpExpr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Bytecode.html#FuncEnv"><span class="hs-identifier hs-type">FuncEnv</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Ast.html#BinaryOpExpr"><span class="hs-identifier hs-type">BinaryOpExpr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-132"></span><span id="compileBinaryOpExpr"><span class="annot"><span class="annottext">compileBinaryOpExpr :: FuncEnv -&gt; BinaryOpExpr -&gt; Identifier
+</span><a href="Bytecode.html#compileBinaryOpExpr"><span class="hs-identifier hs-var hs-var">compileBinaryOpExpr</span></a></span></span><span> </span><span id="local-6989586621679018669"><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018669"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Ast.html#BinaryOpConst"><span class="hs-identifier hs-type">BinaryOpConst</span></a></span><span> </span><span id="local-6989586621679018671"><span class="annot"><span class="annottext">ParmCallDecl
+</span><a href="#local-6989586621679018671"><span class="hs-identifier hs-var">p</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-133"></span><span>    </span><span class="annot"><span class="annottext">FuncEnv -&gt; ParmCallDecl -&gt; Identifier
+</span><a href="Bytecode.html#compileParmCall"><span class="hs-identifier hs-var">compileParmCall</span></a></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018669"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="annot"><span class="annottext">ParmCallDecl
+</span><a href="#local-6989586621679018671"><span class="hs-identifier hs-var">p</span></a></span><span>
+</span><span id="line-134"></span><span class="annot"><a href="Bytecode.html#compileBinaryOpExpr"><span class="hs-identifier hs-var">compileBinaryOpExpr</span></a></span><span> </span><span id="local-6989586621679018672"><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018672"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Ast.html#BinaryOpExpr"><span class="hs-identifier hs-type">BinaryOpExpr</span></a></span><span> </span><span id="local-6989586621679018674"><span class="annot"><span class="annottext">BinaryOpParm
+</span><a href="#local-6989586621679018674"><span class="hs-identifier hs-var">l</span></a></span></span><span> </span><span id="local-6989586621679018675"><span class="annot"><span class="annottext">BinaryOp
+</span><a href="#local-6989586621679018675"><span class="hs-identifier hs-var">op</span></a></span></span><span> </span><span id="local-6989586621679018676"><span class="annot"><span class="annottext">BinaryOpParm
+</span><a href="#local-6989586621679018676"><span class="hs-identifier hs-var">r</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-135"></span><span>    </span><span class="annot"><span class="annottext">FuncEnv -&gt; BinaryOpParm -&gt; Identifier
+</span><a href="Bytecode.html#compileBinaryOpParm"><span class="hs-identifier hs-var">compileBinaryOpParm</span></a></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018672"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="annot"><span class="annottext">BinaryOpParm
+</span><a href="#local-6989586621679018674"><span class="hs-identifier hs-var">l</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span>
+</span><span id="line-136"></span><span>    </span><span class="annot"><span class="annottext">FuncEnv -&gt; BinaryOpParm -&gt; Identifier
+</span><a href="Bytecode.html#compileBinaryOpParm"><span class="hs-identifier hs-var">compileBinaryOpParm</span></a></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018672"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="annot"><span class="annottext">BinaryOpParm
+</span><a href="#local-6989586621679018676"><span class="hs-identifier hs-var">r</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span>
+</span><span id="line-137"></span><span>    </span><span class="annot"><span class="annottext">BinaryOp -&gt; Identifier
+</span><a href="Bytecode.html#opToInstr"><span class="hs-identifier hs-var">opToInstr</span></a></span><span> </span><span class="annot"><span class="annottext">BinaryOp
+</span><a href="#local-6989586621679018675"><span class="hs-identifier hs-var">op</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;\n&quot;</span></span><span>
+</span><span id="line-138"></span><span>
+</span><span id="line-139"></span><span class="annot"><a href="Bytecode.html#compileBinaryOpParm"><span class="hs-identifier hs-type">compileBinaryOpParm</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Bytecode.html#FuncEnv"><span class="hs-identifier hs-type">FuncEnv</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Ast.html#BinaryOpParm"><span class="hs-identifier hs-type">BinaryOpParm</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-140"></span><span id="compileBinaryOpParm"><span class="annot"><span class="annottext">compileBinaryOpParm :: FuncEnv -&gt; BinaryOpParm -&gt; Identifier
+</span><a href="Bytecode.html#compileBinaryOpParm"><span class="hs-identifier hs-var hs-var">compileBinaryOpParm</span></a></span></span><span> </span><span id="local-6989586621679018679"><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018679"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Ast.html#BinaryOpParm"><span class="hs-identifier hs-type">BinaryOpParm</span></a></span><span> </span><span id="local-6989586621679018681"><span class="annot"><span class="annottext">ParmCallDecl
+</span><a href="#local-6989586621679018681"><span class="hs-identifier hs-var">p</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FuncEnv -&gt; ParmCallDecl -&gt; Identifier
+</span><a href="Bytecode.html#compileParmCall"><span class="hs-identifier hs-var">compileParmCall</span></a></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018679"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="annot"><span class="annottext">ParmCallDecl
+</span><a href="#local-6989586621679018681"><span class="hs-identifier hs-var">p</span></a></span><span>
+</span><span id="line-141"></span><span class="annot"><a href="Bytecode.html#compileBinaryOpParm"><span class="hs-identifier hs-var">compileBinaryOpParm</span></a></span><span> </span><span id="local-6989586621679018682"><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018682"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Ast.html#BinaryOpParmBOp"><span class="hs-identifier hs-type">BinaryOpParmBOp</span></a></span><span> </span><span id="local-6989586621679018684"><span class="annot"><span class="annottext">BinaryOpExpr
+</span><a href="#local-6989586621679018684"><span class="hs-identifier hs-var">expr</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FuncEnv -&gt; BinaryOpExpr -&gt; Identifier
+</span><a href="Bytecode.html#compileBinaryOpExpr"><span class="hs-identifier hs-var">compileBinaryOpExpr</span></a></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018682"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="annot"><span class="annottext">BinaryOpExpr
+</span><a href="#local-6989586621679018684"><span class="hs-identifier hs-var">expr</span></a></span><span>
+</span><span id="line-142"></span><span>
+</span><span id="line-143"></span><span>
+</span><span id="line-144"></span><span class="annot"><a href="Bytecode.html#compileParmCall"><span class="hs-identifier hs-type">compileParmCall</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Bytecode.html#FuncEnv"><span class="hs-identifier hs-type">FuncEnv</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Ast.html#ParmCallDecl"><span class="hs-identifier hs-type">ParmCallDecl</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-145"></span><span id="compileParmCall"><span class="annot"><span class="annottext">compileParmCall :: FuncEnv -&gt; ParmCallDecl -&gt; Identifier
+</span><a href="Bytecode.html#compileParmCall"><span class="hs-identifier hs-var hs-var">compileParmCall</span></a></span></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><span class="hs-identifier">_</span></span><span>   </span><span class="hs-special">(</span><span class="annot"><a href="Ast.html#ParmCallDeclLiteral"><span class="hs-identifier hs-type">ParmCallDeclLiteral</span></a></span><span> </span><span id="local-6989586621679018686"><span class="annot"><span class="annottext">Literal
+</span><a href="#local-6989586621679018686"><span class="hs-identifier hs-var">lit</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Literal -&gt; Identifier
+</span><a href="Bytecode.html#compileLiteral"><span class="hs-identifier hs-var">compileLiteral</span></a></span><span> </span><span class="annot"><span class="annottext">Literal
+</span><a href="#local-6989586621679018686"><span class="hs-identifier hs-var">lit</span></a></span><span>
+</span><span id="line-146"></span><span class="annot"><a href="Bytecode.html#compileParmCall"><span class="hs-identifier hs-var">compileParmCall</span></a></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><span class="hs-identifier">_</span></span><span>   </span><span class="hs-special">(</span><span class="annot"><a href="Ast.html#ParmCallDeclIdent"><span class="hs-identifier hs-type">ParmCallDeclIdent</span></a></span><span> </span><span id="local-6989586621679018689"><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018689"><span class="hs-identifier hs-var">ident</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;LOAD &quot;</span></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018689"><span class="hs-identifier hs-var">ident</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;\n&quot;</span></span><span>
+</span><span id="line-147"></span><span class="annot"><a href="Bytecode.html#compileParmCall"><span class="hs-identifier hs-var">compileParmCall</span></a></span><span> </span><span id="local-6989586621679018690"><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018690"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Ast.html#ParmCallDeclExpr"><span class="hs-identifier hs-type">ParmCallDeclExpr</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Ast.html#CallExprDecl"><span class="hs-identifier hs-type">CallExprDecl</span></a></span><span> </span><span id="local-6989586621679018692"><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018692"><span class="hs-identifier hs-var">fname</span></a></span></span><span> </span><span id="local-6989586621679018693"><span class="annot"><span class="annottext">[ParmCallDecl]
+</span><a href="#local-6989586621679018693"><span class="hs-identifier hs-var">args</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-148"></span><span>    </span><span class="annot"><span class="annottext">FuncEnv -&gt; Identifier -&gt; [ParmCallDecl] -&gt; Identifier
+</span><a href="Bytecode.html#compileCallWithNamedParams"><span class="hs-identifier hs-var">compileCallWithNamedParams</span></a></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018690"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><a href="#local-6989586621679018692"><span class="hs-identifier hs-var">fname</span></a></span><span> </span><span class="annot"><span class="annottext">[ParmCallDecl]
+</span><a href="#local-6989586621679018693"><span class="hs-identifier hs-var">args</span></a></span><span>
+</span><span id="line-149"></span><span>
+</span><span id="line-150"></span><span>
+</span><span id="line-151"></span><span class="annot"><a href="Bytecode.html#compileParmCall"><span class="hs-identifier hs-var">compileParmCall</span></a></span><span> </span><span id="local-6989586621679018694"><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018694"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Ast.html#ParmCallBExpr"><span class="hs-identifier hs-type">ParmCallBExpr</span></a></span><span> </span><span id="local-6989586621679018696"><span class="annot"><span class="annottext">BinaryOpParm
+</span><a href="#local-6989586621679018696"><span class="hs-identifier hs-var">l</span></a></span></span><span> </span><span id="local-6989586621679018697"><span class="annot"><span class="annottext">BinaryOp
+</span><a href="#local-6989586621679018697"><span class="hs-identifier hs-var">op</span></a></span></span><span> </span><span id="local-6989586621679018698"><span class="annot"><span class="annottext">BinaryOpParm
+</span><a href="#local-6989586621679018698"><span class="hs-identifier hs-var">r</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-152"></span><span>    </span><span class="annot"><span class="annottext">FuncEnv -&gt; BinaryOpParm -&gt; Identifier
+</span><a href="Bytecode.html#compileBinaryOpParm"><span class="hs-identifier hs-var">compileBinaryOpParm</span></a></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018694"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="annot"><span class="annottext">BinaryOpParm
+</span><a href="#local-6989586621679018696"><span class="hs-identifier hs-var">l</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span>
+</span><span id="line-153"></span><span>    </span><span class="annot"><span class="annottext">FuncEnv -&gt; BinaryOpParm -&gt; Identifier
+</span><a href="Bytecode.html#compileBinaryOpParm"><span class="hs-identifier hs-var">compileBinaryOpParm</span></a></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018694"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="annot"><span class="annottext">BinaryOpParm
+</span><a href="#local-6989586621679018698"><span class="hs-identifier hs-var">r</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span>
+</span><span id="line-154"></span><span>    </span><span class="annot"><span class="annottext">BinaryOp -&gt; Identifier
+</span><a href="Bytecode.html#opToInstr"><span class="hs-identifier hs-var">opToInstr</span></a></span><span> </span><span class="annot"><span class="annottext">BinaryOp
+</span><a href="#local-6989586621679018697"><span class="hs-identifier hs-var">op</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;\n&quot;</span></span><span>
+</span><span id="line-155"></span><span>
+</span><span id="line-156"></span><span>
+</span><span id="line-157"></span><span class="annot"><a href="Bytecode.html#compileForInit"><span class="hs-identifier hs-type">compileForInit</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Bytecode.html#FuncEnv"><span class="hs-identifier hs-type">FuncEnv</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Ast.html#VarDeclStmt"><span class="hs-identifier hs-type">VarDeclStmt</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-158"></span><span id="compileForInit"><span class="annot"><span class="annottext">compileForInit :: FuncEnv -&gt; Maybe VarDeclStmt -&gt; Identifier
+</span><a href="Bytecode.html#compileForInit"><span class="hs-identifier hs-var hs-var">compileForInit</span></a></span></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><span class="hs-identifier">_</span></span><span>   </span><span class="annot"><span class="annottext">Maybe VarDeclStmt
+</span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;&quot;</span></span><span>
+</span><span id="line-159"></span><span class="annot"><a href="Bytecode.html#compileForInit"><span class="hs-identifier hs-var">compileForInit</span></a></span><span> </span><span id="local-6989586621679018699"><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018699"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679018700"><span class="annot"><span class="annottext">VarDeclStmt
+</span><a href="#local-6989586621679018700"><span class="hs-identifier hs-var">vds</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FuncEnv -&gt; Stmt -&gt; Identifier
+</span><a href="Bytecode.html#compileStmt"><span class="hs-identifier hs-var">compileStmt</span></a></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018699"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarDeclStmt -&gt; Stmt
+</span><a href="Ast.html#DeclVarExpr"><span class="hs-identifier hs-var">DeclVarExpr</span></a></span><span> </span><span class="annot"><span class="annottext">VarDeclStmt
+</span><a href="#local-6989586621679018700"><span class="hs-identifier hs-var">vds</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-160"></span><span>
+</span><span id="line-161"></span><span class="annot"><a href="Bytecode.html#compileForCond"><span class="hs-identifier hs-type">compileForCond</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Bytecode.html#FuncEnv"><span class="hs-identifier hs-type">FuncEnv</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Ast.html#BinaryOpExpr"><span class="hs-identifier hs-type">BinaryOpExpr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-162"></span><span id="compileForCond"><span class="annot"><span class="annottext">compileForCond :: FuncEnv -&gt; Maybe BinaryOpExpr -&gt; Identifier
+</span><a href="Bytecode.html#compileForCond"><span class="hs-identifier hs-var hs-var">compileForCond</span></a></span></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><span class="hs-identifier">_</span></span><span>   </span><span class="annot"><span class="annottext">Maybe BinaryOpExpr
+</span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;&quot;</span></span><span>
+</span><span id="line-163"></span><span class="annot"><a href="Bytecode.html#compileForCond"><span class="hs-identifier hs-var">compileForCond</span></a></span><span> </span><span id="local-6989586621679018701"><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018701"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679018702"><span class="annot"><span class="annottext">BinaryOpExpr
+</span><a href="#local-6989586621679018702"><span class="hs-identifier hs-var">cond</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FuncEnv -&gt; BinaryOpExpr -&gt; Identifier
+</span><a href="Bytecode.html#compileBinaryOpExpr"><span class="hs-identifier hs-var">compileBinaryOpExpr</span></a></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018701"><span class="hs-identifier hs-var">env</span></a></span><span>
+</span><span id="line-164"></span><span>    </span><span class="annot"><span class="annottext">BinaryOpExpr
+</span><a href="#local-6989586621679018702"><span class="hs-identifier hs-var">cond</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;JMP_IF_FALSE for_end\n&quot;</span></span><span>
+</span><span id="line-165"></span><span>
+</span><span id="line-166"></span><span class="annot"><a href="Bytecode.html#compileForStep"><span class="hs-identifier hs-type">compileForStep</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Bytecode.html#FuncEnv"><span class="hs-identifier hs-type">FuncEnv</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Ast.html#DeclStmt"><span class="hs-identifier hs-type">DeclStmt</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-167"></span><span id="compileForStep"><span class="annot"><span class="annottext">compileForStep :: FuncEnv -&gt; Maybe DeclStmt -&gt; Identifier
+</span><a href="Bytecode.html#compileForStep"><span class="hs-identifier hs-var hs-var">compileForStep</span></a></span></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><span class="hs-identifier">_</span></span><span>   </span><span class="annot"><span class="annottext">Maybe DeclStmt
+</span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;&quot;</span></span><span>
+</span><span id="line-168"></span><span class="annot"><a href="Bytecode.html#compileForStep"><span class="hs-identifier hs-var">compileForStep</span></a></span><span> </span><span id="local-6989586621679018703"><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018703"><span class="hs-identifier hs-var">env</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679018704"><span class="annot"><span class="annottext">DeclStmt
+</span><a href="#local-6989586621679018704"><span class="hs-identifier hs-var">ds</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">FuncEnv -&gt; Stmt -&gt; Identifier
+</span><a href="Bytecode.html#compileStmt"><span class="hs-identifier hs-var">compileStmt</span></a></span><span> </span><span class="annot"><span class="annottext">FuncEnv
+</span><a href="#local-6989586621679018703"><span class="hs-identifier hs-var">env</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">DeclStmt -&gt; Stmt
+</span><a href="Ast.html#DeclStmt"><span class="hs-identifier hs-var">DeclStmt</span></a></span><span> </span><span class="annot"><span class="annottext">DeclStmt
+</span><a href="#local-6989586621679018704"><span class="hs-identifier hs-var">ds</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-169"></span><span>
+</span><span id="line-170"></span><span>
+</span><span id="line-171"></span><span class="annot"><a href="Bytecode.html#compileLiteral"><span class="hs-identifier hs-type">compileLiteral</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Tokens.html#Literal"><span class="hs-identifier hs-type">Literal</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-172"></span><span id="compileLiteral"><span class="annot"><span class="annottext">compileLiteral :: Literal -&gt; Identifier
+</span><a href="Bytecode.html#compileLiteral"><span class="hs-identifier hs-var hs-var">compileLiteral</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Tokens.html#IntLiteral"><span class="hs-identifier hs-type">IntLiteral</span></a></span><span> </span><span id="local-6989586621679018706"><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679018706"><span class="hs-identifier hs-var">i</span></a></span></span><span class="hs-special">)</span><span>   </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;PUSH_INT &quot;</span></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Integer -&gt; Identifier
+forall a. Show a =&gt; a -&gt; Identifier
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Integer
+</span><a href="#local-6989586621679018706"><span class="hs-identifier hs-var">i</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;\n&quot;</span></span><span>
+</span><span id="line-173"></span><span class="annot"><a href="Bytecode.html#compileLiteral"><span class="hs-identifier hs-var">compileLiteral</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Tokens.html#BoolLiteral"><span class="hs-identifier hs-type">BoolLiteral</span></a></span><span> </span><span id="local-6989586621679018708"><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679018708"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;PUSH_BOOL &quot;</span></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span>
+</span><span id="line-174"></span><span>    </span><span class="hs-special">(</span><span class="hs-keyword">if</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><a href="#local-6989586621679018708"><span class="hs-identifier hs-var">b</span></a></span><span> </span><span class="hs-keyword">then</span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;true\n&quot;</span></span><span> </span><span class="hs-keyword">else</span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;false\n&quot;</span></span><span class="hs-special">)</span><span>
+</span><span id="line-175"></span><span class="annot"><a href="Bytecode.html#compileLiteral"><span class="hs-identifier hs-var">compileLiteral</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Tokens.html#FloatLiteral"><span class="hs-identifier hs-type">FloatLiteral</span></a></span><span> </span><span id="local-6989586621679018710"><span class="annot"><span class="annottext">Float
+</span><a href="#local-6989586621679018710"><span class="hs-identifier hs-var">f</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;PUSH_FLOAT &quot;</span></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Float -&gt; Identifier
+forall a. Show a =&gt; a -&gt; Identifier
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="annot"><span class="annottext">Float
+</span><a href="#local-6989586621679018710"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;\n&quot;</span></span><span>
+</span><span id="line-176"></span><span class="annot"><a href="Bytecode.html#compileLiteral"><span class="hs-identifier hs-var">compileLiteral</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Tokens.html#ListLiteral"><span class="hs-identifier hs-type">ListLiteral</span></a></span><span> </span><span id="local-6989586621679018712"><span class="annot"><span class="annottext">[Literal]
+</span><a href="#local-6989586621679018712"><span class="hs-identifier hs-var">elems</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-177"></span><span>    </span><span class="annot"><span class="annottext">(Literal -&gt; Identifier) -&gt; [Literal] -&gt; Identifier
+forall (t :: * -&gt; *) a b. Foldable t =&gt; (a -&gt; [b]) -&gt; t a -&gt; [b]
+</span><span class="hs-identifier hs-var">concatMap</span></span><span> </span><span class="annot"><span class="annottext">Literal -&gt; Identifier
+</span><a href="Bytecode.html#compileLiteral"><span class="hs-identifier hs-var">compileLiteral</span></a></span><span> </span><span class="annot"><span class="annottext">[Literal]
+</span><a href="#local-6989586621679018712"><span class="hs-identifier hs-var">elems</span></a></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span>
+</span><span id="line-178"></span><span>    </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;PUSH_LIST &quot;</span></span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Int -&gt; Identifier
+forall a. Show a =&gt; a -&gt; Identifier
+</span><span class="hs-identifier hs-var">show</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Literal] -&gt; Int
+forall a. [a] -&gt; Int
+forall (t :: * -&gt; *) a. Foldable t =&gt; t a -&gt; Int
+</span><span class="hs-identifier hs-var">length</span></span><span> </span><span class="annot"><span class="annottext">[Literal]
+</span><a href="#local-6989586621679018712"><span class="hs-identifier hs-var">elems</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Identifier -&gt; Identifier -&gt; Identifier
+forall a. [a] -&gt; [a] -&gt; [a]
+</span><span class="hs-operator hs-var">++</span></span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;\n&quot;</span></span><span>
+</span><span id="line-179"></span><span class="annot"><a href="Bytecode.html#compileLiteral"><span class="hs-identifier hs-var">compileLiteral</span></a></span><span> </span><span class="annot"><span class="annottext">Literal
+</span><span class="hs-identifier">_</span></span><span>                </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;PUSH_UNKNOWN\n&quot;</span></span><span>
+</span><span id="line-180"></span><span>
+</span><span id="line-181"></span><span>
+</span><span id="line-182"></span><span class="annot"><a href="Bytecode.html#opToInstr"><span class="hs-identifier hs-type">opToInstr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Tokens.html#BinaryOp"><span class="hs-identifier hs-type">BinaryOp</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-183"></span><span id="opToInstr"><span class="annot"><span class="annottext">opToInstr :: BinaryOp -&gt; Identifier
+</span><a href="Bytecode.html#opToInstr"><span class="hs-identifier hs-var hs-var">opToInstr</span></a></span></span><span> </span><span class="annot"><span class="annottext">BinaryOp
+</span><a href="Tokens.html#Add"><span class="hs-identifier hs-var">Add</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;ADD&quot;</span></span><span>
+</span><span id="line-184"></span><span class="annot"><a href="Bytecode.html#opToInstr"><span class="hs-identifier hs-var">opToInstr</span></a></span><span> </span><span class="annot"><span class="annottext">BinaryOp
+</span><a href="Tokens.html#Sub"><span class="hs-identifier hs-var">Sub</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;SUB&quot;</span></span><span>
+</span><span id="line-185"></span><span class="annot"><a href="Bytecode.html#opToInstr"><span class="hs-identifier hs-var">opToInstr</span></a></span><span> </span><span class="annot"><span class="annottext">BinaryOp
+</span><a href="Tokens.html#Mul"><span class="hs-identifier hs-var">Mul</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;MUL&quot;</span></span><span>
+</span><span id="line-186"></span><span class="annot"><a href="Bytecode.html#opToInstr"><span class="hs-identifier hs-var">opToInstr</span></a></span><span> </span><span class="annot"><span class="annottext">BinaryOp
+</span><a href="Tokens.html#Div"><span class="hs-identifier hs-var">Div</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;DIV&quot;</span></span><span>
+</span><span id="line-187"></span><span class="annot"><a href="Bytecode.html#opToInstr"><span class="hs-identifier hs-var">opToInstr</span></a></span><span> </span><span class="annot"><span class="annottext">BinaryOp
+</span><a href="Tokens.html#Mod"><span class="hs-identifier hs-var">Mod</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;MOD&quot;</span></span><span>
+</span><span id="line-188"></span><span class="annot"><a href="Bytecode.html#opToInstr"><span class="hs-identifier hs-var">opToInstr</span></a></span><span> </span><span class="annot"><span class="annottext">BinaryOp
+</span><a href="Tokens.html#Eq"><span class="hs-identifier hs-var">Eq</span></a></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;EQ&quot;</span></span><span>
+</span><span id="line-189"></span><span class="annot"><a href="Bytecode.html#opToInstr"><span class="hs-identifier hs-var">opToInstr</span></a></span><span> </span><span class="annot"><span class="annottext">BinaryOp
+</span><a href="Tokens.html#Lt"><span class="hs-identifier hs-var">Lt</span></a></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;LT&quot;</span></span><span>
+</span><span id="line-190"></span><span class="annot"><a href="Bytecode.html#opToInstr"><span class="hs-identifier hs-var">opToInstr</span></a></span><span> </span><span class="annot"><span class="annottext">BinaryOp
+</span><a href="Tokens.html#Gt"><span class="hs-identifier hs-var">Gt</span></a></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;GT&quot;</span></span><span>
+</span><span id="line-191"></span><span class="annot"><a href="Bytecode.html#opToInstr"><span class="hs-identifier hs-var">opToInstr</span></a></span><span> </span><span class="annot"><span class="annottext">BinaryOp
+</span><a href="Tokens.html#LEq"><span class="hs-identifier hs-var">LEq</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;LE&quot;</span></span><span>
+</span><span id="line-192"></span><span class="annot"><a href="Bytecode.html#opToInstr"><span class="hs-identifier hs-var">opToInstr</span></a></span><span> </span><span class="annot"><span class="annottext">BinaryOp
+</span><a href="Tokens.html#GEq"><span class="hs-identifier hs-var">GEq</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;GE&quot;</span></span><span>
+</span><span id="line-193"></span><span class="annot"><a href="Bytecode.html#opToInstr"><span class="hs-identifier hs-var">opToInstr</span></a></span><span> </span><span class="annot"><span class="annottext">BinaryOp
+</span><a href="Tokens.html#NEq"><span class="hs-identifier hs-var">NEq</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;NEQ&quot;</span></span><span>
+</span><span id="line-194"></span><span class="annot"><a href="Bytecode.html#opToInstr"><span class="hs-identifier hs-var">opToInstr</span></a></span><span> </span><span class="annot"><span class="annottext">BinaryOp
+</span><a href="Tokens.html#And"><span class="hs-identifier hs-var">And</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;AND&quot;</span></span><span>
+</span><span id="line-195"></span><span class="annot"><a href="Bytecode.html#opToInstr"><span class="hs-identifier hs-var">opToInstr</span></a></span><span> </span><span class="annot"><span class="annottext">BinaryOp
+</span><a href="Tokens.html#Or"><span class="hs-identifier hs-var">Or</span></a></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Identifier
+</span><span class="hs-string">&quot;OR&quot;</span></span><span>
+</span><span id="line-196"></span></pre></body></html>

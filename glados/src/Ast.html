@@ -1,0 +1,746 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-comment">{- 
+-- EPITECH PROJECT, 2025
+-- Generic Language And Data Operand Syntax
+-- File description:
+-- lib/frontend/rizz/types/Ast.hs
+-}</span><span>
+</span><span id="line-7"></span><span>
+</span><span id="line-8"></span><span class="hs-comment">-------------------------------------------------------------------------------</span><span>
+</span><span id="line-9"></span><span class="hs-comment">-- |</span><span>
+</span><span id="line-10"></span><span class="hs-comment">-- Module      : Ast</span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- Description : Defines the abstract syntax tree structure for the rizz language.</span><span>
+</span><span id="line-12"></span><span class="hs-comment">-- License     : MIT</span><span>
+</span><span id="line-13"></span><span class="hs-comment">-- Maintainer  : laszlo.serdet@epitech.eu</span><span>
+</span><span id="line-14"></span><span class="hs-comment">--</span><span>
+</span><span id="line-15"></span><span class="hs-comment">-- The abstract syntax tree serves to define how rizz tokens forms a valid grammar in order to represent a correct language expression.</span><span>
+</span><span id="line-16"></span><span class="hs-comment">-- This grammar is heavily inspired from the Clang C's (programming language) AST.</span><span>
+</span><span id="line-17"></span><span class="hs-comment">--</span><span>
+</span><span id="line-18"></span><span class="hs-comment">-- For further information, refer to the [Microsoft C grammar definition] (https://learn.microsoft.com/en-us/cpp/c-language/phrase-structure-grammar)</span><span>
+</span><span id="line-19"></span><span class="hs-comment">-- and the [Clang AST](https://clang.llvm.org/docs/IntroductionToTheClangAST.html) documentation.</span><span>
+</span><span id="line-20"></span><span class="hs-comment">--</span><span>
+</span><span id="line-21"></span><span class="hs-comment">-- === __Example__</span><span>
+</span><span id="line-22"></span><span class="hs-comment">-- Taking those simple functions, expressed in rizz code:</span><span>
+</span><span id="line-23"></span><span class="hs-comment">--</span><span>
+</span><span id="line-24"></span><span class="hs-comment">-- @fn foo(Int: x) -&gt; Int</span><span>
+</span><span id="line-25"></span><span class="hs-comment">--{</span><span>
+</span><span id="line-26"></span><span class="hs-comment">--    Int y = 42;</span><span>
+</span><span id="line-27"></span><span class="hs-comment">-- \</span><span>
+</span><span id="line-28"></span><span class="hs-comment">--    if (x == 0) {</span><span>
+</span><span id="line-29"></span><span class="hs-comment">--        ret 0;</span><span>
+</span><span id="line-30"></span><span class="hs-comment">--    }</span><span>
+</span><span id="line-31"></span><span class="hs-comment">--    ret y / x;</span><span>
+</span><span id="line-32"></span><span class="hs-comment">--}</span><span>
+</span><span id="line-33"></span><span class="hs-comment">-- \</span><span>
+</span><span id="line-34"></span><span class="hs-comment">--fn bar(Int: x) -&gt; Int</span><span>
+</span><span id="line-35"></span><span class="hs-comment">--{</span><span>
+</span><span id="line-36"></span><span class="hs-comment">--    Int y = 1;</span><span>
+</span><span id="line-37"></span><span class="hs-comment">-- \</span><span>
+</span><span id="line-38"></span><span class="hs-comment">--    for (; y &lt; x; y++) {</span><span>
+</span><span id="line-39"></span><span class="hs-comment">--        if (foo(y) == 0) {</span><span>
+</span><span id="line-40"></span><span class="hs-comment">--            ret 10;</span><span>
+</span><span id="line-41"></span><span class="hs-comment">--        }</span><span>
+</span><span id="line-42"></span><span class="hs-comment">--    }</span><span>
+</span><span id="line-43"></span><span class="hs-comment">--    ret y;</span><span>
+</span><span id="line-44"></span><span class="hs-comment">--}</span><span>
+</span><span id="line-45"></span><span class="hs-comment">-- \</span><span>
+</span><span id="line-46"></span><span class="hs-comment">--fn baz()</span><span>
+</span><span id="line-47"></span><span class="hs-comment">--{</span><span>
+</span><span id="line-48"></span><span class="hs-comment">--    bar(foo(100));</span><span>
+</span><span id="line-49"></span><span class="hs-comment">--}@</span><span>
+</span><span id="line-50"></span><span class="hs-comment">--</span><span>
+</span><span id="line-51"></span><span class="hs-comment">-- will be translated (each) as these following @'Decl'@:</span><span>
+</span><span id="line-52"></span><span class="hs-comment">--</span><span>
+</span><span id="line-53"></span><span class="hs-comment">-- &gt;&gt;&gt; FunctionDecl &quot;foo&quot; [ParmVarDeclExpr Integer &quot;x&quot;] (CompoundStmt [DeclVarExpr (VarDeclStmt Integer &quot;y&quot; Equal (ParmCallDeclLiteral (IntLiteral 42))), IfStmt (BinaryOpExpr (BinaryOpParm (ParmCallDeclIdent &quot;x&quot;)) Eq (BinaryOpParm (ParmCallDeclLiteral (IntLiteral 0)))) (CompoundStmt [RetStmt (BinaryOpConst (ParmCallDeclLiteral (IntLiteral 0)))]) Nothing, RetStmt (BinaryOpExpr (BinaryOpParm (ParmCallDeclIdent &quot;y&quot;)) Div (BinaryOpParm (ParmCallDeclIdent &quot;x&quot;)))]) (Just Integer)</span><span>
+</span><span id="line-54"></span><span class="hs-comment">--</span><span>
+</span><span id="line-55"></span><span class="hs-comment">-- &gt;&gt;&gt; FunctionDecl &quot;bar&quot; [ParmVarDeclExpr Integer &quot;x&quot;] (CompoundStmt [DeclVarExpr (VarDeclStmt Integer &quot;y&quot; Equal (ParmCallDeclLiteral (IntLiteral 1))),ForStmt Nothing (Just (BinaryOpExpr (BinaryOpParm (ParmCallDeclIdent &quot;y&quot;)) Lt (BinaryOpParm (ParmCallDeclIdent &quot;x&quot;)))) (Just (DeclAssignStmtUnary (UnaryOperatorExpr &quot;y&quot; IdentIncrement))) (CompoundStmt [IfStmt (BinaryOpExpr (BinaryOpParm (ParmCallDeclExpr (CallExprDecl &quot;foo&quot; [ParmCallDeclIdent &quot;y&quot;]))) Eq (BinaryOpParm (ParmCallDeclLiteral (IntLiteral 0)))) (CompoundStmt [RetStmt (BinaryOpConst (ParmCallDeclLiteral (IntLiteral 0)))]) Nothing]),RetStmt (BinaryOpConst (ParmCallDeclIdent &quot;y&quot;))]) (Just Integer)</span><span>
+</span><span id="line-56"></span><span class="hs-comment">--</span><span>
+</span><span id="line-57"></span><span class="hs-comment">-- &gt;&gt;&gt; FunctionDecl &quot;baz&quot; [] (CompoundStmt [CallExpr (CallExprDecl &quot;bar&quot; [ParmCallDeclExpr (CallExprDecl &quot;foo&quot; [ParmCallDeclLiteral (IntLiteral 100)])])]) Nothing</span><span>
+</span><span id="line-58"></span><span class="hs-comment">--</span><span>
+</span><span id="line-59"></span><span class="hs-comment">-- and will be translated as a compilation unit (a @'[Decl]'@) as follow:</span><span>
+</span><span id="line-60"></span><span class="hs-comment">--</span><span>
+</span><span id="line-61"></span><span class="hs-comment">-- &gt;&gt;&gt; [FunctionDecl &quot;foo&quot; [ParmVarDeclExpr Integer &quot;x&quot;] (CompoundStmt [DeclVarExpr (VarDeclStmt Integer &quot;y&quot; Equal (ParmCallDeclLiteral (IntLiteral 42))), IfStmt (BinaryOpExpr (BinaryOpParm (ParmCallDeclIdent &quot;x&quot;)) Eq (BinaryOpParm (ParmCallDeclLiteral (IntLiteral 0)))) (CompoundStmt [RetStmt (BinaryOpConst (ParmCallDeclLiteral (IntLiteral 0)))]) Nothing, RetStmt (BinaryOpExpr (BinaryOpParm (ParmCallDeclIdent &quot;y&quot;)) Div (BinaryOpParm (ParmCallDeclIdent &quot;x&quot;)))]) (Just Integer), FunctionDecl &quot;bar&quot; [ParmVarDeclExpr Integer &quot;x&quot;] (CompoundStmt [DeclVarExpr (VarDeclStmt Integer &quot;y&quot; Equal (ParmCallDeclLiteral (IntLiteral 1))),ForStmt Nothing (Just (BinaryOpExpr (BinaryOpParm (ParmCallDeclIdent &quot;y&quot;)) Lt (BinaryOpParm (ParmCallDeclIdent &quot;x&quot;)))) (Just (DeclAssignStmtUnary (UnaryOperatorExpr &quot;y&quot; IdentIncrement))) (CompoundStmt [IfStmt (BinaryOpExpr (BinaryOpParm (ParmCallDeclExpr (CallExprDecl &quot;foo&quot; [ParmCallDeclIdent &quot;y&quot;]))) Eq (BinaryOpParm (ParmCallDeclLiteral (IntLiteral 0)))) (CompoundStmt [RetStmt (BinaryOpConst (ParmCallDeclLiteral (IntLiteral 0)))]) Nothing]),RetStmt (BinaryOpConst (ParmCallDeclIdent &quot;y&quot;))]) (Just Integer), FunctionDecl &quot;baz&quot; [] (CompoundStmt [CallExpr (CallExprDecl &quot;bar&quot; [ParmCallDeclExpr (CallExprDecl &quot;foo&quot; [ParmCallDeclLiteral (IntLiteral 100)])])]) Nothing]</span><span>
+</span><span id="line-62"></span><span class="hs-comment">-------------------------------------------------------------------------------</span><span>
+</span><span id="line-63"></span><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Ast</span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-64"></span><span>    </span><span class="annot"><span class="hs-comment">-- * BNF definition</span></span><span>
+</span><span id="line-65"></span><span>    </span><span class="annot"><span class="hs-comment">-- $bnf</span></span><span>
+</span><span id="line-66"></span><span>
+</span><span id="line-67"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Top level definitions</span></span><span>
+</span><span id="line-68"></span><span>    </span><span class="annot"><a href="Ast.html#Decl"><span class="hs-identifier">Decl</span></a></span><span>                    </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-69"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Ast.html#Stmt"><span class="hs-identifier">Stmt</span></a></span><span>                  </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-70"></span><span>
+</span><span id="line-71"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Declarations</span></span><span>
+</span><span id="line-72"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Ast.html#CompoundStmt"><span class="hs-identifier">CompoundStmt</span></a></span><span>          </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-73"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Ast.html#ParmVarDeclExpr"><span class="hs-identifier">ParmVarDeclExpr</span></a></span><span>       </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-74"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Ast.html#BuiltinType"><span class="hs-identifier">BuiltinType</span></a></span><span>           </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-75"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Ast.html#VarDeclStmt"><span class="hs-identifier">VarDeclStmt</span></a></span><span>           </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-76"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Ast.html#RecordDeclExpr"><span class="hs-identifier">RecordDeclExpr</span></a></span><span>        </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-77"></span><span>
+</span><span id="line-78"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Statements</span></span><span>
+</span><span id="line-79"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Ast.html#DeclStmt"><span class="hs-identifier">DeclStmt</span></a></span><span>              </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-80"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Ast.html#UnaryOperatorExpr"><span class="hs-identifier">UnaryOperatorExpr</span></a></span><span>     </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-81"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Ast.html#BinaryOpParm"><span class="hs-identifier">BinaryOpParm</span></a></span><span>          </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-82"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Ast.html#BinaryOpExpr"><span class="hs-identifier">BinaryOpExpr</span></a></span><span>          </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-83"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Ast.html#ParmCallDecl"><span class="hs-identifier">ParmCallDecl</span></a></span><span>          </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-84"></span><span>    </span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Ast.html#CallExprDecl"><span class="hs-identifier">CallExprDecl</span></a></span><span>          </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span>
+</span><span id="line-85"></span><span class="hs-special">)</span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-86"></span><span>
+</span><span id="line-87"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Tokens.html"><span class="hs-identifier">Tokens</span></a></span><span>
+</span><span id="line-88"></span><span>
+</span><span id="line-89"></span><span class="hs-comment">-- $bnf</span><span>
+</span><span id="line-90"></span><span class="hs-comment">-- For the full rizz grammar syntax definition, see the [BNF definition](https://github.com/lszsrd/glados/blob/main/docs/BNF/rizz-grammar.md) here.</span><span>
+</span><span id="line-91"></span><span>
+</span><span id="line-92"></span><span class="hs-comment">-- | Defines @'Decl'@ as a primary Ast node containing language declarations.</span><span>
+</span><span id="line-93"></span><span class="hs-comment">--</span><span>
+</span><span id="line-94"></span><span class="hs-comment">-- === __Examples__</span><span>
+</span><span id="line-95"></span><span class="hs-comment">--</span><span>
+</span><span id="line-96"></span><span class="hs-comment">-- Some GHCI syntax examples for every @'Decl'@ constructors:</span><span>
+</span><span id="line-97"></span><span class="hs-comment">--</span><span>
+</span><span id="line-98"></span><span class="hs-comment">-- &gt;&gt;&gt; FunctionDecl &quot;foo&quot; [ParmVarDeclExpr Integer &quot;x&quot;] (CompoundStmt []) (Just Integer)</span><span>
+</span><span id="line-99"></span><span class="hs-comment">-- &gt;&gt;&gt; ParmVarDeclExpr Integer &quot;foo&quot;</span><span>
+</span><span id="line-100"></span><span class="hs-comment">-- &gt;&gt;&gt; VarDecl (VarDeclStmt Boolean &quot;foo&quot; Equal (ParmCallDeclLiteral (BoolLiteral True)))</span><span>
+</span><span id="line-101"></span><span class="hs-keyword">data</span><span> </span><span id="Decl"><span class="annot"><a href="Ast.html#Decl"><span class="hs-identifier hs-var">Decl</span></a></span></span><span>
+</span><span id="line-102"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="FunctionDecl"><span class="annot"><a href="Ast.html#FunctionDecl"><span class="hs-identifier hs-var">FunctionDecl</span></a></span></span><span> </span><span class="annot"><a href="Tokens.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Ast.html#ParmVarDeclExpr"><span class="hs-identifier hs-type">ParmVarDeclExpr</span></a></span><span class="hs-special">]</span><span> </span><span class="annot"><a href="Ast.html#CompoundStmt"><span class="hs-identifier hs-type">CompoundStmt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Ast.html#BuiltinType"><span class="hs-identifier hs-type">BuiltinType</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-103"></span><span>    </span><span class="hs-comment">-- ^ Function declaration, expressed in rizz code like @\`fn foo(Char: bar) -&gt; Int {}\`@.</span><span>
+</span><span id="line-104"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-105"></span><span>    </span><span class="hs-comment">-- A @'FunctionDecl'@'s rizz grammar in-code is as follow, in the given order:</span><span>
+</span><span id="line-106"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-107"></span><span>    </span><span class="hs-comment">--  - A leading @'Fn'@.</span><span>
+</span><span id="line-108"></span><span>    </span><span class="hs-comment">--  - Function's name as an @'Identifier'@.</span><span>
+</span><span id="line-109"></span><span>    </span><span class="hs-comment">--  - Function's __optional__ parameters enclosed in @'OpenRBracket'@ and @'CloseRBracket'@ expressed as @'ParmVarDeclExpr'@ (both round brackets are still required even if no arguments are provided to the function).</span><span>
+</span><span id="line-110"></span><span>    </span><span class="hs-comment">--  - Function's __optional__ return type. If the function __does__ returns, the return type is expressed as an @'Arrow'@ @'Keyword'@ and a @'BuiltinType'@.</span><span>
+</span><span id="line-111"></span><span>    </span><span class="hs-comment">--  - Function's body within a @'CompoundStmt'@.</span><span>
+</span><span id="line-112"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="ParmVarDecl"><span class="annot"><a href="Ast.html#ParmVarDecl"><span class="hs-identifier hs-var">ParmVarDecl</span></a></span></span><span> </span><span class="annot"><a href="Ast.html#ParmVarDeclExpr"><span class="hs-identifier hs-type">ParmVarDeclExpr</span></a></span><span>
+</span><span id="line-113"></span><span>    </span><span class="hs-comment">-- ^ Function parameter, expressed in rizz code like @\`Bool: baz\`@.</span><span>
+</span><span id="line-114"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-115"></span><span>    </span><span class="hs-comment">-- A @'ParmVarDecl'@'s rizz grammar in-code is as follow, in the given order:</span><span>
+</span><span id="line-116"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-117"></span><span>    </span><span class="hs-comment">--  - The parameter's type as a @'BuiltinType'@.</span><span>
+</span><span id="line-118"></span><span>    </span><span class="hs-comment">--  - A @'Colon'@.</span><span>
+</span><span id="line-119"></span><span>    </span><span class="hs-comment">--  - The parameter's name as an @'Identifier'@.</span><span>
+</span><span id="line-120"></span><span>    </span><span class="hs-comment">--  - A trailing @'Comma'@ if and __only__ if the parameter is __not__ the last one in the list.</span><span>
+</span><span id="line-121"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-122"></span><span>    </span><span class="hs-comment">--  Note that a standalone @'ParmVarDecl'@ (not in a @'FunctionDecl'@ expression) is a __grammar violation__!</span><span>
+</span><span id="line-123"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="VarDecl"><span class="annot"><a href="Ast.html#VarDecl"><span class="hs-identifier hs-var">VarDecl</span></a></span></span><span> </span><span class="annot"><a href="Ast.html#VarDeclStmt"><span class="hs-identifier hs-type">VarDeclStmt</span></a></span><span>
+</span><span id="line-124"></span><span>    </span><span class="hs-comment">-- ^ Variable (with its type) declaration, expressed in rizz code like @\`Float pi = 3.14;\`@.</span><span>
+</span><span id="line-125"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-126"></span><span>    </span><span class="hs-comment">-- A @'VarDecl'@ rizz grammar in-code is as follow, in the given order:</span><span>
+</span><span id="line-127"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-128"></span><span>    </span><span class="hs-comment">--  - The variable's type as a @'BuiltinType'@.</span><span>
+</span><span id="line-129"></span><span>    </span><span class="hs-comment">--  - The variable's name as an @'Identifier'@.</span><span>
+</span><span id="line-130"></span><span>    </span><span class="hs-comment">--  - Any @'AssignOp'@ assignment operator.</span><span>
+</span><span id="line-131"></span><span>    </span><span class="hs-comment">--  - Any @'ParmCallDecl'@ (see the definition).</span><span>
+</span><span id="line-132"></span><span>    </span><span class="hs-comment">--  - A trailing @'Semicolon'@ to end the expression.</span><span>
+</span><span id="line-133"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-134"></span><span>    </span><span class="hs-comment">--  /TODO/: Merge both @'VarDecl'@ and @'Stmt.DeclStmt'@ types as they are almost identical.</span><span>
+</span><span id="line-135"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-136"></span><span>    </span><span class="hs-comment">-- Note that a variable that initializes itself is a __semantic violation__!</span><span>
+</span><span id="line-137"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="RecordDecl"><span class="annot"><a href="Ast.html#RecordDecl"><span class="hs-identifier hs-var">RecordDecl</span></a></span></span><span> </span><span class="annot"><a href="Ast.html#RecordDeclExpr"><span class="hs-identifier hs-type">RecordDeclExpr</span></a></span><span>
+</span><span id="line-138"></span><span>    </span><span class="hs-comment">-- ^ Structure declaration, expressed in rizz code like @\`struct Foo {Int: x; Int y; Bool: alive;}\`@.</span><span>
+</span><span id="line-139"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-140"></span><span>    </span><span class="hs-comment">-- A @'RecordDecl'@ rizz grammar in-code is as follow, in the given order:</span><span>
+</span><span id="line-141"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-142"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-143"></span><span>
+</span><span id="line-144"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-145"></span><span>        </span><span id="local-6989586621679032489"><span id="local-6989586621679032511"><span id="local-6989586621679032515"><span class="annot"><span class="annottext">Int -&gt; Decl -&gt; ShowS
+[Decl] -&gt; ShowS
+Decl -&gt; String
+(Int -&gt; Decl -&gt; ShowS)
+-&gt; (Decl -&gt; String) -&gt; ([Decl] -&gt; ShowS) -&gt; Show Decl
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; Decl -&gt; ShowS
+showsPrec :: Int -&gt; Decl -&gt; ShowS
+$cshow :: Decl -&gt; String
+show :: Decl -&gt; String
+$cshowList :: [Decl] -&gt; ShowS
+showList :: [Decl] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span>
+</span><span id="line-146"></span><span>        </span><span class="annot"><span class="hs-comment">-- ^ Allows @'Decl'@ to be printed.</span></span><span>
+</span><span id="line-147"></span><span>        </span><span class="hs-special">,</span><span> </span><span id="local-6989586621679032522"><span id="local-6989586621679032539"><span class="annot"><span class="annottext">Decl -&gt; Decl -&gt; Bool
+(Decl -&gt; Decl -&gt; Bool) -&gt; (Decl -&gt; Decl -&gt; Bool) -&gt; Eq Decl
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: Decl -&gt; Decl -&gt; Bool
+== :: Decl -&gt; Decl -&gt; Bool
+$c/= :: Decl -&gt; Decl -&gt; Bool
+/= :: Decl -&gt; Decl -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span>
+</span><span id="line-148"></span><span>        </span><span class="annot"><span class="hs-comment">-- ^ Allows @'Decl'@ to be compared, needed for unit tests.</span></span><span>
+</span><span id="line-149"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-150"></span><span>
+</span><span id="line-151"></span><span class="hs-comment">-- | Defines @'Stmt'@ as the second-primary Ast node containing language statements.</span><span>
+</span><span id="line-152"></span><span class="hs-comment">--</span><span>
+</span><span id="line-153"></span><span class="hs-comment">-- === __Examples__</span><span>
+</span><span id="line-154"></span><span class="hs-comment">--</span><span>
+</span><span id="line-155"></span><span class="hs-comment">-- Some GHCI syntax examples for every @'Stmt'@ constructors:</span><span>
+</span><span id="line-156"></span><span class="hs-comment">--</span><span>
+</span><span id="line-157"></span><span class="hs-comment">-- &gt;&gt;&gt; DeclVarExpr (VarDeclStmt Boolean &quot;foo&quot; Equal (ParmCallDeclLiteral (BoolLiteral True)))</span><span>
+</span><span id="line-158"></span><span class="hs-comment">-- &gt;&gt;&gt; DeclStmt (DeclAssignStmtLiteral &quot;var&quot; MulEqual (ParmCallDeclLiteral (BoolLiteral True)))</span><span>
+</span><span id="line-159"></span><span class="hs-comment">-- &gt;&gt;&gt; UnaryOperatorExpr &quot;x&quot; IdentIncrement</span><span>
+</span><span id="line-160"></span><span class="hs-comment">-- &gt;&gt;&gt; BinaryOpExpr (BinaryOpParm (ParmCallDeclLiteral (BoolLiteral True))) Lt (BinaryOpParm (ParmCallDeclIdent &quot;a&quot;))</span><span>
+</span><span id="line-161"></span><span class="hs-comment">-- &gt;&gt;&gt; IfStmt (BinaryOpExpr (BinaryOpParm (ParmCallDeclExpr (CallExprDecl &quot;foo&quot; [ParmCallDeclLiteral (IntLiteral 42)]))) Lt (BinaryOpParm (ParmCallDeclIdent &quot;a&quot;))) (CompoundStmt []) (Just (CompoundStmt []))</span><span>
+</span><span id="line-162"></span><span class="hs-comment">-- &gt;&gt;&gt; WhileStmt (BinaryOpExpr (BinaryOpParm (ParmCallDeclLiteral (BoolLiteral True))) NEq (BinaryOpParm (ParmCallDeclLiteral (BoolLiteral False)))) (CompoundStmt [])</span><span>
+</span><span id="line-163"></span><span class="hs-comment">-- &gt;&gt;&gt; ForStmt (Just (VarDeclStmt Integer &quot;i&quot; Equal (ParmCallDeclExpr (CallExprDecl &quot;foo&quot; [])))) (Just (BinaryOpExpr (BinaryOpParm (ParmCallDeclIdent &quot;x&quot;)) Lt (BinaryOpParm (ParmCallDeclIdent &quot;y&quot;)))) Nothing (CompoundStmt [])</span><span>
+</span><span id="line-164"></span><span class="hs-comment">-- &gt;&gt;&gt; ForeachStmt &quot;foo&quot; &quot;it&quot; (CompoundStmt [])</span><span>
+</span><span id="line-165"></span><span class="hs-comment">-- &gt;&gt;&gt; CallExpr (CallExprDecl &quot;foo&quot; [ParmCallDeclLiteral (IntLiteral 42)])</span><span>
+</span><span id="line-166"></span><span class="hs-comment">-- &gt;&gt;&gt; RetStmt (BinaryOpConst (ParmCallDeclIdent &quot;foo&quot;))</span><span>
+</span><span id="line-167"></span><span class="hs-keyword">data</span><span> </span><span id="Stmt"><span class="annot"><a href="Ast.html#Stmt"><span class="hs-identifier hs-var">Stmt</span></a></span></span><span>
+</span><span id="line-168"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="DeclVarExpr"><span class="annot"><a href="Ast.html#DeclVarExpr"><span class="hs-identifier hs-var">DeclVarExpr</span></a></span></span><span> </span><span class="annot"><a href="Ast.html#VarDeclStmt"><span class="hs-identifier hs-type">VarDeclStmt</span></a></span><span>
+</span><span id="line-169"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ @'VarDeclStmt'@ alias, allows a variable typed declaration to be a @'Stmt'@.</span></span><span>
+</span><span id="line-170"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="DeclStmt"><span class="annot"><a href="Ast.html#DeclStmt"><span class="hs-identifier hs-var">DeclStmt</span></a></span></span><span> </span><span class="annot"><a href="Ast.html#DeclStmt"><span class="hs-identifier hs-type">DeclStmt</span></a></span><span>
+</span><span id="line-171"></span><span>    </span><span class="hs-comment">-- ^ Variable (without its type) assignment, expressed in rizz code like @\`foo = bar;\`@ or @\`baz++;\`@.</span><span>
+</span><span id="line-172"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-173"></span><span>    </span><span class="hs-comment">-- A @'Stmt.DeclStmt'@ rizz grammar in-code is as follow, in the given order:</span><span>
+</span><span id="line-174"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-175"></span><span>    </span><span class="hs-comment">--  - The variable's name as an @'Identifier'@.</span><span>
+</span><span id="line-176"></span><span>    </span><span class="hs-comment">--  - Any @'AssignOp'@ assignment operator.</span><span>
+</span><span id="line-177"></span><span>    </span><span class="hs-comment">--  - Any @'ParmCallDecl'@ (see the definition).</span><span>
+</span><span id="line-178"></span><span>    </span><span class="hs-comment">--  - A trailing @'Semicolon'@ to end the expression.</span><span>
+</span><span id="line-179"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-180"></span><span>    </span><span class="hs-comment">-- /TODO/: Rename this to 'AssignStmt' to better describe it.</span><span>
+</span><span id="line-181"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-182"></span><span>    </span><span class="hs-comment">-- Note that this statement differs from @'VarDecl'@ as it does not declare the variable's type, it only assigns a new value to it.</span><span>
+</span><span id="line-183"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="UnaryOperator"><span class="annot"><a href="Ast.html#UnaryOperator"><span class="hs-identifier hs-var">UnaryOperator</span></a></span></span><span> </span><span class="annot"><a href="Ast.html#UnaryOperatorExpr"><span class="hs-identifier hs-type">UnaryOperatorExpr</span></a></span><span>
+</span><span id="line-184"></span><span>    </span><span class="hs-comment">-- ^ Unary operator, which are @'Identifier'@ self increment or decrement, expressed in rizz code as @\`foo++;\`@ or @\`bar--\`@.</span><span>
+</span><span id="line-185"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-186"></span><span>    </span><span class="hs-comment">-- A @'Stmt.DeclStmt'@ rizz grammar in-code is as follow, in the given order:</span><span>
+</span><span id="line-187"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-188"></span><span>    </span><span class="hs-comment">--  - The variable's name as an @'Identifier'@.</span><span>
+</span><span id="line-189"></span><span>    </span><span class="hs-comment">--  - One of the @'UnaryOp'@ operator.</span><span>
+</span><span id="line-190"></span><span>    </span><span class="hs-comment">--  - A trailing @'Semicolon'@ to end the expression.</span><span>
+</span><span id="line-191"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="BinaryOperator"><span class="annot"><a href="Ast.html#BinaryOperator"><span class="hs-identifier hs-var">BinaryOperator</span></a></span></span><span> </span><span class="annot"><a href="Ast.html#BinaryOpExpr"><span class="hs-identifier hs-type">BinaryOpExpr</span></a></span><span>
+</span><span id="line-192"></span><span>    </span><span class="hs-comment">-- ^ Binary operation, expressed in rizz code like @\`a &lt; 42\`@ or @\`True == foo(bar, baz)\`@ (non exhaustive list).</span><span>
+</span><span id="line-193"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-194"></span><span>    </span><span class="hs-comment">-- For further details, see @'BinaryOpExpr'@.</span><span>
+</span><span id="line-195"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="IfStmt"><span class="annot"><a href="Ast.html#IfStmt"><span class="hs-identifier hs-var">IfStmt</span></a></span></span><span> </span><span class="annot"><a href="Ast.html#BinaryOpExpr"><span class="hs-identifier hs-type">BinaryOpExpr</span></a></span><span> </span><span class="annot"><a href="Ast.html#CompoundStmt"><span class="hs-identifier hs-type">CompoundStmt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Ast.html#CompoundStmt"><span class="hs-identifier hs-type">CompoundStmt</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-196"></span><span>    </span><span class="hs-comment">-- ^ Conditional branching, expressed in rizz code like @\`if (foo == bar) {...}\`@.</span><span>
+</span><span id="line-197"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-198"></span><span>    </span><span class="hs-comment">-- A @'IfStmt'@ rizz grammar in-code is as follow, in the given order:</span><span>
+</span><span id="line-199"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-200"></span><span>    </span><span class="hs-comment">--  - A leading @'If'@.</span><span>
+</span><span id="line-201"></span><span>    </span><span class="hs-comment">--  - Condition enclosed in @'OpenRBracket'@ and @'CloseRBracket'@ expressed as @'BinaryOpExpr'@.</span><span>
+</span><span id="line-202"></span><span>    </span><span class="hs-comment">--  - Conditional's body within a @'CompoundStmt'@.</span><span>
+</span><span id="line-203"></span><span>    </span><span class="hs-comment">--  - A second __optional__ @'CompoundStmt'@ to represent an @'Else'@ block, expressed in rizz code as @\`else {...}\`@.</span><span>
+</span><span id="line-204"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="WhileStmt"><span class="annot"><a href="Ast.html#WhileStmt"><span class="hs-identifier hs-var">WhileStmt</span></a></span></span><span> </span><span class="annot"><a href="Ast.html#BinaryOpExpr"><span class="hs-identifier hs-type">BinaryOpExpr</span></a></span><span> </span><span class="annot"><a href="Ast.html#CompoundStmt"><span class="hs-identifier hs-type">CompoundStmt</span></a></span><span>
+</span><span id="line-205"></span><span>    </span><span class="hs-comment">-- ^ While loop, expressed in rizz code like @\`while (True) {...}\`@.</span><span>
+</span><span id="line-206"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-207"></span><span>    </span><span class="hs-comment">-- A @'WhileStmt'@ rizz grammar in-code is as follow, in the given order:</span><span>
+</span><span id="line-208"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-209"></span><span>    </span><span class="hs-comment">--  - A leading @'While'@.</span><span>
+</span><span id="line-210"></span><span>    </span><span class="hs-comment">--  - Condition enclosed in @'OpenRBracket'@ and @'CloseRBracket'@ expressed as @'BinaryOpExpr'@.</span><span>
+</span><span id="line-211"></span><span>    </span><span class="hs-comment">--  - While's body within a @'CompoundStmt'@.</span><span>
+</span><span id="line-212"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="ForStmt"><span class="annot"><a href="Ast.html#ForStmt"><span class="hs-identifier hs-var">ForStmt</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Ast.html#VarDeclStmt"><span class="hs-identifier hs-type">VarDeclStmt</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Ast.html#BinaryOpExpr"><span class="hs-identifier hs-type">BinaryOpExpr</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Maybe</span></span><span> </span><span class="annot"><a href="Ast.html#DeclStmt"><span class="hs-identifier hs-type">DeclStmt</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><a href="Ast.html#CompoundStmt"><span class="hs-identifier hs-type">CompoundStmt</span></a></span><span>
+</span><span id="line-213"></span><span>    </span><span class="hs-comment">-- ^ For loop, expressed in rizz code like @\`for (Int i = 0; i &lt; 10; i++) {...}\`@.</span><span>
+</span><span id="line-214"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-215"></span><span>    </span><span class="hs-comment">-- A @'ForeachStmt'@'s rizz grammar in-code is as follow, in the given order:</span><span>
+</span><span id="line-216"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-217"></span><span>    </span><span class="hs-comment">--  - A leading @'for'@.</span><span>
+</span><span id="line-218"></span><span>    </span><span class="hs-comment">--  - An @'OpenRBracket'@.</span><span>
+</span><span id="line-219"></span><span>    </span><span class="hs-comment">--  - An __optional__ @'VarDeclStmt'@.</span><span>
+</span><span id="line-220"></span><span>    </span><span class="hs-comment">--  - A @'Semicolon'@ @'Punctuator'@.</span><span>
+</span><span id="line-221"></span><span>    </span><span class="hs-comment">--  - An __optional__ @'BinaryOpExpr'@.</span><span>
+</span><span id="line-222"></span><span>    </span><span class="hs-comment">--  - A @'Semicolon'@ @'Punctuator'@.</span><span>
+</span><span id="line-223"></span><span>    </span><span class="hs-comment">--  - An __optional__ @'DeclStmt'@.</span><span>
+</span><span id="line-224"></span><span>    </span><span class="hs-comment">--  - A @'CloseRBracket'@.</span><span>
+</span><span id="line-225"></span><span>    </span><span class="hs-comment">--  - For's body within a @'CompoundStmt'@.</span><span>
+</span><span id="line-226"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="ForeachStmt"><span class="annot"><a href="Ast.html#ForeachStmt"><span class="hs-identifier hs-var">ForeachStmt</span></a></span></span><span> </span><span class="annot"><a href="Tokens.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span> </span><span class="annot"><a href="Tokens.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span> </span><span class="annot"><a href="Ast.html#CompoundStmt"><span class="hs-identifier hs-type">CompoundStmt</span></a></span><span>
+</span><span id="line-227"></span><span>    </span><span class="hs-comment">-- ^ Foreach loop to iterate over a list, expressed in rizz code like @\`foreach (foo : it) {...}\`@.</span><span>
+</span><span id="line-228"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-229"></span><span>    </span><span class="hs-comment">-- A @'ForeachStmt'@'s rizz grammar in-code is as follow, in the given order:</span><span>
+</span><span id="line-230"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-231"></span><span>    </span><span class="hs-comment">--  - A leading @'Foreach'@.</span><span>
+</span><span id="line-232"></span><span>    </span><span class="hs-comment">--  - An @'OpenRBracket'@.</span><span>
+</span><span id="line-233"></span><span>    </span><span class="hs-comment">--  - The variable's name as an @'Identifier'@.</span><span>
+</span><span id="line-234"></span><span>    </span><span class="hs-comment">--  - A @'Colon'@ @'Punctuator'@.</span><span>
+</span><span id="line-235"></span><span>    </span><span class="hs-comment">--  - The iterator's name as an @'Identifier'@.</span><span>
+</span><span id="line-236"></span><span>    </span><span class="hs-comment">--  - A @'CloseRBracket'@.</span><span>
+</span><span id="line-237"></span><span>    </span><span class="hs-comment">--  - Foreach's body within a @'CompoundStmt'@.</span><span>
+</span><span id="line-238"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="CallExpr"><span class="annot"><a href="Ast.html#CallExpr"><span class="hs-identifier hs-var">CallExpr</span></a></span></span><span> </span><span class="annot"><a href="Ast.html#CallExprDecl"><span class="hs-identifier hs-type">CallExprDecl</span></a></span><span> </span><span>
+</span><span id="line-239"></span><span>    </span><span class="hs-comment">-- ^ Function call, expressed in rizz code like @\`foo(bar, baz);\`@.</span><span>
+</span><span id="line-240"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-241"></span><span>    </span><span class="hs-comment">-- A @'CallExprDecl'@'s rizz grammar in-code is as follow, in the given order:</span><span>
+</span><span id="line-242"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-243"></span><span>    </span><span class="hs-comment">--  - Function's name as an @'Identifier'@.</span><span>
+</span><span id="line-244"></span><span>    </span><span class="hs-comment">--  - Function's parameters enclosed in @'OpenRBracket'@ and @'CloseRBracket'@ expressed as @'ParmCallDecl'@ (both round brackets are still required even if no arguments are provided to the function).</span><span>
+</span><span id="line-245"></span><span>    </span><span class="hs-comment">--  - A trailing @'Semicolon'@ to end the expression.</span><span>
+</span><span id="line-246"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="RetStmt"><span class="annot"><a href="Ast.html#RetStmt"><span class="hs-identifier hs-var">RetStmt</span></a></span></span><span> </span><span class="annot"><a href="Ast.html#BinaryOpExpr"><span class="hs-identifier hs-type">BinaryOpExpr</span></a></span><span>
+</span><span id="line-247"></span><span>    </span><span class="hs-comment">-- ^ Return from function, expressed in rizz code like @\`ret 42;\`@.</span><span>
+</span><span id="line-248"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-249"></span><span>    </span><span class="hs-comment">-- A @'RetStmt'@ rizz grammar in-code is as follow, in the given order:</span><span>
+</span><span id="line-250"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-251"></span><span>    </span><span class="hs-comment">--  - A leading @'Ret'@.</span><span>
+</span><span id="line-252"></span><span>    </span><span class="hs-comment">--  - @'BinaryOpExpr'@ which suits all needs, from constants to arithmetics or even function call.</span><span>
+</span><span id="line-253"></span><span>    </span><span class="hs-comment">--  - A trailing @'Semicolon'@ to end the expression.</span><span>
+</span><span id="line-254"></span><span>
+</span><span id="line-255"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-256"></span><span>        </span><span id="local-6989586621679032568"><span id="local-6989586621679032603"><span id="local-6989586621679032607"><span class="annot"><span class="annottext">Int -&gt; Stmt -&gt; ShowS
+[Stmt] -&gt; ShowS
+Stmt -&gt; String
+(Int -&gt; Stmt -&gt; ShowS)
+-&gt; (Stmt -&gt; String) -&gt; ([Stmt] -&gt; ShowS) -&gt; Show Stmt
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; Stmt -&gt; ShowS
+showsPrec :: Int -&gt; Stmt -&gt; ShowS
+$cshow :: Stmt -&gt; String
+show :: Stmt -&gt; String
+$cshowList :: [Stmt] -&gt; ShowS
+showList :: [Stmt] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span>
+</span><span id="line-257"></span><span>        </span><span class="annot"><span class="hs-comment">-- ^ Allows @'Stmt'@ to be printed.</span></span><span>
+</span><span id="line-258"></span><span>        </span><span class="hs-special">,</span><span> </span><span id="local-6989586621679032610"><span id="local-6989586621679032635"><span class="annot"><span class="annottext">Stmt -&gt; Stmt -&gt; Bool
+(Stmt -&gt; Stmt -&gt; Bool) -&gt; (Stmt -&gt; Stmt -&gt; Bool) -&gt; Eq Stmt
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: Stmt -&gt; Stmt -&gt; Bool
+== :: Stmt -&gt; Stmt -&gt; Bool
+$c/= :: Stmt -&gt; Stmt -&gt; Bool
+/= :: Stmt -&gt; Stmt -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span>
+</span><span id="line-259"></span><span>        </span><span class="annot"><span class="hs-comment">-- ^ Allows @'Stmt'@ to be compared, needed for unit tests.</span></span><span>
+</span><span id="line-260"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-261"></span><span>
+</span><span id="line-262"></span><span class="annot"><span class="hs-comment">-- | Defines @'CompoundStmt'@ type as a list of @'Stmt'@ expressions.</span></span><span>
+</span><span id="line-263"></span><span class="hs-keyword">newtype</span><span> </span><span id="CompoundStmt"><span class="annot"><a href="Ast.html#CompoundStmt"><span class="hs-identifier hs-var">CompoundStmt</span></a></span></span><span>
+</span><span id="line-264"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="CompoundStmt"><span class="annot"><a href="Ast.html#CompoundStmt"><span class="hs-identifier hs-var">CompoundStmt</span></a></span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Ast.html#Stmt"><span class="hs-identifier hs-type">Stmt</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-265"></span><span>    </span><span class="hs-comment">-- ^ Compound statement block, expressed in rizz code as @\`{...}\`@ (any code enclosed in a @'OpenCBracket'@ and a @'CloseCBracket'@).</span><span>
+</span><span id="line-266"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-267"></span><span>    </span><span class="hs-comment">-- A @'CompoundStmt'@ is used for the following special cases:</span><span>
+</span><span id="line-268"></span><span>    </span><span class="hs-comment">--</span><span>
+</span><span id="line-269"></span><span>    </span><span class="hs-comment">--  - A function body</span><span>
+</span><span id="line-270"></span><span>    </span><span class="hs-comment">--  - A conditional body</span><span>
+</span><span id="line-271"></span><span>    </span><span class="hs-comment">--  - A loop body</span><span>
+</span><span id="line-272"></span><span>    </span><span class="hs-comment">--  - An unnamed scope</span><span>
+</span><span id="line-273"></span><span>
+</span><span id="line-274"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-275"></span><span>        </span><span id="local-6989586621679032641"><span id="local-6989586621679032646"><span id="local-6989586621679032649"><span class="annot"><span class="annottext">Int -&gt; CompoundStmt -&gt; ShowS
+[CompoundStmt] -&gt; ShowS
+CompoundStmt -&gt; String
+(Int -&gt; CompoundStmt -&gt; ShowS)
+-&gt; (CompoundStmt -&gt; String)
+-&gt; ([CompoundStmt] -&gt; ShowS)
+-&gt; Show CompoundStmt
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; CompoundStmt -&gt; ShowS
+showsPrec :: Int -&gt; CompoundStmt -&gt; ShowS
+$cshow :: CompoundStmt -&gt; String
+show :: CompoundStmt -&gt; String
+$cshowList :: [CompoundStmt] -&gt; ShowS
+showList :: [CompoundStmt] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span>
+</span><span id="line-276"></span><span>        </span><span class="annot"><span class="hs-comment">-- ^ Allows @'CompoundStmt'@ to be printed.</span></span><span>
+</span><span id="line-277"></span><span>        </span><span class="hs-special">,</span><span> </span><span id="local-6989586621679032652"><span id="local-6989586621679032657"><span class="annot"><span class="annottext">CompoundStmt -&gt; CompoundStmt -&gt; Bool
+(CompoundStmt -&gt; CompoundStmt -&gt; Bool)
+-&gt; (CompoundStmt -&gt; CompoundStmt -&gt; Bool) -&gt; Eq CompoundStmt
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: CompoundStmt -&gt; CompoundStmt -&gt; Bool
+== :: CompoundStmt -&gt; CompoundStmt -&gt; Bool
+$c/= :: CompoundStmt -&gt; CompoundStmt -&gt; Bool
+/= :: CompoundStmt -&gt; CompoundStmt -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span>
+</span><span id="line-278"></span><span>        </span><span class="annot"><span class="hs-comment">-- ^ Allows @'CompoundStmt'@ to be compared, needed for unit tests.</span></span><span>
+</span><span id="line-279"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-280"></span><span>
+</span><span id="line-281"></span><span class="hs-comment">-- | Defines the @'ParmVarDeclExpr'@ expression (extended constructor for @'ParmVarDecl'@).</span><span>
+</span><span id="line-282"></span><span class="hs-comment">--</span><span>
+</span><span id="line-283"></span><span class="hs-comment">-- === __Example__</span><span>
+</span><span id="line-284"></span><span class="hs-comment">--</span><span>
+</span><span id="line-285"></span><span class="hs-comment">-- A GHCI syntax example to declare a @'ParmVarDecl'@:</span><span>
+</span><span id="line-286"></span><span class="hs-comment">--</span><span>
+</span><span id="line-287"></span><span class="hs-comment">-- &gt;&gt;&gt; ParmVarDeclExpr Boolean &quot;x&quot;</span><span>
+</span><span id="line-288"></span><span class="hs-keyword">data</span><span> </span><span id="ParmVarDeclExpr"><span class="annot"><a href="Ast.html#ParmVarDeclExpr"><span class="hs-identifier hs-var">ParmVarDeclExpr</span></a></span></span><span>
+</span><span id="line-289"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="ParmVarDeclExpr"><span class="annot"><a href="Ast.html#ParmVarDeclExpr"><span class="hs-identifier hs-var">ParmVarDeclExpr</span></a></span></span><span> </span><span class="annot"><a href="Ast.html#BuiltinType"><span class="hs-identifier hs-type">BuiltinType</span></a></span><span> </span><span class="annot"><a href="Tokens.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
+</span><span id="line-290"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ Function's parameter, see @'ParmVarDecl'@ definition.</span></span><span>
+</span><span id="line-291"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="ParmVarRecord"><span class="annot"><a href="Ast.html#ParmVarRecord"><span class="hs-identifier hs-var">ParmVarRecord</span></a></span></span><span> </span><span class="annot"><a href="Ast.html#RecordDeclExpr"><span class="hs-identifier hs-type">RecordDeclExpr</span></a></span><span>
+</span><span id="line-292"></span><span>
+</span><span id="line-293"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-294"></span><span>        </span><span id="local-6989586621679032663"><span id="local-6989586621679032671"><span id="local-6989586621679032674"><span class="annot"><span class="annottext">Int -&gt; ParmVarDeclExpr -&gt; ShowS
+[ParmVarDeclExpr] -&gt; ShowS
+ParmVarDeclExpr -&gt; String
+(Int -&gt; ParmVarDeclExpr -&gt; ShowS)
+-&gt; (ParmVarDeclExpr -&gt; String)
+-&gt; ([ParmVarDeclExpr] -&gt; ShowS)
+-&gt; Show ParmVarDeclExpr
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; ParmVarDeclExpr -&gt; ShowS
+showsPrec :: Int -&gt; ParmVarDeclExpr -&gt; ShowS
+$cshow :: ParmVarDeclExpr -&gt; String
+show :: ParmVarDeclExpr -&gt; String
+$cshowList :: [ParmVarDeclExpr] -&gt; ShowS
+showList :: [ParmVarDeclExpr] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span>
+</span><span id="line-295"></span><span>        </span><span class="annot"><span class="hs-comment">-- ^ Allows @'ParmVarDecl'@ to be printed.</span></span><span>
+</span><span id="line-296"></span><span>        </span><span class="hs-special">,</span><span> </span><span id="local-6989586621679032677"><span id="local-6989586621679032683"><span class="annot"><span class="annottext">ParmVarDeclExpr -&gt; ParmVarDeclExpr -&gt; Bool
+(ParmVarDeclExpr -&gt; ParmVarDeclExpr -&gt; Bool)
+-&gt; (ParmVarDeclExpr -&gt; ParmVarDeclExpr -&gt; Bool)
+-&gt; Eq ParmVarDeclExpr
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: ParmVarDeclExpr -&gt; ParmVarDeclExpr -&gt; Bool
+== :: ParmVarDeclExpr -&gt; ParmVarDeclExpr -&gt; Bool
+$c/= :: ParmVarDeclExpr -&gt; ParmVarDeclExpr -&gt; Bool
+/= :: ParmVarDeclExpr -&gt; ParmVarDeclExpr -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span>
+</span><span id="line-297"></span><span>        </span><span class="annot"><span class="hs-comment">-- ^ Allows @'ParmVarDecl'@ to be compared, needed for unit tests.</span></span><span>
+</span><span id="line-298"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-299"></span><span>
+</span><span id="line-300"></span><span class="hs-keyword">data</span><span> </span><span id="RecordDeclExpr"><span class="annot"><a href="Ast.html#RecordDeclExpr"><span class="hs-identifier hs-var">RecordDeclExpr</span></a></span></span><span>
+</span><span id="line-301"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="RecordDeclExpr"><span class="annot"><a href="Ast.html#RecordDeclExpr"><span class="hs-identifier hs-var">RecordDeclExpr</span></a></span></span><span> </span><span class="annot"><a href="Tokens.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Ast.html#ParmVarDeclExpr"><span class="hs-identifier hs-type">ParmVarDeclExpr</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-302"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ Structure declaration</span></span><span>
+</span><span id="line-303"></span><span>
+</span><span id="line-304"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-305"></span><span>        </span><span id="local-6989586621679032687"><span id="local-6989586621679032694"><span id="local-6989586621679032697"><span class="annot"><span class="annottext">Int -&gt; RecordDeclExpr -&gt; ShowS
+[RecordDeclExpr] -&gt; ShowS
+RecordDeclExpr -&gt; String
+(Int -&gt; RecordDeclExpr -&gt; ShowS)
+-&gt; (RecordDeclExpr -&gt; String)
+-&gt; ([RecordDeclExpr] -&gt; ShowS)
+-&gt; Show RecordDeclExpr
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; RecordDeclExpr -&gt; ShowS
+showsPrec :: Int -&gt; RecordDeclExpr -&gt; ShowS
+$cshow :: RecordDeclExpr -&gt; String
+show :: RecordDeclExpr -&gt; String
+$cshowList :: [RecordDeclExpr] -&gt; ShowS
+showList :: [RecordDeclExpr] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span>
+</span><span id="line-306"></span><span>        </span><span class="annot"><span class="hs-comment">-- ^ Allows @'ParmVarDecl'@ to be printed.</span></span><span>
+</span><span id="line-307"></span><span>        </span><span class="hs-special">,</span><span> </span><span id="local-6989586621679032700"><span id="local-6989586621679032706"><span class="annot"><span class="annottext">RecordDeclExpr -&gt; RecordDeclExpr -&gt; Bool
+(RecordDeclExpr -&gt; RecordDeclExpr -&gt; Bool)
+-&gt; (RecordDeclExpr -&gt; RecordDeclExpr -&gt; Bool) -&gt; Eq RecordDeclExpr
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: RecordDeclExpr -&gt; RecordDeclExpr -&gt; Bool
+== :: RecordDeclExpr -&gt; RecordDeclExpr -&gt; Bool
+$c/= :: RecordDeclExpr -&gt; RecordDeclExpr -&gt; Bool
+/= :: RecordDeclExpr -&gt; RecordDeclExpr -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span>
+</span><span id="line-308"></span><span>        </span><span class="annot"><span class="hs-comment">-- ^ Allows @'ParmVarDecl'@ to be compared, needed for unit tests.</span></span><span>
+</span><span id="line-309"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-310"></span><span>
+</span><span id="line-311"></span><span class="annot"><span class="hs-comment">-- | Defines the @'BuiltinType'@ expression which lists available rizz data types (implementating Keyword @'Token'@ types).</span></span><span>
+</span><span id="line-312"></span><span class="hs-keyword">data</span><span> </span><span id="BuiltinType"><span class="annot"><a href="Ast.html#BuiltinType"><span class="hs-identifier hs-var">BuiltinType</span></a></span></span><span>
+</span><span id="line-313"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="Boolean"><span class="annot"><a href="Ast.html#Boolean"><span class="hs-identifier hs-var">Boolean</span></a></span></span><span>
+</span><span id="line-314"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ Boolean type keyword, see Bool @'Keyword'@</span></span><span>
+</span><span id="line-315"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="Character"><span class="annot"><a href="Ast.html#Character"><span class="hs-identifier hs-var">Character</span></a></span></span><span>
+</span><span id="line-316"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ Character type keyword, see Char @'Keyword'@</span></span><span>
+</span><span id="line-317"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="Integer"><span class="annot"><a href="Ast.html#Integer"><span class="hs-identifier hs-var">Integer</span></a></span></span><span>
+</span><span id="line-318"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ Integer type keyword, see Int @'Keyword'@</span></span><span>
+</span><span id="line-319"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="SinglePrecision"><span class="annot"><a href="Ast.html#SinglePrecision"><span class="hs-identifier hs-var">SinglePrecision</span></a></span></span><span>
+</span><span id="line-320"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ Float type keyword, see Float @'Keyword'@</span></span><span>
+</span><span id="line-321"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="ListType"><span class="annot"><a href="Ast.html#ListType"><span class="hs-identifier hs-var">ListType</span></a></span></span><span> </span><span class="annot"><a href="Ast.html#BuiltinType"><span class="hs-identifier hs-type">BuiltinType</span></a></span><span>
+</span><span id="line-322"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ List type, expressed in rizz code as @\`[Int]\`@, @\`[[Int]]\`@, etc.</span></span><span>
+</span><span id="line-323"></span><span>
+</span><span id="line-324"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-325"></span><span>        </span><span id="local-6989586621679032715"><span id="local-6989586621679032719"><span id="local-6989586621679032722"><span class="annot"><span class="annottext">Int -&gt; BuiltinType -&gt; ShowS
+[BuiltinType] -&gt; ShowS
+BuiltinType -&gt; String
+(Int -&gt; BuiltinType -&gt; ShowS)
+-&gt; (BuiltinType -&gt; String)
+-&gt; ([BuiltinType] -&gt; ShowS)
+-&gt; Show BuiltinType
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; BuiltinType -&gt; ShowS
+showsPrec :: Int -&gt; BuiltinType -&gt; ShowS
+$cshow :: BuiltinType -&gt; String
+show :: BuiltinType -&gt; String
+$cshowList :: [BuiltinType] -&gt; ShowS
+showList :: [BuiltinType] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span>
+</span><span id="line-326"></span><span>        </span><span class="annot"><span class="hs-comment">-- ^ Allows @'BuiltinType'@ to be printed.</span></span><span>
+</span><span id="line-327"></span><span>        </span><span class="hs-special">,</span><span> </span><span id="local-6989586621679032725"><span id="local-6989586621679032728"><span class="annot"><span class="annottext">BuiltinType -&gt; BuiltinType -&gt; Bool
+(BuiltinType -&gt; BuiltinType -&gt; Bool)
+-&gt; (BuiltinType -&gt; BuiltinType -&gt; Bool) -&gt; Eq BuiltinType
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: BuiltinType -&gt; BuiltinType -&gt; Bool
+== :: BuiltinType -&gt; BuiltinType -&gt; Bool
+$c/= :: BuiltinType -&gt; BuiltinType -&gt; Bool
+/= :: BuiltinType -&gt; BuiltinType -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span>
+</span><span id="line-328"></span><span>        </span><span class="annot"><span class="hs-comment">-- ^ Allows @'BuiltinType'@ to be compared, needed for unit tests.</span></span><span>
+</span><span id="line-329"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-330"></span><span>
+</span><span id="line-331"></span><span class="annot"><span class="hs-comment">-- | Defines the @'VarDeclStmt'@ expression (extended constructor for @'VarDecl'@).</span></span><span>
+</span><span id="line-332"></span><span class="hs-keyword">data</span><span> </span><span id="VarDeclStmt"><span class="annot"><a href="Ast.html#VarDeclStmt"><span class="hs-identifier hs-var">VarDeclStmt</span></a></span></span><span>
+</span><span id="line-333"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="VarDeclStmt"><span class="annot"><a href="Ast.html#VarDeclStmt"><span class="hs-identifier hs-var">VarDeclStmt</span></a></span></span><span> </span><span class="annot"><a href="Ast.html#BuiltinType"><span class="hs-identifier hs-type">BuiltinType</span></a></span><span> </span><span class="annot"><a href="Tokens.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span> </span><span class="annot"><a href="Tokens.html#AssignOp"><span class="hs-identifier hs-type">AssignOp</span></a></span><span> </span><span class="annot"><a href="Ast.html#ParmCallDecl"><span class="hs-identifier hs-type">ParmCallDecl</span></a></span><span>
+</span><span id="line-334"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ Variable declaration, see @'VarDecl'@ definition.</span></span><span>
+</span><span id="line-335"></span><span>    </span><span>
+</span><span id="line-336"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-337"></span><span>        </span><span id="local-6989586621679032731"><span id="local-6989586621679032741"><span id="local-6989586621679032744"><span class="annot"><span class="annottext">Int -&gt; VarDeclStmt -&gt; ShowS
+[VarDeclStmt] -&gt; ShowS
+VarDeclStmt -&gt; String
+(Int -&gt; VarDeclStmt -&gt; ShowS)
+-&gt; (VarDeclStmt -&gt; String)
+-&gt; ([VarDeclStmt] -&gt; ShowS)
+-&gt; Show VarDeclStmt
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; VarDeclStmt -&gt; ShowS
+showsPrec :: Int -&gt; VarDeclStmt -&gt; ShowS
+$cshow :: VarDeclStmt -&gt; String
+show :: VarDeclStmt -&gt; String
+$cshowList :: [VarDeclStmt] -&gt; ShowS
+showList :: [VarDeclStmt] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span>
+</span><span id="line-338"></span><span>        </span><span class="annot"><span class="hs-comment">-- ^ Allows @'VarDeclStmt'@ to be printed.</span></span><span>
+</span><span id="line-339"></span><span>        </span><span class="hs-special">,</span><span> </span><span id="local-6989586621679032747"><span id="local-6989586621679032756"><span class="annot"><span class="annottext">VarDeclStmt -&gt; VarDeclStmt -&gt; Bool
+(VarDeclStmt -&gt; VarDeclStmt -&gt; Bool)
+-&gt; (VarDeclStmt -&gt; VarDeclStmt -&gt; Bool) -&gt; Eq VarDeclStmt
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: VarDeclStmt -&gt; VarDeclStmt -&gt; Bool
+== :: VarDeclStmt -&gt; VarDeclStmt -&gt; Bool
+$c/= :: VarDeclStmt -&gt; VarDeclStmt -&gt; Bool
+/= :: VarDeclStmt -&gt; VarDeclStmt -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span>
+</span><span id="line-340"></span><span>        </span><span class="annot"><span class="hs-comment">-- ^ Allows @'VarDeclStmt'@ to be compared, needed for unit tests.</span></span><span>
+</span><span id="line-341"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-342"></span><span>
+</span><span id="line-343"></span><span class="hs-comment">-- | Defines the @'DeclStmt'@ expression (extended constructor for @'DeclStmt'@).</span><span>
+</span><span id="line-344"></span><span class="hs-comment">--</span><span>
+</span><span id="line-345"></span><span class="hs-comment">-- === __Example__</span><span>
+</span><span id="line-346"></span><span class="hs-comment">--</span><span>
+</span><span id="line-347"></span><span class="hs-comment">-- A GHCI syntax example to declare a @'ParmVarDecl'@:</span><span>
+</span><span id="line-348"></span><span class="hs-comment">--</span><span>
+</span><span id="line-349"></span><span class="hs-comment">-- &gt;&gt;&gt; DeclAssignStmtLiteral &quot;var&quot; DivEqual (ParmCallDeclLiteral (BoolLiteral True))</span><span>
+</span><span id="line-350"></span><span class="hs-comment">-- &gt;&gt;&gt; DeclAssignStmtUnary (UnaryOperatorExpr &quot;var&quot; IdentIncrement)</span><span>
+</span><span id="line-351"></span><span class="hs-keyword">data</span><span> </span><span id="DeclStmt"><span class="annot"><a href="Ast.html#DeclStmt"><span class="hs-identifier hs-var">DeclStmt</span></a></span></span><span>
+</span><span id="line-352"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="DeclAssignStmtLiteral"><span class="annot"><a href="Ast.html#DeclAssignStmtLiteral"><span class="hs-identifier hs-var">DeclAssignStmtLiteral</span></a></span></span><span> </span><span class="annot"><a href="Tokens.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span> </span><span class="annot"><a href="Tokens.html#AssignOp"><span class="hs-identifier hs-type">AssignOp</span></a></span><span> </span><span class="annot"><a href="Ast.html#ParmCallDecl"><span class="hs-identifier hs-type">ParmCallDecl</span></a></span><span>
+</span><span id="line-353"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ Variable assignment, expressed in rizz code like @\`foo = bar\`@.</span></span><span>
+</span><span id="line-354"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="DeclAssignStmtUnary"><span class="annot"><a href="Ast.html#DeclAssignStmtUnary"><span class="hs-identifier hs-var">DeclAssignStmtUnary</span></a></span></span><span> </span><span class="annot"><a href="Ast.html#UnaryOperatorExpr"><span class="hs-identifier hs-type">UnaryOperatorExpr</span></a></span><span>
+</span><span id="line-355"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ Variable assignment via a @'UnaryOp'@, expressed in rizz code like @\`foo++\`@.</span></span><span>
+</span><span id="line-356"></span><span>
+</span><span id="line-357"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-358"></span><span>        </span><span id="local-6989586621679032761"><span id="local-6989586621679032770"><span id="local-6989586621679032773"><span class="annot"><span class="annottext">Int -&gt; DeclStmt -&gt; ShowS
+[DeclStmt] -&gt; ShowS
+DeclStmt -&gt; String
+(Int -&gt; DeclStmt -&gt; ShowS)
+-&gt; (DeclStmt -&gt; String) -&gt; ([DeclStmt] -&gt; ShowS) -&gt; Show DeclStmt
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; DeclStmt -&gt; ShowS
+showsPrec :: Int -&gt; DeclStmt -&gt; ShowS
+$cshow :: DeclStmt -&gt; String
+show :: DeclStmt -&gt; String
+$cshowList :: [DeclStmt] -&gt; ShowS
+showList :: [DeclStmt] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span>
+</span><span id="line-359"></span><span>        </span><span class="annot"><span class="hs-comment">-- ^ Allows @'DeclStmt'@ to be printed.</span></span><span>
+</span><span id="line-360"></span><span>        </span><span class="hs-special">,</span><span> </span><span id="local-6989586621679032776"><span id="local-6989586621679032783"><span class="annot"><span class="annottext">DeclStmt -&gt; DeclStmt -&gt; Bool
+(DeclStmt -&gt; DeclStmt -&gt; Bool)
+-&gt; (DeclStmt -&gt; DeclStmt -&gt; Bool) -&gt; Eq DeclStmt
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: DeclStmt -&gt; DeclStmt -&gt; Bool
+== :: DeclStmt -&gt; DeclStmt -&gt; Bool
+$c/= :: DeclStmt -&gt; DeclStmt -&gt; Bool
+/= :: DeclStmt -&gt; DeclStmt -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span>
+</span><span id="line-361"></span><span>        </span><span class="annot"><span class="hs-comment">-- ^ Allows @'DeclStmt'@ to be compared, needed for unit tests.</span></span><span>
+</span><span id="line-362"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-363"></span><span>
+</span><span id="line-364"></span><span class="hs-comment">-- | Defines the @'UnaryOperatorExpr'@ expression (extended constructor for @'UnaryOperator'@).</span><span>
+</span><span id="line-365"></span><span class="hs-comment">--</span><span>
+</span><span id="line-366"></span><span class="hs-comment">-- === __Example__</span><span>
+</span><span id="line-367"></span><span class="hs-comment">--</span><span>
+</span><span id="line-368"></span><span class="hs-comment">-- A GHCI syntax example to declare a @'UnaryOperatorExpr'@:</span><span>
+</span><span id="line-369"></span><span class="hs-comment">--</span><span>
+</span><span id="line-370"></span><span class="hs-comment">-- &gt;&gt;&gt; UnaryOperatorExpr &quot;foo&quot; IdentIncrement</span><span>
+</span><span id="line-371"></span><span class="hs-keyword">data</span><span> </span><span id="UnaryOperatorExpr"><span class="annot"><a href="Ast.html#UnaryOperatorExpr"><span class="hs-identifier hs-var">UnaryOperatorExpr</span></a></span></span><span>
+</span><span id="line-372"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="UnaryOperatorExpr"><span class="annot"><a href="Ast.html#UnaryOperatorExpr"><span class="hs-identifier hs-var">UnaryOperatorExpr</span></a></span></span><span> </span><span class="annot"><a href="Tokens.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span> </span><span class="annot"><a href="Tokens.html#UnaryOp"><span class="hs-identifier hs-type">UnaryOp</span></a></span><span>
+</span><span id="line-373"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ Variable declaration, see @'UnaryOperator'@ definition.</span></span><span>
+</span><span id="line-374"></span><span>
+</span><span id="line-375"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-376"></span><span>        </span><span id="local-6989586621679032787"><span id="local-6989586621679032794"><span id="local-6989586621679032797"><span class="annot"><span class="annottext">Int -&gt; UnaryOperatorExpr -&gt; ShowS
+[UnaryOperatorExpr] -&gt; ShowS
+UnaryOperatorExpr -&gt; String
+(Int -&gt; UnaryOperatorExpr -&gt; ShowS)
+-&gt; (UnaryOperatorExpr -&gt; String)
+-&gt; ([UnaryOperatorExpr] -&gt; ShowS)
+-&gt; Show UnaryOperatorExpr
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; UnaryOperatorExpr -&gt; ShowS
+showsPrec :: Int -&gt; UnaryOperatorExpr -&gt; ShowS
+$cshow :: UnaryOperatorExpr -&gt; String
+show :: UnaryOperatorExpr -&gt; String
+$cshowList :: [UnaryOperatorExpr] -&gt; ShowS
+showList :: [UnaryOperatorExpr] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span>
+</span><span id="line-377"></span><span>        </span><span class="annot"><span class="hs-comment">-- ^ Allows @'UnaryOperatorExpr'@ to be printed.</span></span><span>
+</span><span id="line-378"></span><span>        </span><span class="hs-special">,</span><span> </span><span id="local-6989586621679032800"><span id="local-6989586621679032806"><span class="annot"><span class="annottext">UnaryOperatorExpr -&gt; UnaryOperatorExpr -&gt; Bool
+(UnaryOperatorExpr -&gt; UnaryOperatorExpr -&gt; Bool)
+-&gt; (UnaryOperatorExpr -&gt; UnaryOperatorExpr -&gt; Bool)
+-&gt; Eq UnaryOperatorExpr
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: UnaryOperatorExpr -&gt; UnaryOperatorExpr -&gt; Bool
+== :: UnaryOperatorExpr -&gt; UnaryOperatorExpr -&gt; Bool
+$c/= :: UnaryOperatorExpr -&gt; UnaryOperatorExpr -&gt; Bool
+/= :: UnaryOperatorExpr -&gt; UnaryOperatorExpr -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span>
+</span><span id="line-379"></span><span>        </span><span class="annot"><span class="hs-comment">-- ^ Allows @'UnaryOperatorExpr'@ to be compared, needed for unit tests.BinaryOp</span></span><span>
+</span><span id="line-380"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-381"></span><span>
+</span><span id="line-382"></span><span class="hs-comment">-- | Defines @'BinaryOp'@'s parameters.</span><span>
+</span><span id="line-383"></span><span class="hs-comment">--</span><span>
+</span><span id="line-384"></span><span class="hs-comment">-- === __Examples__</span><span>
+</span><span id="line-385"></span><span class="hs-comment">--</span><span>
+</span><span id="line-386"></span><span class="hs-comment">-- A GHCI syntax example to declare a @'BinaryOpParm'@:</span><span>
+</span><span id="line-387"></span><span class="hs-comment">--</span><span>
+</span><span id="line-388"></span><span class="hs-comment">-- &gt;&gt;&gt; BinaryOpParm (ParmCallDeclLiteral (IntLiteral 42))</span><span>
+</span><span id="line-389"></span><span class="hs-keyword">data</span><span> </span><span id="BinaryOpParm"><span class="annot"><a href="Ast.html#BinaryOpParm"><span class="hs-identifier hs-var">BinaryOpParm</span></a></span></span><span>
+</span><span id="line-390"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="BinaryOpParm"><span class="annot"><a href="Ast.html#BinaryOpParm"><span class="hs-identifier hs-var">BinaryOpParm</span></a></span></span><span> </span><span class="annot"><a href="Ast.html#ParmCallDecl"><span class="hs-identifier hs-type">ParmCallDecl</span></a></span><span>
+</span><span id="line-391"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ Function call which should be interpreted and evaluated.</span></span><span>
+</span><span id="line-392"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="BinaryOpParmBOp"><span class="annot"><a href="Ast.html#BinaryOpParmBOp"><span class="hs-identifier hs-var">BinaryOpParmBOp</span></a></span></span><span> </span><span class="annot"><a href="Ast.html#BinaryOpExpr"><span class="hs-identifier hs-type">BinaryOpExpr</span></a></span><span>
+</span><span id="line-393"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ Any other @'BinaryOpExpr'@.</span></span><span>
+</span><span id="line-394"></span><span>
+</span><span id="line-395"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-396"></span><span>        </span><span id="local-6989586621679032812"><span id="local-6989586621679032818"><span id="local-6989586621679032822"><span class="annot"><span class="annottext">Int -&gt; BinaryOpParm -&gt; ShowS
+[BinaryOpParm] -&gt; ShowS
+BinaryOpParm -&gt; String
+(Int -&gt; BinaryOpParm -&gt; ShowS)
+-&gt; (BinaryOpParm -&gt; String)
+-&gt; ([BinaryOpParm] -&gt; ShowS)
+-&gt; Show BinaryOpParm
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; BinaryOpParm -&gt; ShowS
+showsPrec :: Int -&gt; BinaryOpParm -&gt; ShowS
+$cshow :: BinaryOpParm -&gt; String
+show :: BinaryOpParm -&gt; String
+$cshowList :: [BinaryOpParm] -&gt; ShowS
+showList :: [BinaryOpParm] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span>
+</span><span id="line-397"></span><span>        </span><span class="annot"><span class="hs-comment">-- ^ Allows @'BinaryOpParm'@ to be printed.</span></span><span>
+</span><span id="line-398"></span><span>        </span><span class="hs-special">,</span><span> </span><span id="local-6989586621679032825"><span id="local-6989586621679032829"><span class="annot"><span class="annottext">BinaryOpParm -&gt; BinaryOpParm -&gt; Bool
+(BinaryOpParm -&gt; BinaryOpParm -&gt; Bool)
+-&gt; (BinaryOpParm -&gt; BinaryOpParm -&gt; Bool) -&gt; Eq BinaryOpParm
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: BinaryOpParm -&gt; BinaryOpParm -&gt; Bool
+== :: BinaryOpParm -&gt; BinaryOpParm -&gt; Bool
+$c/= :: BinaryOpParm -&gt; BinaryOpParm -&gt; Bool
+/= :: BinaryOpParm -&gt; BinaryOpParm -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span>
+</span><span id="line-399"></span><span>        </span><span class="annot"><span class="hs-comment">-- ^ Allows @'BinaryOpParm'@ to be compared, needed for unit tests.</span></span><span>
+</span><span id="line-400"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-401"></span><span>
+</span><span id="line-402"></span><span class="hs-comment">-- | Defines @'BinaryOpExpr'@ as any expression that can be evaluated by equality or arithmetic operators.</span><span>
+</span><span id="line-403"></span><span class="hs-comment">--</span><span>
+</span><span id="line-404"></span><span class="hs-comment">-- === __Examples__</span><span>
+</span><span id="line-405"></span><span class="hs-comment">--</span><span>
+</span><span id="line-406"></span><span class="hs-comment">-- A GHCI syntax example to declare a @'BinaryOpExpr'@:</span><span>
+</span><span id="line-407"></span><span class="hs-comment">--</span><span>
+</span><span id="line-408"></span><span class="hs-comment">-- &gt;&gt;&gt; BinaryOpExpr (BinaryOpParm (ParmCallDeclIdent &quot;x&quot;)) Div (BinaryOpParm (ParmCallDeclLiteral (IntLiteral 42)))</span><span>
+</span><span id="line-409"></span><span class="hs-comment">-- &gt;&gt;&gt; BinaryOpConst (ParmCallDeclLiteral (IntLiteral 84))</span><span>
+</span><span id="line-410"></span><span class="hs-comment">-- &gt;&gt;&gt; BinaryOpExpr (BinaryOpParm (ParmCallDeclLiteral (IntLiteral 10))) Add (BinaryOpParmBOp (BinaryOpExpr (BinaryOpParm (ParmCallDeclLiteral (IntLiteral 45))) Add (BinaryOpParm (ParmCallDeclExpr (CallExprDecl &quot;foo&quot; [ParmCallDeclIdent &quot;bar&quot;])))))</span><span>
+</span><span id="line-411"></span><span class="hs-keyword">data</span><span> </span><span id="BinaryOpExpr"><span class="annot"><a href="Ast.html#BinaryOpExpr"><span class="hs-identifier hs-var">BinaryOpExpr</span></a></span></span><span>
+</span><span id="line-412"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="BinaryOpExpr"><span class="annot"><a href="Ast.html#BinaryOpExpr"><span class="hs-identifier hs-var">BinaryOpExpr</span></a></span></span><span> </span><span class="annot"><a href="Ast.html#BinaryOpParm"><span class="hs-identifier hs-type">BinaryOpParm</span></a></span><span> </span><span class="annot"><a href="Tokens.html#BinaryOp"><span class="hs-identifier hs-type">BinaryOp</span></a></span><span> </span><span class="annot"><a href="Ast.html#BinaryOpParm"><span class="hs-identifier hs-type">BinaryOpParm</span></a></span><span>
+</span><span id="line-413"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ Two @'BinaryOpParm'@ being compared with any @'BinaryOp'@ operator.</span></span><span>
+</span><span id="line-414"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="BinaryOpConst"><span class="annot"><a href="Ast.html#BinaryOpConst"><span class="hs-identifier hs-var">BinaryOpConst</span></a></span></span><span> </span><span class="annot"><a href="Ast.html#ParmCallDecl"><span class="hs-identifier hs-type">ParmCallDecl</span></a></span><span>
+</span><span id="line-415"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ Any literal value defined by @'ParmCallDecl'@.</span></span><span>
+</span><span id="line-416"></span><span>
+</span><span id="line-417"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-418"></span><span>        </span><span id="local-6989586621679032834"><span id="local-6989586621679032843"><span id="local-6989586621679032846"><span class="annot"><span class="annottext">Int -&gt; BinaryOpExpr -&gt; ShowS
+[BinaryOpExpr] -&gt; ShowS
+BinaryOpExpr -&gt; String
+(Int -&gt; BinaryOpExpr -&gt; ShowS)
+-&gt; (BinaryOpExpr -&gt; String)
+-&gt; ([BinaryOpExpr] -&gt; ShowS)
+-&gt; Show BinaryOpExpr
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; BinaryOpExpr -&gt; ShowS
+showsPrec :: Int -&gt; BinaryOpExpr -&gt; ShowS
+$cshow :: BinaryOpExpr -&gt; String
+show :: BinaryOpExpr -&gt; String
+$cshowList :: [BinaryOpExpr] -&gt; ShowS
+showList :: [BinaryOpExpr] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span>
+</span><span id="line-419"></span><span>        </span><span class="annot"><span class="hs-comment">-- ^ Allows @'BinaryOpExpr'@ to be printed.</span></span><span>
+</span><span id="line-420"></span><span>        </span><span class="hs-special">,</span><span> </span><span id="local-6989586621679032849"><span id="local-6989586621679032856"><span class="annot"><span class="annottext">BinaryOpExpr -&gt; BinaryOpExpr -&gt; Bool
+(BinaryOpExpr -&gt; BinaryOpExpr -&gt; Bool)
+-&gt; (BinaryOpExpr -&gt; BinaryOpExpr -&gt; Bool) -&gt; Eq BinaryOpExpr
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: BinaryOpExpr -&gt; BinaryOpExpr -&gt; Bool
+== :: BinaryOpExpr -&gt; BinaryOpExpr -&gt; Bool
+$c/= :: BinaryOpExpr -&gt; BinaryOpExpr -&gt; Bool
+/= :: BinaryOpExpr -&gt; BinaryOpExpr -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span>
+</span><span id="line-421"></span><span>        </span><span class="annot"><span class="hs-comment">-- ^ Allows @'BinaryOpExpr'@ to be compared, needed for unit tests.</span></span><span>
+</span><span id="line-422"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-423"></span><span>
+</span><span id="line-424"></span><span class="annot"><span class="hs-comment">-- | Defines @'ParmCallDecl'@ as any value that can be evaluated. It also binds to function call's parameters.</span></span><span>
+</span><span id="line-425"></span><span class="hs-keyword">data</span><span> </span><span id="ParmCallDecl"><span class="annot"><a href="Ast.html#ParmCallDecl"><span class="hs-identifier hs-var">ParmCallDecl</span></a></span></span><span>
+</span><span id="line-426"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="ParmCallDeclLiteral"><span class="annot"><a href="Ast.html#ParmCallDeclLiteral"><span class="hs-identifier hs-var">ParmCallDeclLiteral</span></a></span></span><span> </span><span class="annot"><a href="Tokens.html#Literal"><span class="hs-identifier hs-type">Literal</span></a></span><span>
+</span><span id="line-427"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ Literal value defined by Literal @'Token'@, expressed in rizz code like @\`42\`@.</span></span><span>
+</span><span id="line-428"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="ParmCallDeclIdent"><span class="annot"><a href="Ast.html#ParmCallDeclIdent"><span class="hs-identifier hs-var">ParmCallDeclIdent</span></a></span></span><span> </span><span class="annot"><a href="Tokens.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span>
+</span><span id="line-429"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ Identifier, which is a bound variable, expressed in rizz code like @\`foo\`@.</span></span><span>
+</span><span id="line-430"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="ParmCallDeclExpr"><span class="annot"><a href="Ast.html#ParmCallDeclExpr"><span class="hs-identifier hs-var">ParmCallDeclExpr</span></a></span></span><span> </span><span class="annot"><a href="Ast.html#CallExprDecl"><span class="hs-identifier hs-type">CallExprDecl</span></a></span><span>
+</span><span id="line-431"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ Function call, defined by @'CallExprDecl'@, see @'CallExprDecl'@.</span></span><span>
+</span><span id="line-432"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span id="ParmCallBExpr"><span class="annot"><a href="Ast.html#ParmCallBExpr"><span class="hs-identifier hs-var">ParmCallBExpr</span></a></span></span><span> </span><span class="annot"><a href="Ast.html#BinaryOpParm"><span class="hs-identifier hs-type">BinaryOpParm</span></a></span><span> </span><span class="annot"><a href="Tokens.html#BinaryOp"><span class="hs-identifier hs-type">BinaryOp</span></a></span><span> </span><span class="annot"><a href="Ast.html#BinaryOpParm"><span class="hs-identifier hs-type">BinaryOpParm</span></a></span><span>
+</span><span id="line-433"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ Binary expression, an exact copy of @'BinaryOpExpr'@ without self calling @'BinaryOpConst'@ allowing expression in rizz code like @\`x - 1\`@ in function calls.</span></span><span>
+</span><span id="line-434"></span><span>
+</span><span id="line-435"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-436"></span><span>        </span><span id="local-6989586621679032863"><span id="local-6989586621679032877"><span id="local-6989586621679032880"><span class="annot"><span class="annottext">Int -&gt; ParmCallDecl -&gt; ShowS
+[ParmCallDecl] -&gt; ShowS
+ParmCallDecl -&gt; String
+(Int -&gt; ParmCallDecl -&gt; ShowS)
+-&gt; (ParmCallDecl -&gt; String)
+-&gt; ([ParmCallDecl] -&gt; ShowS)
+-&gt; Show ParmCallDecl
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; ParmCallDecl -&gt; ShowS
+showsPrec :: Int -&gt; ParmCallDecl -&gt; ShowS
+$cshow :: ParmCallDecl -&gt; String
+show :: ParmCallDecl -&gt; String
+$cshowList :: [ParmCallDecl] -&gt; ShowS
+showList :: [ParmCallDecl] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span>
+</span><span id="line-437"></span><span>        </span><span class="annot"><span class="hs-comment">-- ^ Allows @'ParmCallDecl'@ to be printed.</span></span><span>
+</span><span id="line-438"></span><span>        </span><span class="hs-special">,</span><span> </span><span id="local-6989586621679032883"><span id="local-6989586621679032893"><span class="annot"><span class="annottext">ParmCallDecl -&gt; ParmCallDecl -&gt; Bool
+(ParmCallDecl -&gt; ParmCallDecl -&gt; Bool)
+-&gt; (ParmCallDecl -&gt; ParmCallDecl -&gt; Bool) -&gt; Eq ParmCallDecl
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: ParmCallDecl -&gt; ParmCallDecl -&gt; Bool
+== :: ParmCallDecl -&gt; ParmCallDecl -&gt; Bool
+$c/= :: ParmCallDecl -&gt; ParmCallDecl -&gt; Bool
+/= :: ParmCallDecl -&gt; ParmCallDecl -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span>
+</span><span id="line-439"></span><span>        </span><span class="annot"><span class="hs-comment">-- ^ Allows @'ParmCallDecl'@ to be compared, needed for unit tests.</span></span><span>
+</span><span id="line-440"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-441"></span><span>
+</span><span id="line-442"></span><span class="annot"><span class="hs-comment">-- | Defines @'CallExprDecl'@ as a function call expression.</span></span><span>
+</span><span id="line-443"></span><span class="hs-keyword">data</span><span> </span><span id="CallExprDecl"><span class="annot"><a href="Ast.html#CallExprDecl"><span class="hs-identifier hs-var">CallExprDecl</span></a></span></span><span>
+</span><span id="line-444"></span><span>    </span><span class="hs-glyph">=</span><span> </span><span id="CallExprDecl"><span class="annot"><a href="Ast.html#CallExprDecl"><span class="hs-identifier hs-var">CallExprDecl</span></a></span></span><span> </span><span class="annot"><a href="Tokens.html#Identifier"><span class="hs-identifier hs-type">Identifier</span></a></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Ast.html#ParmCallDecl"><span class="hs-identifier hs-type">ParmCallDecl</span></a></span><span class="hs-special">]</span><span>
+</span><span id="line-445"></span><span>    </span><span class="annot"><span class="hs-comment">-- ^ Function call expression, actually 'calling' another function.</span></span><span>
+</span><span id="line-446"></span><span>
+</span><span id="line-447"></span><span>    </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span>
+</span><span id="line-448"></span><span>        </span><span id="local-6989586621679032896"><span id="local-6989586621679032903"><span id="local-6989586621679032906"><span class="annot"><span class="annottext">Int -&gt; CallExprDecl -&gt; ShowS
+[CallExprDecl] -&gt; ShowS
+CallExprDecl -&gt; String
+(Int -&gt; CallExprDecl -&gt; ShowS)
+-&gt; (CallExprDecl -&gt; String)
+-&gt; ([CallExprDecl] -&gt; ShowS)
+-&gt; Show CallExprDecl
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; CallExprDecl -&gt; ShowS
+showsPrec :: Int -&gt; CallExprDecl -&gt; ShowS
+$cshow :: CallExprDecl -&gt; String
+show :: CallExprDecl -&gt; String
+$cshowList :: [CallExprDecl] -&gt; ShowS
+showList :: [CallExprDecl] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span>
+</span><span id="line-449"></span><span>        </span><span class="annot"><span class="hs-comment">-- ^ Allows @'CallExprDecl'@ to be printed.</span></span><span>
+</span><span id="line-450"></span><span>        </span><span class="hs-special">,</span><span> </span><span id="local-6989586621679032909"><span id="local-6989586621679032915"><span class="annot"><span class="annottext">CallExprDecl -&gt; CallExprDecl -&gt; Bool
+(CallExprDecl -&gt; CallExprDecl -&gt; Bool)
+-&gt; (CallExprDecl -&gt; CallExprDecl -&gt; Bool) -&gt; Eq CallExprDecl
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: CallExprDecl -&gt; CallExprDecl -&gt; Bool
+== :: CallExprDecl -&gt; CallExprDecl -&gt; Bool
+$c/= :: CallExprDecl -&gt; CallExprDecl -&gt; Bool
+/= :: CallExprDecl -&gt; CallExprDecl -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span>
+</span><span id="line-451"></span><span>        </span><span class="annot"><span class="hs-comment">-- ^ Allows @'CallExprDecl'@ to be compared, needed for unit tests.</span></span><span>
+</span><span id="line-452"></span><span>    </span><span class="hs-special">)</span><span>
+</span><span id="line-453"></span></pre></body></html>
