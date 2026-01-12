@@ -73,6 +73,7 @@ module Ast (
     , ParmVarDeclExpr       (..)
     , BuiltinType           (..)
     , VarDeclStmt           (..)
+    , RecordDeclExpr        (..)
 
     -- * Statements
     , DeclStmt              (..)
@@ -133,6 +134,12 @@ data Decl
     --  /TODO/: Merge both @'VarDecl'@ and @'Stmt.DeclStmt'@ types as they are almost identical.
     --
     -- Note that a variable that initializes itself is a __semantic violation__!
+    | RecordDecl RecordDeclExpr
+    -- ^ Structure declaration, expressed in rizz code like @\`struct Foo {Int: x; Int y; Bool: alive;}\`@.
+    --
+    -- A @'RecordDecl'@ rizz grammar in-code is as follow, in the given order:
+    --
+    --
 
     deriving (
         Show
@@ -281,6 +288,18 @@ newtype CompoundStmt
 data ParmVarDeclExpr
     = ParmVarDeclExpr BuiltinType Identifier
     -- ^ Function's parameter, see @'ParmVarDecl'@ definition.
+    | ParmVarRecord RecordDeclExpr
+
+    deriving (
+        Show
+        -- ^ Allows @'ParmVarDecl'@ to be printed.
+        , Eq
+        -- ^ Allows @'ParmVarDecl'@ to be compared, needed for unit tests.
+    )
+
+data RecordDeclExpr
+    = RecordDeclExpr Identifier [ParmVarDeclExpr]
+    -- ^ Structure declaration
 
     deriving (
         Show
