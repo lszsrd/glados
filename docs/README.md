@@ -42,7 +42,8 @@ make
 ## 🔦 Usage
 
 ```bash
-./glados [LISP file to interpret]
+./glados-compiler [LISP/rizz files to compile]
+./glados-vm [*.bc files to interpret]
 ```
 
 
