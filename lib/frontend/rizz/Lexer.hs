@@ -81,8 +81,8 @@ lexerWrapper begin ('/': '*': x) (l, c)
 lexerWrapper beg ('/': '/': x) y = lexerWrapper beg (dropWhile (/= '\n') x) y
 lexerWrapper begin ('\n': xs) (l, _) = lexerWrapper begin xs (l + 1, 1)
 lexerWrapper begin stream@(x:xs) (l, col) = case parseKeyword stream
-      <|> fmap (\(a,b,c) -> (Identifier a, b, c)) (parseIdentifier stream)
       <|> parseLiteral stream
+      <|> fmap (\(a,b,c) -> (Identifier a, b, c)) (parseIdentifier stream)
       <|> parsePunctuator stream of
         Just (tok, len, res) -> case lexerWrapper begin res (l, col + len) of
             Left e -> Left e

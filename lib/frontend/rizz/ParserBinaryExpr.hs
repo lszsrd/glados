@@ -107,6 +107,13 @@ getFirstParam (punct : rest) = case punct of
         (param, rest1) <- getFirstParam rest
         Right (punct: param, rest1)
 
+-- | Takes a stream of @'SingleToken'@ as parameter
+--  and returns a __Either __ @'String'@ @'[SingleToken]'@
+--
+-- On success, this function returns a packed Binary Operation Expression.
+-- That means, grouping the first param of the bigger fish.
+-- 
+-- On failure, this function returns a pretty formatted error message.
 packFirstParamH :: [SingleToken] -> Parser [SingleToken]
 packFirstParamH first rest = case first of
     (a@(T.Identifier _, _) :
@@ -115,6 +122,13 @@ packFirstParamH first rest = case first of
         Right (a: x : formatBinOpExpr parm ++ rest1, rest)
     _ -> Right (first, rest)
 
+-- | Takes a stream of @'SingleToken'@ as parameter
+--  and returns a __Either __ @'String'@ @'[SingleToken]'@
+--
+-- On success, this function returns a packed Binary Operation Expression.
+-- That means, grouping the first param of the bigger fish.
+-- 
+-- On failure, this function returns a pretty formatted error message.
 packFirstParam :: Parser [SingleToken]
 packFirstParam t = do
     (first, rest) <- getFirstParam t

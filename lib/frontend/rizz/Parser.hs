@@ -45,6 +45,23 @@ parseReturnType toks = Right (Nothing, toks)
 
 -- | Takes a @'Parser'@ @'SingleToken'@ list as parameter and returns a __Either__ @'String'@ (@'A.Decl'@, [@'SingleToken'@]).
 --
+-- On success, this function returns a tuple made of the parsed return type and the remaining tokens.
+--
+-- On failure, this function return a error message in a @'String'@, this message contain what expected.
+parseRecordDeclExpr :: Parser A.Decl
+parseRecordDeclExpr tokens = do
+    (_, rest) <- H.expectToken (T.Keyword T.Struct)
+        "expected struct" tokens
+    (identifier, rest2) <- H.parseIdentifier rest
+    (_, rest3) <- H.expectToken (T.Punctuator (T.CBracket T.OpenCBracket))
+        "expected '{'" rest2
+    (pvdel, rest4) <- H.parsePVDEList rest3
+    (_, rest5) <- H.expectToken (T.Punctuator (T.CBracket T.CloseCBracket))
+        "expected '}'" rest4
+    Right (A.RecordDecl (A.RecordDeclExpr identifier pvdel), rest5)
+
+-- | Takes a @'Parser'@ @'SingleToken'@ list as parameter and returns a __Either__ @'String'@ (@'A.Decl'@, [@'SingleToken'@]).
+--
 -- On success, this function returns a tuple made of the parsed variable declaration as @'A.VarDecl'@ and the remaining tokens.
 --
 -- On failure, this function returns a pretty formatted error message if invalid syntax or a semicolon is missing.
@@ -53,7 +70,6 @@ parseVarDecl f tokens = do
     (vardecl, rest1) <- H.parseVarDeclStmt f tokens
     (_, rest2) <- H.expectToken (T.Punctuator T.Semicolon) "Expected ';'" rest1
     Right (A.VarDecl vardecl, rest2)
-
 
 parseFunctionDeclH :: Parser T.Identifier
 parseFunctionDeclH tokens = do
@@ -78,7 +94,6 @@ parseFunctionDecl tokens = do
         (A.CompoundStmt []) returntype) rest5
     Right (A.FunctionDecl n pvdelist compStmt returntype, rest6)
 
-
 -- | Takes a @'Parser'@ @'SingleToken'@ list as parameter and returns a __Either__ @'String'@ (@'A.Decl'@, [@'SingleToken'@]).
 --
 -- On success, this function returns a tuple made of the parsed top-level declaration (either a function or variable declaration) and the remaining tokens.
@@ -86,12 +101,12 @@ parseFunctionDecl tokens = do
 -- On failure, this function returns a pretty formatted error message.
 parseTopLevel :: Parser A.Decl
 parseTopLevel tokens@((T.Keyword T.Fn, _) : _) = parseFunctionDecl tokens
+parseTopLevel tokens@((T.Keyword T.Struct, _) : _) = parseRecordDeclExpr tokens
 parseTopLevel tokens =
     case H.parseBuiltinType tokens of
         Right _ -> parseVarDecl
             (A.FunctionDecl "" [] (A.CompoundStmt []) Nothing) tokens
         Left err -> Left err
-
 
 -- | Takes a @'Parser'@ @'SingleToken'@ list as parameter and returns a __Either__ @'String'@ ([@'A.Decl'@], [@'SingleToken'@]).
 --

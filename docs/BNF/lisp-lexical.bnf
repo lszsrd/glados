@@ -1,0 +1,3 @@
+list -> '(' expression* ')'
+expression -> atom | list
+atom -> number | name | string | operator
