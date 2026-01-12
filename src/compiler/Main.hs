@@ -16,8 +16,8 @@ import Data.List (isPrefixOf, group, sort)
 
 import Format (error)
 
-import Lexer (lexer)
-import Parser (parser)
+import Rizz.Lexer (lexer)
+import Rizz.Parser (parser)
 import Bytecode (compileDecl)
 
 import Options (Options (..))

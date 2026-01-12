@@ -11,10 +11,10 @@ module TestsParser (
 
 import Test.HUnit
 
-import Lexer
-import qualified Tokens as T
-import Parser (parser)
-import qualified Ast as A
+import Rizz.Lexer
+import qualified Rizz.Tokens as T
+import Rizz.Parser (parser)
+import qualified Rizz.Ast as A
 
 runParse :: String -> Either String [A.Decl]
 runParse s = do

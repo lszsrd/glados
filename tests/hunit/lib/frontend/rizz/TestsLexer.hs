@@ -29,8 +29,8 @@ module TestsLexer (
 
 import Test.HUnit
 
-import Lexer
-import Tokens
+import Rizz.Lexer
+import Rizz.Tokens
 
 tests = TestList                        [
     testsParseDigit, testsParseNonDigit, testsParseIdentifier
@@ -76,7 +76,8 @@ testsParseKeyword = TestList            [
     , parseKeywordTest4, parseKeywordTest5, parseKeywordTest6
     , parseKeywordTest7, parseKeywordTest8, parseKeywordTest9
     , parseKeywordTest10, parseKeywordTest11, parseKeywordTest12
-    , parseKeywordTest13, parseKeywordTest14
+    , parseKeywordTest13, parseKeywordTest14, parseKeywordTest15
+    , parseKeywordTest16
                                         ]
 
 parseKeywordTest1 = TestCase (assertEqual "parseKeyword \"Bool\"" (Just (Keyword Bool, 4, [])) (parseKeyword "Bool"))
@@ -91,8 +92,10 @@ parseKeywordTest9 = TestCase (assertEqual "parseKeyword \"while\"" (Just (Keywor
 parseKeywordTest10 = TestCase (assertEqual "parseKeyword \"foreach  \"" (Just (Keyword Foreach, 7, "  ")) (parseKeyword "foreach  "))
 parseKeywordTest11 = TestCase (assertEqual "parseKeyword \"for\"" (Just (Keyword For, 3, [])) (parseKeyword "for"))
 parseKeywordTest12 = TestCase (assertEqual "parseKeyword \"ret 1\"" (Just (Keyword Ret, 3, " 1")) (parseKeyword "ret 1"))
-parseKeywordTest13 = TestCase (assertEqual "parseKeyword \"Boolfoo\"" Nothing (parseKeyword "Boolfoo"))
-parseKeywordTest14 = TestCase (assertEqual "parseKeyword \"\"" Nothing (parseKeyword ""))
+parseKeywordTest13 = TestCase (assertEqual "parseKeyword \"struct Foo\"" (Just (Keyword Struct, 6, " Foo")) (parseKeyword "struct Foo"))
+parseKeywordTest14 = TestCase (assertEqual "parseKeyword \"Int] i\"" (Just (Keyword Int, 3, "] i")) (parseKeyword "Int] i"))
+parseKeywordTest15 = TestCase (assertEqual "parseKeyword \"Boolfoo\"" Nothing (parseKeyword "Boolfoo"))
+parseKeywordTest16 = TestCase (assertEqual "parseKeyword \"\"" Nothing (parseKeyword ""))
 
 testsParseLiteral = TestList            [
     parseLiteralTest1, parseLiteralTest2, parseLiteralTest3
@@ -149,9 +152,9 @@ parsePunctuatorTest29 = TestCase (assertEqual "parsePunctuator \":42\"" (Just (P
 parsePunctuatorTest30 = TestCase (assertEqual "parsePunctuator \";;\"" (Just (Punctuator Semicolon, 1, ";")) (parsePunctuator ";;"))
 parsePunctuatorTest31 = TestCase (assertEqual "parsePunctuator \",,,\"" (Just (Punctuator Comma, 1, ",,")) (parsePunctuator ",,,"))
 parsePunctuatorTest32 = TestCase (assertEqual "parsePunctuator \"=\"" (Just (Punctuator (AssignOp Equal), 1, [])) (parsePunctuator "="))
-parsePunctuatorTest33 = TestCase (assertEqual "parsePunctuator \"" Nothing (parsePunctuator ""))
-parsePunctuatorTest34 = TestCase (assertEqual "parsePunctuator @" Nothing (parsePunctuator "@"))
-parsePunctuatorTest35 = TestCase (assertEqual "parsePunctuator |" Nothing (parsePunctuator "|"))
+parsePunctuatorTest33 = TestCase (assertEqual "parsePunctuator \"@\"" Nothing (parsePunctuator "@"))
+parsePunctuatorTest34 = TestCase (assertEqual "parsePunctuator \"|\"" Nothing (parsePunctuator "|"))
+parsePunctuatorTest35 = TestCase (assertEqual "parsePunctuator \"?\"" (Just (Punctuator QMark, 1, [])) (parsePunctuator "?"))
 
 testsParseMultiLineComment = TestList   [
     parseMultiLineCommentTest1, parseMultiLineCommentTest2, parseMultiLineCommentTest3
