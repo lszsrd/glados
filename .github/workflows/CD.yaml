@@ -17,6 +17,7 @@ jobs:
     if: github.repository == 'lszsrd/glados' && github.event.workflow_run.conclusion == 'success'
     name: Generating documentation
     runs-on: ubuntu-24.04
+    container: epitechcontent/epitest-docker:latest
 
     steps:
     - name: Cloning repository
