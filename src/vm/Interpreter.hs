@@ -20,7 +20,6 @@ import OpCodes (Operand (..), OpCode (..))
 import Function (Function)
 import Stack (Stack)
 import Env (Env)
-import Debug.Trace (trace)
 
 -- invoke a new function and runs it
 call :: String -> [Function] -> [Function] -> Env -> IO (Either String (Maybe Operand))
@@ -64,7 +63,8 @@ exec symtab bOps (PushFloat x: ops) stack env =
     exec symtab bOps ops (stack ++ [x]) env
 exec symtab bOps (PushList x: ops) stack env = if length stack < x
         then return $ Left "PUSH_LIST: not enough operands on stack"
-        else exec symtab bOps ops (stack ++ [List $ reverse(take x $ reverse stack)]) env
+        else exec symtab bOps ops stack' env
+        where stack' = stack ++ [List $ reverse(take x $ reverse stack)]
 exec symtab bOps (Pop: ops) [] env = exec symtab bOps ops [] env
 exec symtab bOps (Pop: ops) stack env = exec symtab bOps ops (init stack) env
 exec symtab bOps (Jump x: _) stack env = case jumpTo x bOps of
@@ -74,7 +74,8 @@ exec _ _ (JumpFalse _: _) [] _ = return $ Left "JMP_IF_FALSE: empty stack"
 exec symtab bOps (JumpFalse x: ops) stack env = case last stack of
     Bool y -> if not y
         then case jumpTo x bOps of
-            Nothing -> return $ Left ("JMP_IF_FALSE: jump to undeclared label: " ++ x)
+            Nothing -> return
+                $ Left ("JMP_IF_FALSE: jump to undeclared label: " ++ x)
             Just opcodes -> exec symtab bOps opcodes (init stack) env
         else exec symtab bOps ops (init stack) env
     _ -> return $ Left "JMP_IF_FALSE: non-boolean comparison"
@@ -82,7 +83,8 @@ exec _ _ (JumpTrue _: _) [] _ = return $ Left "JMP_IF_TRUE: empty stack"
 exec symtab bOps (JumpTrue x: ops) stack env = case last stack of
     Bool y -> if y
         then case jumpTo x bOps of
-            Nothing -> return $ Left ("JMP_IF_TRUE: jump to undeclared label: " ++ x)
+            Nothing -> return
+                $ Left ("JMP_IF_TRUE: jump to undeclared label: " ++ x)
             Just opcodes -> exec symtab bOps opcodes (init stack) env
         else exec symtab bOps ops (init stack) env
     _ -> return $ Left "JMP_IF_TRUE: non-boolean comparison"
