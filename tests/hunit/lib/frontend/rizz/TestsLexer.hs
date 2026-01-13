@@ -177,9 +177,9 @@ testsParseStringLiteral = TestList      [
     , parseStringLiteralTest7
                                         ]
 
-parseStringLiteralTest1 = TestCase (assertEqual "parseStringLiteral \"\"\"\"" (Just ("", 2, [])) (parseStringLiteral "\"\""))
-parseStringLiteralTest2 = TestCase (assertEqual "parseStringLiteral \"\"x\"foo\"" (Just ("x", 3, "foo")) (parseStringLiteral "\"x\"foo"))
-parseStringLiteralTest3 = TestCase (assertEqual "parseStringLiteral \"\"foo\"\" bar" (Just ("foo", 5, " bar")) (parseStringLiteral "\"foo\" bar"))
+parseStringLiteralTest1 = TestCase (assertEqual "parseStringLiteral \"\"\"\"" (Just (Literal (ListLiteral []), 2, [])) (parseStringLiteral "\"\""))
+parseStringLiteralTest2 = TestCase (assertEqual "parseStringLiteral \"\"x\"foo\"" (Just (Literal (ListLiteral [CharLiteral 'x']), 3, "foo")) (parseStringLiteral "\"x\"foo"))
+parseStringLiteralTest3 = TestCase (assertEqual "parseStringLiteral \"\"foo\"\" bar" (Just (Literal (ListLiteral [CharLiteral 'f', CharLiteral 'o', CharLiteral 'o']), 5, " bar")) (parseStringLiteral "\"foo\" bar"))
 parseStringLiteralTest4 = TestCase (assertEqual "parseStringLiteral \"\"foo\"" Nothing (parseStringLiteral "\"foo"))
 parseStringLiteralTest5 = TestCase (assertEqual "parseStringLiteral \"foo\"\"" Nothing (parseStringLiteral "foo\""))
 parseStringLiteralTest6 = TestCase (assertEqual "parseStringLiteral \"bar\"" Nothing (parseStringLiteral "bar"))
@@ -190,9 +190,9 @@ testsParseSCharSequence = TestList      [
     , parseSCharSequenceTest4
                                         ]
 
-parseSCharSequenceTest1 = TestCase (assertEqual "parseSCharSequence \"abc\"" (Just ("a foo", 5, [])) (parseSCharSequence "a foo"))
-parseSCharSequenceTest2 = TestCase (assertEqual "parseSCharSequence \"abc\"" (Just ("abc", 3, [])) (parseSCharSequence "abc"))
-parseSCharSequenceTest3 = TestCase (assertEqual "parseSCharSequence \"a\"c\"" (Just ("a", 1, "\"c")) (parseSCharSequence "a\"c"))
+parseSCharSequenceTest1 = TestCase (assertEqual "parseSCharSequence \"abc\"" (Just ([CharLiteral 'a', CharLiteral ' ', CharLiteral 'f', CharLiteral 'o', CharLiteral 'o'], 5, [])) (parseSCharSequence "a foo"))
+parseSCharSequenceTest2 = TestCase (assertEqual "parseSCharSequence \"abc\"" (Just ([CharLiteral 'a', CharLiteral 'b', CharLiteral 'c'], 3, [])) (parseSCharSequence "abc"))
+parseSCharSequenceTest3 = TestCase (assertEqual "parseSCharSequence \"a\"c\"" (Just ([CharLiteral 'a'], 1, "\"c")) (parseSCharSequence "a\"c"))
 parseSCharSequenceTest4 = TestCase (assertEqual "parseSCharSequence \"\"" Nothing (parseSCharSequence []))
 
 testsParseSChar = TestList              [
