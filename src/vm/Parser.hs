@@ -76,6 +76,12 @@ parseInstruction ("PUSH_BOOL": x) = case hParseInstruction "PUSH_BOOL" x 1 of
     Right y -> case readMaybe (head y) :: Maybe Bool of
         Nothing -> Left ("PUSH_BOOL: invalid operand: " ++ unwords y)
         Just operand -> Right $ PushBool (Bool operand)
+parseInstruction ["PUSH_CHAR", "'", "'"] = Right $ PushBool (Char ' ')
+parseInstruction ("PUSH_CHAR": x) = case hParseInstruction "PUSH_CHAR" x 1 of
+    Left e -> Left (e ++ ": " ++ show x)
+    Right y -> case readMaybe (head y) :: Maybe Char of
+        Nothing -> Left ("PUSH_BOOL: invalid operand: " ++ unwords y)
+        Just operand -> Right $ PushBool (Char operand)
 parseInstruction ("PUSH_INT": x) = case hParseInstruction "PUSH_INT" x 1 of
     Left e -> Left e
     Right y -> case readMaybe (head y) :: Maybe Integer of
@@ -86,7 +92,11 @@ parseInstruction ("PUSH_FLOAT": x) = case hParseInstruction "PUSH_FLOAT" x 1 of
     Right y -> case readMaybe (head y) :: Maybe Float of
         Nothing -> Left ("PUSH_FLOAT: invalid operand: " ++ unwords y)
         Just operand -> Right $ PushFloat (Float operand)
--- TODO: parse lists
+parseInstruction ("PUSH_LIST": x) = case hParseInstruction "PUSH_LIST" x 1 of
+    Left e -> Left e
+    Right y -> case readMaybe (head y) :: Maybe Int of
+        Nothing -> Left ("PUSH_FLOAT: invalid operand: " ++ unwords y)
+        Just operand -> Right $ PushList operand
 parseInstruction ("POP": x) = case hParseInstruction "POP" x 0 of
     Left e -> Left e
     Right _ -> Right Pop

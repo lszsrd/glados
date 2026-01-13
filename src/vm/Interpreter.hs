@@ -20,31 +20,39 @@ import OpCodes (Operand (..), OpCode (..))
 import Function (Function)
 import Stack (Stack)
 import Env (Env)
+import Debug.Trace (trace)
 
 -- invoke a new function and runs it
-call :: String -> [Function] -> [Function] -> Env -> Either String (Maybe Operand)
-call fnName [] _ _ = Left ("call to undeclared function: " ++ fnName)
+call :: String -> [Function] -> [Function] -> Env -> IO (Either String (Maybe Operand))
+call fnName [] _ _ = return $ Left ("call to undeclared function: " ++ fnName)
 call fnName ((function, argc, opcodes): xs) symtab env
     | fnName == function = if length env < argc
-        then Left ("invalid arguments to function call: " ++ fnName)
-        else case exec symtab opcodes opcodes [] env of
-            Left e -> Left e
-            Right x -> Right x
+        then return $
+            Left ("not enough arguments for function call: " ++ fnName)
+        else exec symtab opcodes opcodes [] env
     | otherwise = call fnName xs symtab env
 
 -- run a function's body (all its instructions)
-exec :: [Function] -> [OpCode] -> [OpCode] -> Stack -> Env -> Either String (Maybe Operand)
+exec :: [Function] -> [OpCode] -> [OpCode] -> Stack -> Env -> IO (Either String (Maybe Operand))
 exec symtab bOps (Nop: ops) stack env = exec symtab bOps ops stack env
-exec symtab bOps (Call x _: ops) stack env = case call x symtab symtab env of
-    Left e -> Left e
-    Right z -> case z of
-        Nothing -> exec symtab bOps ops stack env
-        Just operand -> exec symtab bOps ops (stack ++ [operand]) env
+exec symtab bOps (Call "print" _: ops) stack env = case unsnoc stack of
+    Nothing -> return $ Left "not enough operands"
+    Just (stack', x) -> putStr (show x) >> exec symtab bOps ops stack' env
+exec symtab bOps (Call "println" _: ops) stack env = case unsnoc stack of
+    Nothing -> return $ Left "not enough operands"
+    Just (stack', x) -> print x >> exec symtab bOps ops stack' env
+exec symtab bOps (Call x _: ops) stack env = do
+    y <- call x symtab symtab env
+    case y of
+        Left e -> return $ Left e
+        Right z -> case z of
+            Nothing -> exec symtab bOps ops stack env
+            Just operand -> exec symtab bOps ops (stack ++ [operand]) env
 exec symtab bOps (Load x: ops) stack env = case getEnv x env of
-    Nothing -> Left ("LOAD: not in env: " ++ x)
+    Nothing -> return $ Left ("LOAD: not in env: " ++ x)
     Just y -> exec symtab bOps ops (stack ++ [y]) env
 exec symtab bOps (Store x: ops) stack env = case unsnoc stack of
-    Nothing -> Left "STORE: empty stack"
+    Nothing -> return $ Left "STORE: empty stack"
     Just (y, z) -> exec symtab bOps ops y $ pushEnv env (x, z)
 exec symtab bOps (PushBool x: ops) stack env = 
     exec symtab bOps ops (stack ++ [x]) env
@@ -54,103 +62,106 @@ exec symtab bOps (PushInt x: ops) stack env =
     exec symtab bOps ops (stack ++ [x]) env
 exec symtab bOps (PushFloat x: ops) stack env =
     exec symtab bOps ops (stack ++ [x]) env
+exec symtab bOps (PushList x: ops) stack env = if length stack < x
+        then return $ Left "PUSH_LIST: not enough operands on stack"
+        else exec symtab bOps ops (stack ++ [List $ reverse(take x $ reverse stack)]) env
 exec symtab bOps (Pop: ops) [] env = exec symtab bOps ops [] env
 exec symtab bOps (Pop: ops) stack env = exec symtab bOps ops (init stack) env
 exec symtab bOps (Jump x: _) stack env = case jumpTo x bOps of
-    Nothing -> Left ("JMP: jump to undeclared label: " ++ x)
+    Nothing -> return $ Left ("JMP: jump to undeclared label: " ++ x)
     Just opcodes -> exec symtab bOps opcodes stack env
-exec _ _ (JumpFalse _: _) [] _ = Left "JMP_IF_FALSE: empty stack"
+exec _ _ (JumpFalse _: _) [] _ = return $ Left "JMP_IF_FALSE: empty stack"
 exec symtab bOps (JumpFalse x: ops) stack env = case last stack of
     Bool y -> if not y
         then case jumpTo x bOps of
-            Nothing -> Left ("JMP_IF_FALSE: jump to undeclared label: " ++ x)
+            Nothing -> return $ Left ("JMP_IF_FALSE: jump to undeclared label: " ++ x)
             Just opcodes -> exec symtab bOps opcodes (init stack) env
         else exec symtab bOps ops (init stack) env
-    _ -> Left "JMP_IF_FALSE: non-boolean comparison"
-exec _ _ (JumpTrue _: _) [] _ = Left "JMP_IF_TRUE: empty stack"
+    _ -> return $ Left "JMP_IF_FALSE: non-boolean comparison"
+exec _ _ (JumpTrue _: _) [] _ = return $ Left "JMP_IF_TRUE: empty stack"
 exec symtab bOps (JumpTrue x: ops) stack env = case last stack of
     Bool y -> if y
         then case jumpTo x bOps of
-            Nothing -> Left ("JMP_IF_TRUE: jump to undeclared label: " ++ x)
+            Nothing -> return $ Left ("JMP_IF_TRUE: jump to undeclared label: " ++ x)
             Just opcodes -> exec symtab bOps opcodes (init stack) env
         else exec symtab bOps ops (init stack) env
-    _ -> Left "JMP_IF_TRUE: non-boolean comparison"
+    _ -> return $ Left "JMP_IF_TRUE: non-boolean comparison"
 exec symtab bOps (Label _: ops) stack env = exec symtab bOps ops stack env
 -- TODO: improve aritmethic operations
 exec symtab bOps (Mul: ops) stack env = case pop2 stack of
-    Left e -> Left ("MUL: " ++ e)
+    Left e -> return $ Left ("MUL: " ++ e)
     Right (Integer x, Integer y, z) ->
         exec symtab bOps ops (z ++ [Integer (x * y)]) env
-    Right (x, y, rest) -> do
-        res <- mulOperand x y
-        exec symtab bOps ops (rest ++ [Float res]) env
+    Right (x, y, rest) -> case mulOperand x y of
+        Left e -> return $ Left e
+        Right z -> exec symtab bOps ops (rest ++ [Float z]) env
 exec symtab bOps (Add: ops) stack env = case pop2 stack of
-    Left e -> Left ("ADD: " ++ e)
+    Left e -> return $ Left ("ADD: " ++ e)
     Right (Integer x, Integer y, z) ->
         exec symtab bOps ops (z ++ [Integer (x + y)]) env
-    Right (x, y, rest) -> do
-        res <- addOperand x y
-        exec symtab bOps ops (rest ++ [Float res]) env
+    Right (x, y, rest) -> case addOperand x y of
+        Left e -> return $ Left e
+        Right z -> exec symtab bOps ops (rest ++ [Float z]) env
 exec symtab bOps (Sub: ops) stack env = case pop2 stack of
-    Left e -> Left ("SUB: " ++ e)
+    Left e -> return $ Left ("SUB: " ++ e)
     Right (Integer x, Integer y, z) ->
         exec symtab bOps ops (z ++ [Integer (x - y)]) env
-    Right (x, y, rest) -> do
-        res <- subOperand x y
-        exec symtab bOps ops (rest ++ [Float res]) env
+    Right (x, y, rest) -> case subOperand x y of
+        Left e -> return $ Left e
+        Right z -> exec symtab bOps ops (rest ++ [Float z]) env
 exec symtab bOps (Div: ops) stack env = case pop2 stack of
-    Left e -> Left ("DIV: " ++ e)
-    Right (_, Integer 0, _) -> Left "DIV: 0 division"
-    Right (_, Float 0, _) -> Left "DIV: 0 division"
-    Right (x, y, rest) -> do
-        res <- divOperand x y
-        exec symtab bOps ops (rest ++ [Float res]) env
+    Left e -> return $ Left ("DIV: " ++ e)
+    Right (_, Integer 0, _) -> return $ Left "DIV: 0 division"
+    Right (_, Float 0, _) -> return $ Left "DIV: 0 division"
+    Right (x, y, rest) -> case divOperand x y of
+        Left e -> return $ Left e
+        Right z -> exec symtab bOps ops (rest ++ [Float z]) env
 exec symtab bOps (Mod: ops) stack env = case pop2 stack of
-    Left e -> Left ("MOD: " ++ e)
-    Right (_, Integer 0, _) -> Left "MOD: 0 modulo"
-    Right (_, Float 0, _) -> Left "MOD: 0 modulo"
-    Right (x, y, rest) -> do
-        res <- modOperand x y
-        exec symtab bOps ops (rest ++ [Float res]) env
+    Left e -> return $ Left ("MOD: " ++ e)
+    Right (_, Integer 0, _) -> return $ Left "MOD: 0 modulo"
+    Right (_, Float 0, _) -> return $ Left "MOD: 0 modulo"
+    Right (x, y, rest) -> case modOperand x y of
+        Left e -> return $ Left e
+        Right z -> exec symtab bOps ops (rest ++ [Float z]) env
 exec symtab bOps (Lt: ops) stack env = case pop2 stack of
-    Left e -> Left ("LT: " ++ e)
+    Left e -> return $ Left ("LT: " ++ e)
     Right (x, y, rest) ->
         exec symtab bOps ops (rest ++ [Bool (ltOperand x y)]) env 
 exec symtab bOps (Gt: ops) stack env = case pop2 stack of
-    Left e -> Left ("GT: " ++ e)
+    Left e -> return $ Left ("GT: " ++ e)
     Right (x, y, rest) ->
         exec symtab bOps ops (rest ++ [Bool (gtOperand x y)]) env 
 exec symtab bOps (LEq: ops) stack env = case pop2 stack of
-    Left e -> Left ("LT_EQ: " ++ e)
+    Left e -> return $ Left ("LT_EQ: " ++ e)
     Right (x, y, rest) ->
         exec symtab bOps ops (rest ++ [Bool (leOperand x y)]) env 
 exec symtab bOps (GEq: ops) stack env = case pop2 stack of
-    Left e -> Left ("GT_EQ: " ++ e)
+    Left e -> return $ Left ("GT_EQ: " ++ e)
     Right (x, y, rest) ->
         exec symtab bOps ops (rest ++ [Bool (geOperand x y)]) env 
 exec symtab bOps (Eq: ops) stack env = case pop2 stack of
-    Left e -> Left ("EQ: " ++ e)
+    Left e -> return $ Left ("EQ: " ++ e)
     Right (x, y, rest) ->
         exec symtab bOps ops (rest ++ [Bool (eqOperand x y)]) env 
 exec symtab bOps (NEq: ops) stack env = case pop2 stack of
-    Left e -> Left ("NOT_EQ: " ++ e)
+    Left e -> return $ Left ("NOT_EQ: " ++ e)
     Right (x, y, rest) ->
         exec symtab bOps ops (rest ++ [Bool (neqOperand x y)]) env 
 exec symtab bOps (And: ops) stack env = case pop2 stack of
-    Left e -> Left ("AND: " ++ e)
+    Left e -> return $ Left ("AND: " ++ e)
     Right (Bool x, Bool y, z)
         -> exec symtab bOps ops (z ++ [Bool (x && y)]) env
-    Right _ -> Left "AND: non-boolean comparison"
+    Right _ -> return $ Left "AND: non-boolean comparison"
 exec symtab bOps (Or: ops) stack env = case pop2 stack of
-    Left e -> Left ("OR: " ++ e)
+    Left e -> return $ Left ("OR: " ++ e)
     Right (Bool x, Bool y, z)
         -> exec symtab bOps ops (z ++ [Bool (x || y)]) env
-    Right _ -> Left "OR: non-boolean comparison"
-exec _ _ (Ret: _) [] _ = Right Nothing
-exec _ _ (Ret: _) stack _ = Right $ Just (last stack)
+    Right _ -> return $ Left "OR: non-boolean comparison"
+exec _ _ (Ret: _) [] _ = return $ Right Nothing
+exec _ _ (Ret: _) stack _ = return $ Right $ Just (last stack)
 exec _ _ x _ _
-    | null x = Right Nothing
-    | otherwise = Left ("unknwon instruction: " ++ show (head x))
+    | null x = return $ Right Nothing
+    | otherwise = return $ Left ("unknwon instruction: " ++ show (head x))
 
 addOperand :: Operand -> Operand -> Either String Float
 addOperand (Integer x)  (Float y)   = Right (fromIntegral x + y)
@@ -272,6 +283,3 @@ pop2 x = case unsnoc x of
     Just (y, op1) -> case unsnoc y of
         Nothing -> Left "missing one operand"
         Just (z, op2) -> Right (op2, op1, z)
-
-{- operate :: Operand -> Operand -> (a -> a -> a) -> Operand
-operate ( -}

@@ -16,7 +16,6 @@ import Data.List (isPrefixOf, group, sort)
 
 import Format (error)
 
-import OpCodes (Operand (..))
 import Parser (parseFunctions)
 import Interpreter (call)
 
@@ -44,14 +43,12 @@ printUsage x = putStrLn $
 interpret :: String -> IO ()
 interpret x = case parseFunctions $ lines x of
     Left e -> hPutStrLn stderr e >> exitFailure
-    Right symtab -> case call "main" symtab symtab [] of
-        Left e -> hPutStrLn stderr e >> exitFailure
-        Right y -> case y of
-            Nothing -> return ()
-            Just (Bool z) -> print z
-            Just (Integer z) -> print z
-            Just (Float z) -> print z
-            _ -> print y
+    Right symtab -> do
+        y <- call "main" symtab symtab []
+        case y of
+            Left e -> hPutStrLn stderr e >> exitFailure
+            Right Nothing -> return ()
+            Right (Just z) -> putStrLn ("### exit code " ++ show z ++ " ###")
 
 main :: IO ()
 main = do
