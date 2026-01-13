@@ -10,10 +10,6 @@ module ParseArgs (
     , printUsage
 ) where
 
-import System.FilePath (takeExtension)
-
-import Format (error)
-
 import Options (Options (..))
 
 -- TODO: [(FilePath, lexer, parser, compiler)]
@@ -32,13 +28,11 @@ parseArgs ("--dump-tokens": x) = case parseArgs x of
         option y = (Options {dumpToks = True, dumpAst = y})
 parseArgs (('-': _): _) = Left "USAGE"
 parseArgs (x: xs)
-    | takeExtension x /= ".rz" && takeExtension x /= ".scm" = Left
-        $ ": " ++ Format.error ++ ": " ++ x ++ ": unknown file type"
     | null xs = Right (Options {dumpToks = False, dumpAst = False}, [x])
     | otherwise = case parseArgs xs of
         Left e -> Left e
         Right (z, ys) -> Right (z, x: ys)
-parseArgs [] = Left $ ": " ++ Format.error ++ ": no input files"
+parseArgs [] = Right (Options False False, [])
 
 printUsage :: String -> IO ()
 printUsage x = putStrLn $

@@ -13,20 +13,19 @@ import System.Exit (exitFailure)
 
 import Data.List (isPrefixOf, group, sort)
 
-import Rizz.Lexer (lexer)
-import Rizz.Parser (parser)
-import Bytecode (compileDecl)
+import Format (error)
 
 import ParseArgs (parseArgs, printUsage)
 import Compiler (compile)
 
 main :: IO ()
 main = do
-    progName <- getProgName
-    arguments <- parseArgs <$> getArgs
-    case arguments of
+    x <- getProgName
+    y <- parseArgs <$> getArgs
+    case y of
         Left e -> if "USAGE" `isPrefixOf` e
-            then printUsage progName
-            else hPutStrLn stderr (progName ++ e) >> exitFailure
-        Right (x, xs) ->
-            compile x (map head . group . sort $ xs) lexer parser compileDecl
+            then printUsage x
+            else hPutStrLn stderr (x ++ e) >> exitFailure
+        Right (_, []) -> hPutStrLn stderr
+            (x ++ ": " ++ Format.error ++ ": no input files") >> exitFailure
+        Right (z, zs) -> compile z (map head . group . sort $ zs)
