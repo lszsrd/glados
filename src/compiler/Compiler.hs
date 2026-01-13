@@ -29,8 +29,7 @@ type Lexer a = String -> Either String [(a, (Int, Int))]
 type Parser a b = [(a, (Int, Int))] -> Either String [b]
 type Transpiler b = [b] -> String
 
-compile :: (Show a, Show b) => Options -> [FilePath] -> Lexer a -> Parser a b
-    -> Transpiler b -> IO ()
+compile :: (Show a, Show b) => Options -> [FilePath] -> Lexer a -> Parser a b -> Transpiler b -> IO ()
 compile _ [] _ _ _ = exitSuccess
 compile opts (x: xs) lexer parser transpiler = do
     content <- readFile x
@@ -43,8 +42,7 @@ compile opts (x: xs) lexer parser transpiler = do
                 >> postCompile opts p toks decl
                 >> compile opts xs lexer parser transpiler
 
-postCompile :: (Show a, Show b) => Options -> FilePath -> [(a, (Int, Int))]
-    -> b -> IO ()
+postCompile :: (Show a, Show b) => Options -> FilePath -> [(a, (Int, Int))] -> b -> IO ()
 postCompile (Options True x) filepath token decl
     = putStrLn ("\ESC[1;32mTokens\ESC[0m (" ++ filepath ++ ")\n" ++ show token)
     >> postCompile Options {dumpToks = False, dumpAst = x} filepath token decl
@@ -67,8 +65,7 @@ formatParserError content string = case words string of
                 _ -> string ++ fixMe
             _ -> string ++ fixMe
 
-cestpascompletementoverkilljustepourafficherunmessagederreur :: String
-    -> String -> String
+cestpascompletementoverkilljustepourafficherunmessagederreur :: String -> String -> String
 cestpascompletementoverkilljustepourafficherunmessagederreur [] _ = []
 cestpascompletementoverkilljustepourafficherunmessagederreur string content
     = case findString string "error" of
