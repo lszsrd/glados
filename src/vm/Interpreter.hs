@@ -28,7 +28,7 @@ call fnName ((function, argc, opcodes): xs) symtab env
     | fnName == function = if length env < argc
         then return $
             Left ("not enough arguments for function call: " ++ fnName)
-        else exec symtab opcodes opcodes [] env
+        else exec symtab opcodes opcodes [] env -- TODO: flush previous env
     | otherwise = call fnName xs symtab env
 
 -- run a function's body (all its instructions)
@@ -256,7 +256,6 @@ neqOperand (Bool x)     (Float y)   = fromBool x /= y
 neqOperand (Float x)    (Bool y)    = x /= fromBool y
 neqOperand x y                      = x /= y
 
--- Big L that we cannot use base-4.19 or newer
 -- https://github.com/haskell/core-libraries-committee/issues/165 
 unsnoc :: [a] -> Maybe ([a], a)
 unsnoc = foldr (\x -> Just . maybe ([], x) (\(~(a, b)) -> (x : a, b))) Nothing

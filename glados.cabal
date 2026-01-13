@@ -62,6 +62,7 @@ executable glados-compiler
     ghc-options:        -Wall -O2
     other-modules:
         Options
+        ParseArgs
         Compiler
     build-depends:      base, filepath, format, frontend-lisp, frontend-rizz, backend-rizz
     mixins:
@@ -78,6 +79,7 @@ executable glados-vm
         Function
         Stack
         Env
+        ParseArgs
         Parser
         Interpreter
     build-depends:      base, filepath, format
