@@ -30,7 +30,7 @@
 </span><span id="line-30"></span><span class="hs-keyword">import</span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="annot"><a href="ParserStmt.html"><span class="hs-identifier">ParserStmt</span></a></span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">PS</span></span><span>
 </span><span id="line-31"></span><span>
 </span><span id="line-32"></span><span class="hs-keyword">type</span><span> </span><span id="SingleToken"><span class="annot"><a href="Parser.html#SingleToken"><span class="hs-identifier hs-var">SingleToken</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Tokens.html#Token"><span class="hs-identifier hs-type">T.Token</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-33"></span><span class="hs-keyword">type</span><span> </span><span id="Parser"><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-var">Parser</span></a></span></span><span> </span><span id="local-6989586621679033792"><span class="annot"><a href="#local-6989586621679033792"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Parser.html#SingleToken"><span class="hs-identifier hs-type">SingleToken</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679033792"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Parser.html#SingleToken"><span class="hs-identifier hs-type">SingleToken</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span>
+</span><span id="line-33"></span><span class="hs-keyword">type</span><span> </span><span id="Parser"><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-var">Parser</span></a></span></span><span> </span><span id="local-6989586621679033698"><span class="annot"><a href="#local-6989586621679033698"><span class="hs-identifier hs-type">a</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Parser.html#SingleToken"><span class="hs-identifier hs-type">SingleToken</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679033698"><span class="hs-identifier hs-type">a</span></a></span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Parser.html#SingleToken"><span class="hs-identifier hs-type">SingleToken</span></a></span><span class="hs-special">]</span><span class="hs-special">)</span><span>
 </span><span id="line-34"></span><span>
 </span><span id="line-35"></span><span class="hs-comment">-- | Takes a @'Parser'@ @'SingleToken'@ list as parameter and returns a __Either__ @'String'@ (@'Maybe'@ @'A.BuiltinType'@, [@'SingleToken'@]).</span><span>
 </span><span id="line-36"></span><span class="hs-comment">--</span><span>
@@ -41,29 +41,29 @@
 </span><span id="line-41"></span><span id="parseReturnType"><span class="annot"><span class="annottext">parseReturnType :: Parser (Maybe BuiltinType)
 </span><a href="Parser.html#parseReturnType"><span class="hs-identifier hs-var hs-var">parseReturnType</span></a></span></span><span> </span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><a href="Tokens.html#Punctuator"><span class="hs-identifier hs-type">T.Punctuator</span></a></span><span> </span><span class="annot"><span class="annottext">Punctuator
 </span><a href="Tokens.html#Arrow"><span class="hs-identifier hs-var">T.Arrow</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(Int, Int)
-</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679033796"><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033796"><span class="hs-identifier hs-var">rest1</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-42"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679033797"><span class="annot"><span class="annottext">BuiltinType
-</span><a href="#local-6989586621679033797"><span class="hs-identifier hs-var">returntype</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679033798"><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033798"><span class="hs-identifier hs-var">rest2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser BuiltinType
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span id="local-6989586621679033702"><span class="annot"><span class="annottext">[SingleToken]
+</span><a href="#local-6989586621679033702"><span class="hs-identifier hs-var">rest1</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-42"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679033703"><span class="annot"><span class="annottext">BuiltinType
+</span><a href="#local-6989586621679033703"><span class="hs-identifier hs-var">returntype</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679033704"><span class="annot"><span class="annottext">[SingleToken]
+</span><a href="#local-6989586621679033704"><span class="hs-identifier hs-var">rest2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser BuiltinType
 </span><a href="ParserHelper.html#parseBuiltinType"><span class="hs-identifier hs-var">H.parseBuiltinType</span></a></span><span> </span><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033796"><span class="hs-identifier hs-var">rest1</span></a></span><span>
+</span><a href="#local-6989586621679033702"><span class="hs-identifier hs-var">rest1</span></a></span><span>
 </span><span id="line-43"></span><span>    </span><span class="annot"><span class="annottext">(Maybe BuiltinType, [SingleToken])
 -&gt; Either String (Maybe BuiltinType, [SingleToken])
 forall a b. b -&gt; Either a b
 </span><span class="hs-identifier hs-var">Right</span></span><span class="hs-special">(</span><span class="annot"><span class="annottext">BuiltinType -&gt; Maybe BuiltinType
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">BuiltinType
-</span><a href="#local-6989586621679033797"><span class="hs-identifier hs-var">returntype</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033798"><span class="hs-identifier hs-var">rest2</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-44"></span><span class="annot"><a href="Parser.html#parseReturnType"><span class="hs-identifier hs-var">parseReturnType</span></a></span><span> </span><span id="local-6989586621679033800"><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033800"><span class="hs-identifier hs-var">toks</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Maybe BuiltinType, [SingleToken])
+</span><a href="#local-6989586621679033703"><span class="hs-identifier hs-var">returntype</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[SingleToken]
+</span><a href="#local-6989586621679033704"><span class="hs-identifier hs-var">rest2</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-44"></span><span class="annot"><a href="Parser.html#parseReturnType"><span class="hs-identifier hs-var">parseReturnType</span></a></span><span> </span><span id="local-6989586621679033706"><span class="annot"><span class="annottext">[SingleToken]
+</span><a href="#local-6989586621679033706"><span class="hs-identifier hs-var">toks</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Maybe BuiltinType, [SingleToken])
 -&gt; Either String (Maybe BuiltinType, [SingleToken])
 forall a b. b -&gt; Either a b
 </span><span class="hs-identifier hs-var">Right</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Maybe BuiltinType
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033800"><span class="hs-identifier hs-var">toks</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679033706"><span class="hs-identifier hs-var">toks</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-45"></span><span>
 </span><span id="line-46"></span><span class="hs-comment">-- | Takes a @'Parser'@ @'SingleToken'@ list as parameter and returns a __Either__ @'String'@ (@'A.Decl'@, [@'SingleToken'@]).</span><span>
 </span><span id="line-47"></span><span class="hs-comment">--</span><span>
@@ -72,55 +72,55 @@ forall a. Maybe a
 </span><span id="line-50"></span><span class="hs-comment">-- On failure, this function return a error message in a @'String'@, this message contain what expected.</span><span>
 </span><span id="line-51"></span><span class="annot"><a href="Parser.html#parseRecordDeclExpr"><span class="hs-identifier hs-type">parseRecordDeclExpr</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="Ast.html#Decl"><span class="hs-identifier hs-type">A.Decl</span></a></span><span>
 </span><span id="line-52"></span><span id="parseRecordDeclExpr"><span class="annot"><span class="annottext">parseRecordDeclExpr :: Parser Decl
-</span><a href="Parser.html#parseRecordDeclExpr"><span class="hs-identifier hs-var hs-var">parseRecordDeclExpr</span></a></span></span><span> </span><span id="local-6989586621679033802"><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033802"><span class="hs-identifier hs-var">tokens</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><a href="Parser.html#parseRecordDeclExpr"><span class="hs-identifier hs-var hs-var">parseRecordDeclExpr</span></a></span></span><span> </span><span id="local-6989586621679033708"><span class="annot"><span class="annottext">[SingleToken]
+</span><a href="#local-6989586621679033708"><span class="hs-identifier hs-var">tokens</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-53"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="annottext">()
-</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679033803"><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033803"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Token -&gt; String -&gt; Parser ()
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679033709"><span class="annot"><span class="annottext">[SingleToken]
+</span><a href="#local-6989586621679033709"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Token -&gt; String -&gt; Parser ()
 </span><a href="ParserHelper.html#expectToken"><span class="hs-identifier hs-var">H.expectToken</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Keyword -&gt; Token
 </span><a href="Tokens.html#Keyword"><span class="hs-identifier hs-var">T.Keyword</span></a></span><span> </span><span class="annot"><span class="annottext">Keyword
 </span><a href="Tokens.html#Struct"><span class="hs-identifier hs-var">T.Struct</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-54"></span><span>        </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;expected struct&quot;</span></span><span> </span><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033802"><span class="hs-identifier hs-var">tokens</span></a></span><span>
-</span><span id="line-55"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679033807"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679033807"><span class="hs-identifier hs-var">identifier</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679033808"><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033808"><span class="hs-identifier hs-var">rest2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser String
+</span><a href="#local-6989586621679033708"><span class="hs-identifier hs-var">tokens</span></a></span><span>
+</span><span id="line-55"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679033713"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679033713"><span class="hs-identifier hs-var">identifier</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679033714"><span class="annot"><span class="annottext">[SingleToken]
+</span><a href="#local-6989586621679033714"><span class="hs-identifier hs-var">rest2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser String
 </span><a href="ParserHelper.html#parseIdentifier"><span class="hs-identifier hs-var">H.parseIdentifier</span></a></span><span> </span><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033803"><span class="hs-identifier hs-var">rest</span></a></span><span>
+</span><a href="#local-6989586621679033709"><span class="hs-identifier hs-var">rest</span></a></span><span>
 </span><span id="line-56"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="annottext">()
-</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679033810"><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033810"><span class="hs-identifier hs-var">rest3</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Token -&gt; String -&gt; Parser ()
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679033716"><span class="annot"><span class="annottext">[SingleToken]
+</span><a href="#local-6989586621679033716"><span class="hs-identifier hs-var">rest3</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Token -&gt; String -&gt; Parser ()
 </span><a href="ParserHelper.html#expectToken"><span class="hs-identifier hs-var">H.expectToken</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Punctuator -&gt; Token
 </span><a href="Tokens.html#Punctuator"><span class="hs-identifier hs-var">T.Punctuator</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CBracket -&gt; Punctuator
 </span><a href="Tokens.html#CBracket"><span class="hs-identifier hs-var">T.CBracket</span></a></span><span> </span><span class="annot"><span class="annottext">CBracket
 </span><a href="Tokens.html#OpenCBracket"><span class="hs-identifier hs-var">T.OpenCBracket</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-57"></span><span>        </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;expected '{'&quot;</span></span><span> </span><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033808"><span class="hs-identifier hs-var">rest2</span></a></span><span>
-</span><span id="line-58"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679033813"><span class="annot"><span class="annottext">[ParmVarDeclExpr]
-</span><a href="#local-6989586621679033813"><span class="hs-identifier hs-var">pvdel</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679033814"><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033814"><span class="hs-identifier hs-var">rest4</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser [ParmVarDeclExpr]
+</span><a href="#local-6989586621679033714"><span class="hs-identifier hs-var">rest2</span></a></span><span>
+</span><span id="line-58"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679033719"><span class="annot"><span class="annottext">[ParmVarDeclExpr]
+</span><a href="#local-6989586621679033719"><span class="hs-identifier hs-var">pvdel</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679033720"><span class="annot"><span class="annottext">[SingleToken]
+</span><a href="#local-6989586621679033720"><span class="hs-identifier hs-var">rest4</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser [ParmVarDeclExpr]
 </span><a href="ParserHelper.html#parsePVDEList"><span class="hs-identifier hs-var">H.parsePVDEList</span></a></span><span> </span><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033810"><span class="hs-identifier hs-var">rest3</span></a></span><span>
+</span><a href="#local-6989586621679033716"><span class="hs-identifier hs-var">rest3</span></a></span><span>
 </span><span id="line-59"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="annottext">()
-</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679033816"><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033816"><span class="hs-identifier hs-var">rest5</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Token -&gt; String -&gt; Parser ()
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679033722"><span class="annot"><span class="annottext">[SingleToken]
+</span><a href="#local-6989586621679033722"><span class="hs-identifier hs-var">rest5</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Token -&gt; String -&gt; Parser ()
 </span><a href="ParserHelper.html#expectToken"><span class="hs-identifier hs-var">H.expectToken</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Punctuator -&gt; Token
 </span><a href="Tokens.html#Punctuator"><span class="hs-identifier hs-var">T.Punctuator</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">CBracket -&gt; Punctuator
 </span><a href="Tokens.html#CBracket"><span class="hs-identifier hs-var">T.CBracket</span></a></span><span> </span><span class="annot"><span class="annottext">CBracket
 </span><a href="Tokens.html#CloseCBracket"><span class="hs-identifier hs-var">T.CloseCBracket</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-60"></span><span>        </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;expected '}'&quot;</span></span><span> </span><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033814"><span class="hs-identifier hs-var">rest4</span></a></span><span>
+</span><a href="#local-6989586621679033720"><span class="hs-identifier hs-var">rest4</span></a></span><span>
 </span><span id="line-61"></span><span>    </span><span class="annot"><span class="annottext">(Decl, [SingleToken]) -&gt; Either String (Decl, [SingleToken])
 forall a b. b -&gt; Either a b
 </span><span class="hs-identifier hs-var">Right</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">RecordDeclExpr -&gt; Decl
 </span><a href="Ast.html#RecordDecl"><span class="hs-identifier hs-var">A.RecordDecl</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String -&gt; [ParmVarDeclExpr] -&gt; RecordDeclExpr
 </span><a href="Ast.html#RecordDeclExpr"><span class="hs-identifier hs-var">A.RecordDeclExpr</span></a></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679033807"><span class="hs-identifier hs-var">identifier</span></a></span><span> </span><span class="annot"><span class="annottext">[ParmVarDeclExpr]
-</span><a href="#local-6989586621679033813"><span class="hs-identifier hs-var">pvdel</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033816"><span class="hs-identifier hs-var">rest5</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679033713"><span class="hs-identifier hs-var">identifier</span></a></span><span> </span><span class="annot"><span class="annottext">[ParmVarDeclExpr]
+</span><a href="#local-6989586621679033719"><span class="hs-identifier hs-var">pvdel</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[SingleToken]
+</span><a href="#local-6989586621679033722"><span class="hs-identifier hs-var">rest5</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-62"></span><span>
 </span><span id="line-63"></span><span class="hs-comment">-- | Takes a @'Parser'@ @'SingleToken'@ list as parameter and returns a __Either__ @'String'@ (@'A.Decl'@, [@'SingleToken'@]).</span><span>
 </span><span id="line-64"></span><span class="hs-comment">--</span><span>
@@ -129,62 +129,62 @@ forall a b. b -&gt; Either a b
 </span><span id="line-67"></span><span class="hs-comment">-- On failure, this function returns a pretty formatted error message if invalid syntax or a semicolon is missing.</span><span>
 </span><span id="line-68"></span><span class="annot"><a href="Parser.html#parseVarDecl"><span class="hs-identifier hs-type">parseVarDecl</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Ast.html#Decl"><span class="hs-identifier hs-type">A.Decl</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="Ast.html#Decl"><span class="hs-identifier hs-type">A.Decl</span></a></span><span>
 </span><span id="line-69"></span><span id="parseVarDecl"><span class="annot"><span class="annottext">parseVarDecl :: Decl -&gt; Parser Decl
-</span><a href="Parser.html#parseVarDecl"><span class="hs-identifier hs-var hs-var">parseVarDecl</span></a></span></span><span> </span><span id="local-6989586621679033821"><span class="annot"><span class="annottext">Decl
-</span><a href="#local-6989586621679033821"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679033822"><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033822"><span class="hs-identifier hs-var">tokens</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-70"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679033823"><span class="annot"><span class="annottext">VarDeclStmt
-</span><a href="#local-6989586621679033823"><span class="hs-identifier hs-var">vardecl</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679033824"><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033824"><span class="hs-identifier hs-var">rest1</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Decl -&gt; Parser VarDeclStmt
+</span><a href="Parser.html#parseVarDecl"><span class="hs-identifier hs-var hs-var">parseVarDecl</span></a></span></span><span> </span><span id="local-6989586621679033727"><span class="annot"><span class="annottext">Decl
+</span><a href="#local-6989586621679033727"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span id="local-6989586621679033728"><span class="annot"><span class="annottext">[SingleToken]
+</span><a href="#local-6989586621679033728"><span class="hs-identifier hs-var">tokens</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-70"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679033729"><span class="annot"><span class="annottext">VarDeclStmt
+</span><a href="#local-6989586621679033729"><span class="hs-identifier hs-var">vardecl</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679033730"><span class="annot"><span class="annottext">[SingleToken]
+</span><a href="#local-6989586621679033730"><span class="hs-identifier hs-var">rest1</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Decl -&gt; Parser VarDeclStmt
 </span><a href="ParserHelper.html#parseVarDeclStmt"><span class="hs-identifier hs-var">H.parseVarDeclStmt</span></a></span><span> </span><span class="annot"><span class="annottext">Decl
-</span><a href="#local-6989586621679033821"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033822"><span class="hs-identifier hs-var">tokens</span></a></span><span>
+</span><a href="#local-6989586621679033727"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">[SingleToken]
+</span><a href="#local-6989586621679033728"><span class="hs-identifier hs-var">tokens</span></a></span><span>
 </span><span id="line-71"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="annottext">()
-</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679033826"><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033826"><span class="hs-identifier hs-var">rest2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Token -&gt; String -&gt; Parser ()
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679033732"><span class="annot"><span class="annottext">[SingleToken]
+</span><a href="#local-6989586621679033732"><span class="hs-identifier hs-var">rest2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Token -&gt; String -&gt; Parser ()
 </span><a href="ParserHelper.html#expectToken"><span class="hs-identifier hs-var">H.expectToken</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Punctuator -&gt; Token
 </span><a href="Tokens.html#Punctuator"><span class="hs-identifier hs-var">T.Punctuator</span></a></span><span> </span><span class="annot"><span class="annottext">Punctuator
 </span><a href="Tokens.html#Semicolon"><span class="hs-identifier hs-var">T.Semicolon</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Expected ';'&quot;</span></span><span> </span><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033824"><span class="hs-identifier hs-var">rest1</span></a></span><span>
+</span><a href="#local-6989586621679033730"><span class="hs-identifier hs-var">rest1</span></a></span><span>
 </span><span id="line-72"></span><span>    </span><span class="annot"><span class="annottext">(Decl, [SingleToken]) -&gt; Either String (Decl, [SingleToken])
 forall a b. b -&gt; Either a b
 </span><span class="hs-identifier hs-var">Right</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">VarDeclStmt -&gt; Decl
 </span><a href="Ast.html#VarDecl"><span class="hs-identifier hs-var">A.VarDecl</span></a></span><span> </span><span class="annot"><span class="annottext">VarDeclStmt
-</span><a href="#local-6989586621679033823"><span class="hs-identifier hs-var">vardecl</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033826"><span class="hs-identifier hs-var">rest2</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679033729"><span class="hs-identifier hs-var">vardecl</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[SingleToken]
+</span><a href="#local-6989586621679033732"><span class="hs-identifier hs-var">rest2</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-73"></span><span>
 </span><span id="line-74"></span><span class="annot"><a href="Parser.html#parseFunctionDeclH"><span class="hs-identifier hs-type">parseFunctionDeclH</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="Tokens.html#Identifier"><span class="hs-identifier hs-type">T.Identifier</span></a></span><span>
 </span><span id="line-75"></span><span id="parseFunctionDeclH"><span class="annot"><span class="annottext">parseFunctionDeclH :: Parser String
-</span><a href="Parser.html#parseFunctionDeclH"><span class="hs-identifier hs-var hs-var">parseFunctionDeclH</span></a></span></span><span> </span><span id="local-6989586621679033830"><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033830"><span class="hs-identifier hs-var">tokens</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><a href="Parser.html#parseFunctionDeclH"><span class="hs-identifier hs-var hs-var">parseFunctionDeclH</span></a></span></span><span> </span><span id="local-6989586621679033736"><span class="annot"><span class="annottext">[SingleToken]
+</span><a href="#local-6989586621679033736"><span class="hs-identifier hs-var">tokens</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
 </span><span id="line-76"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="annottext">()
-</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">,</span><span> </span><span id="local-6989586621679033831"><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033831"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Token -&gt; String -&gt; Parser ()
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">,</span><span> </span><span id="local-6989586621679033737"><span class="annot"><span class="annottext">[SingleToken]
+</span><a href="#local-6989586621679033737"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Token -&gt; String -&gt; Parser ()
 </span><a href="ParserHelper.html#expectToken"><span class="hs-identifier hs-var">H.expectToken</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Keyword -&gt; Token
 </span><a href="Tokens.html#Keyword"><span class="hs-identifier hs-var">T.Keyword</span></a></span><span> </span><span class="annot"><span class="annottext">Keyword
 </span><a href="Tokens.html#Fn"><span class="hs-identifier hs-var">T.Fn</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;Expected 'Fn'&quot;</span></span><span> </span><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033830"><span class="hs-identifier hs-var">tokens</span></a></span><span>
-</span><span id="line-77"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679033833"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679033833"><span class="hs-identifier hs-var">name</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679033834"><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033834"><span class="hs-identifier hs-var">r1</span></a></span></span><span class="hs-special">)</span><span>       </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser String
+</span><a href="#local-6989586621679033736"><span class="hs-identifier hs-var">tokens</span></a></span><span>
+</span><span id="line-77"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679033739"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679033739"><span class="hs-identifier hs-var">name</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679033740"><span class="annot"><span class="annottext">[SingleToken]
+</span><a href="#local-6989586621679033740"><span class="hs-identifier hs-var">r1</span></a></span></span><span class="hs-special">)</span><span>       </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser String
 </span><a href="ParserHelper.html#parseIdentifier"><span class="hs-identifier hs-var">H.parseIdentifier</span></a></span><span> </span><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033831"><span class="hs-identifier hs-var">rest</span></a></span><span>
+</span><a href="#local-6989586621679033737"><span class="hs-identifier hs-var">rest</span></a></span><span>
 </span><span id="line-78"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="annottext">()
-</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679033835"><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033835"><span class="hs-identifier hs-var">rest2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Token -&gt; String -&gt; Parser ()
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679033741"><span class="annot"><span class="annottext">[SingleToken]
+</span><a href="#local-6989586621679033741"><span class="hs-identifier hs-var">rest2</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Token -&gt; String -&gt; Parser ()
 </span><a href="ParserHelper.html#expectToken"><span class="hs-identifier hs-var">H.expectToken</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Punctuator -&gt; Token
 </span><a href="Tokens.html#Punctuator"><span class="hs-identifier hs-var">T.Punctuator</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">RBracket -&gt; Punctuator
 </span><a href="Tokens.html#RBracket"><span class="hs-identifier hs-var">T.RBracket</span></a></span><span> </span><span class="annot"><span class="annottext">RBracket
 </span><a href="Tokens.html#OpenRBracket"><span class="hs-identifier hs-var">T.OpenRBracket</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-79"></span><span>        </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;expected '('&quot;</span></span><span> </span><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033834"><span class="hs-identifier hs-var">r1</span></a></span><span>
+</span><a href="#local-6989586621679033740"><span class="hs-identifier hs-var">r1</span></a></span><span>
 </span><span id="line-80"></span><span>    </span><span class="annot"><span class="annottext">(String, [SingleToken]) -&gt; Either String (String, [SingleToken])
 forall a b. b -&gt; Either a b
 </span><span class="hs-identifier hs-var">Right</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679033833"><span class="hs-identifier hs-var">name</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033835"><span class="hs-identifier hs-var">rest2</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679033739"><span class="hs-identifier hs-var">name</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[SingleToken]
+</span><a href="#local-6989586621679033741"><span class="hs-identifier hs-var">rest2</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-81"></span><span class="hs-comment">-- | Takes a @'Parser'@ @'SingleToken'@ list as parameter and returns a __Either__ @'String'@ (@'A.Decl'@, [@'SingleToken'@]).</span><span>
 </span><span id="line-82"></span><span class="hs-comment">--</span><span>
 </span><span id="line-83"></span><span class="hs-comment">-- On success, this function returns a tuple made of the parsed function decl.</span><span>
@@ -192,55 +192,55 @@ forall a b. b -&gt; Either a b
 </span><span id="line-85"></span><span class="hs-comment">-- On failure, this function returns a pretty formatted error message.</span><span>
 </span><span id="line-86"></span><span class="annot"><a href="Parser.html#parseFunctionDecl"><span class="hs-identifier hs-type">parseFunctionDecl</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="Ast.html#Decl"><span class="hs-identifier hs-type">A.Decl</span></a></span><span>
 </span><span id="line-87"></span><span id="parseFunctionDecl"><span class="annot"><span class="annottext">parseFunctionDecl :: Parser Decl
-</span><a href="Parser.html#parseFunctionDecl"><span class="hs-identifier hs-var hs-var">parseFunctionDecl</span></a></span></span><span> </span><span id="local-6989586621679033838"><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033838"><span class="hs-identifier hs-var">tokens</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-88"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679033839"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679033839"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679033840"><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033840"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span>        </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser String
+</span><a href="Parser.html#parseFunctionDecl"><span class="hs-identifier hs-var hs-var">parseFunctionDecl</span></a></span></span><span> </span><span id="local-6989586621679033744"><span class="annot"><span class="annottext">[SingleToken]
+</span><a href="#local-6989586621679033744"><span class="hs-identifier hs-var">tokens</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-88"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679033745"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679033745"><span class="hs-identifier hs-var">n</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679033746"><span class="annot"><span class="annottext">[SingleToken]
+</span><a href="#local-6989586621679033746"><span class="hs-identifier hs-var">rest</span></a></span></span><span class="hs-special">)</span><span>        </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser String
 </span><a href="Parser.html#parseFunctionDeclH"><span class="hs-identifier hs-var">parseFunctionDeclH</span></a></span><span> </span><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033838"><span class="hs-identifier hs-var">tokens</span></a></span><span> </span><span>
-</span><span id="line-89"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679033841"><span class="annot"><span class="annottext">[ParmVarDeclExpr]
-</span><a href="#local-6989586621679033841"><span class="hs-identifier hs-var">pvdelist</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679033842"><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033842"><span class="hs-identifier hs-var">rest3</span></a></span></span><span class="hs-special">)</span><span>   </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser [ParmVarDeclExpr]
+</span><a href="#local-6989586621679033744"><span class="hs-identifier hs-var">tokens</span></a></span><span> </span><span>
+</span><span id="line-89"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679033747"><span class="annot"><span class="annottext">[ParmVarDeclExpr]
+</span><a href="#local-6989586621679033747"><span class="hs-identifier hs-var">pvdelist</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679033748"><span class="annot"><span class="annottext">[SingleToken]
+</span><a href="#local-6989586621679033748"><span class="hs-identifier hs-var">rest3</span></a></span></span><span class="hs-special">)</span><span>   </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser [ParmVarDeclExpr]
 </span><a href="ParserHelper.html#parsePVDEList"><span class="hs-identifier hs-var">H.parsePVDEList</span></a></span><span> </span><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033840"><span class="hs-identifier hs-var">rest</span></a></span><span>
+</span><a href="#local-6989586621679033746"><span class="hs-identifier hs-var">rest</span></a></span><span>
 </span><span id="line-90"></span><span>    </span><span class="hs-special">(</span><span class="annot"><span class="annottext">()
-</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679033843"><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033843"><span class="hs-identifier hs-var">rest4</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Token -&gt; String -&gt; Parser ()
+</span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679033749"><span class="annot"><span class="annottext">[SingleToken]
+</span><a href="#local-6989586621679033749"><span class="hs-identifier hs-var">rest4</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Token -&gt; String -&gt; Parser ()
 </span><a href="ParserHelper.html#expectToken"><span class="hs-identifier hs-var">H.expectToken</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Punctuator -&gt; Token
 </span><a href="Tokens.html#Punctuator"><span class="hs-identifier hs-var">T.Punctuator</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">RBracket -&gt; Punctuator
 </span><a href="Tokens.html#RBracket"><span class="hs-identifier hs-var">T.RBracket</span></a></span><span> </span><span class="annot"><span class="annottext">RBracket
 </span><a href="Tokens.html#CloseRBracket"><span class="hs-identifier hs-var">T.CloseRBracket</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
 </span><span id="line-91"></span><span>        </span><span class="annot"><span class="annottext">String
 </span><span class="hs-string">&quot;expected ')'&quot;</span></span><span> </span><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033842"><span class="hs-identifier hs-var">rest3</span></a></span><span>
-</span><span id="line-92"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679033845"><span class="annot"><span class="annottext">Maybe BuiltinType
-</span><a href="#local-6989586621679033845"><span class="hs-identifier hs-var">returntype</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679033846"><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033846"><span class="hs-identifier hs-var">rest5</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser (Maybe BuiltinType)
+</span><a href="#local-6989586621679033748"><span class="hs-identifier hs-var">rest3</span></a></span><span>
+</span><span id="line-92"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679033751"><span class="annot"><span class="annottext">Maybe BuiltinType
+</span><a href="#local-6989586621679033751"><span class="hs-identifier hs-var">returntype</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679033752"><span class="annot"><span class="annottext">[SingleToken]
+</span><a href="#local-6989586621679033752"><span class="hs-identifier hs-var">rest5</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser (Maybe BuiltinType)
 </span><a href="Parser.html#parseReturnType"><span class="hs-identifier hs-var">parseReturnType</span></a></span><span> </span><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033843"><span class="hs-identifier hs-var">rest4</span></a></span><span>
-</span><span id="line-93"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679033847"><span class="annot"><span class="annottext">CompoundStmt
-</span><a href="#local-6989586621679033847"><span class="hs-identifier hs-var">compStmt</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679033848"><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033848"><span class="hs-identifier hs-var">rest6</span></a></span></span><span class="hs-special">)</span><span>   </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Decl -&gt; Parser CompoundStmt
+</span><a href="#local-6989586621679033749"><span class="hs-identifier hs-var">rest4</span></a></span><span>
+</span><span id="line-93"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679033753"><span class="annot"><span class="annottext">CompoundStmt
+</span><a href="#local-6989586621679033753"><span class="hs-identifier hs-var">compStmt</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679033754"><span class="annot"><span class="annottext">[SingleToken]
+</span><a href="#local-6989586621679033754"><span class="hs-identifier hs-var">rest6</span></a></span></span><span class="hs-special">)</span><span>   </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Decl -&gt; Parser CompoundStmt
 </span><a href="ParserStmt.html#parseCompoundStmt"><span class="hs-identifier hs-var">PS.parseCompoundStmt</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String
 -&gt; [ParmVarDeclExpr] -&gt; CompoundStmt -&gt; Maybe BuiltinType -&gt; Decl
 </span><a href="Ast.html#FunctionDecl"><span class="hs-identifier hs-var">A.FunctionDecl</span></a></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679033839"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">[ParmVarDeclExpr]
-</span><a href="#local-6989586621679033841"><span class="hs-identifier hs-var">pvdelist</span></a></span><span>
+</span><a href="#local-6989586621679033745"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">[ParmVarDeclExpr]
+</span><a href="#local-6989586621679033747"><span class="hs-identifier hs-var">pvdelist</span></a></span><span>
 </span><span id="line-94"></span><span>        </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Stmt] -&gt; CompoundStmt
 </span><a href="Ast.html#CompoundStmt"><span class="hs-identifier hs-var">A.CompoundStmt</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Maybe BuiltinType
-</span><a href="#local-6989586621679033845"><span class="hs-identifier hs-var">returntype</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033846"><span class="hs-identifier hs-var">rest5</span></a></span><span>
+</span><a href="#local-6989586621679033751"><span class="hs-identifier hs-var">returntype</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[SingleToken]
+</span><a href="#local-6989586621679033752"><span class="hs-identifier hs-var">rest5</span></a></span><span>
 </span><span id="line-95"></span><span>    </span><span class="annot"><span class="annottext">(Decl, [SingleToken]) -&gt; Either String (Decl, [SingleToken])
 forall a b. b -&gt; Either a b
 </span><span class="hs-identifier hs-var">Right</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">String
 -&gt; [ParmVarDeclExpr] -&gt; CompoundStmt -&gt; Maybe BuiltinType -&gt; Decl
 </span><a href="Ast.html#FunctionDecl"><span class="hs-identifier hs-var">A.FunctionDecl</span></a></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679033839"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">[ParmVarDeclExpr]
-</span><a href="#local-6989586621679033841"><span class="hs-identifier hs-var">pvdelist</span></a></span><span> </span><span class="annot"><span class="annottext">CompoundStmt
-</span><a href="#local-6989586621679033847"><span class="hs-identifier hs-var">compStmt</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe BuiltinType
-</span><a href="#local-6989586621679033845"><span class="hs-identifier hs-var">returntype</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033848"><span class="hs-identifier hs-var">rest6</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679033745"><span class="hs-identifier hs-var">n</span></a></span><span> </span><span class="annot"><span class="annottext">[ParmVarDeclExpr]
+</span><a href="#local-6989586621679033747"><span class="hs-identifier hs-var">pvdelist</span></a></span><span> </span><span class="annot"><span class="annottext">CompoundStmt
+</span><a href="#local-6989586621679033753"><span class="hs-identifier hs-var">compStmt</span></a></span><span> </span><span class="annot"><span class="annottext">Maybe BuiltinType
+</span><a href="#local-6989586621679033751"><span class="hs-identifier hs-var">returntype</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[SingleToken]
+</span><a href="#local-6989586621679033754"><span class="hs-identifier hs-var">rest6</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-96"></span><span>
 </span><span id="line-97"></span><span class="hs-comment">-- | Takes a @'Parser'@ @'SingleToken'@ list as parameter and returns a __Either__ @'String'@ (@'A.Decl'@, [@'SingleToken'@]).</span><span>
 </span><span id="line-98"></span><span class="hs-comment">--</span><span>
@@ -249,25 +249,25 @@ forall a b. b -&gt; Either a b
 </span><span id="line-101"></span><span class="hs-comment">-- On failure, this function returns a pretty formatted error message.</span><span>
 </span><span id="line-102"></span><span class="annot"><a href="Parser.html#parseTopLevel"><span class="hs-identifier hs-type">parseTopLevel</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Parser.html#Parser"><span class="hs-identifier hs-type">Parser</span></a></span><span> </span><span class="annot"><a href="Ast.html#Decl"><span class="hs-identifier hs-type">A.Decl</span></a></span><span>
 </span><span id="line-103"></span><span id="parseTopLevel"><span class="annot"><span class="annottext">parseTopLevel :: Parser Decl
-</span><a href="Parser.html#parseTopLevel"><span class="hs-identifier hs-var hs-var">parseTopLevel</span></a></span></span><span> </span><span id="local-6989586621679033852"><span class="annot"><span class="annottext">tokens :: [SingleToken]
-</span><a href="#local-6989586621679033852"><span class="hs-identifier hs-var">tokens</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><a href="Tokens.html#Keyword"><span class="hs-identifier hs-type">T.Keyword</span></a></span><span> </span><span class="annot"><span class="annottext">Keyword
+</span><a href="Parser.html#parseTopLevel"><span class="hs-identifier hs-var hs-var">parseTopLevel</span></a></span></span><span> </span><span id="local-6989586621679033758"><span class="annot"><span class="annottext">tokens :: [SingleToken]
+</span><a href="#local-6989586621679033758"><span class="hs-identifier hs-var">tokens</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><a href="Tokens.html#Keyword"><span class="hs-identifier hs-type">T.Keyword</span></a></span><span> </span><span class="annot"><span class="annottext">Keyword
 </span><a href="Tokens.html#Fn"><span class="hs-identifier hs-var">T.Fn</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(Int, Int)
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span class="annot"><span class="annottext">[SingleToken]
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Parser Decl
 </span><a href="Parser.html#parseFunctionDecl"><span class="hs-identifier hs-var">parseFunctionDecl</span></a></span><span> </span><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033852"><span class="hs-identifier hs-var">tokens</span></a></span><span>
-</span><span id="line-104"></span><span class="annot"><a href="Parser.html#parseTopLevel"><span class="hs-identifier hs-var">parseTopLevel</span></a></span><span> </span><span id="local-6989586621679033853"><span class="annot"><span class="annottext">tokens :: [SingleToken]
-</span><a href="#local-6989586621679033853"><span class="hs-identifier hs-var">tokens</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><a href="Tokens.html#Keyword"><span class="hs-identifier hs-type">T.Keyword</span></a></span><span> </span><span class="annot"><span class="annottext">Keyword
+</span><a href="#local-6989586621679033758"><span class="hs-identifier hs-var">tokens</span></a></span><span>
+</span><span id="line-104"></span><span class="annot"><a href="Parser.html#parseTopLevel"><span class="hs-identifier hs-var">parseTopLevel</span></a></span><span> </span><span id="local-6989586621679033759"><span class="annot"><span class="annottext">tokens :: [SingleToken]
+</span><a href="#local-6989586621679033759"><span class="hs-identifier hs-var">tokens</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="hs-special">(</span><span class="annot"><a href="Tokens.html#Keyword"><span class="hs-identifier hs-type">T.Keyword</span></a></span><span> </span><span class="annot"><span class="annottext">Keyword
 </span><a href="Tokens.html#Struct"><span class="hs-identifier hs-var">T.Struct</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">(Int, Int)
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="hs-glyph hs-type">:</span></span><span> </span><span class="annot"><span class="annottext">[SingleToken]
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Parser Decl
 </span><a href="Parser.html#parseRecordDeclExpr"><span class="hs-identifier hs-var">parseRecordDeclExpr</span></a></span><span> </span><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033853"><span class="hs-identifier hs-var">tokens</span></a></span><span>
-</span><span id="line-105"></span><span class="annot"><a href="Parser.html#parseTopLevel"><span class="hs-identifier hs-var">parseTopLevel</span></a></span><span> </span><span id="local-6989586621679033854"><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033854"><span class="hs-identifier hs-var">tokens</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="#local-6989586621679033759"><span class="hs-identifier hs-var">tokens</span></a></span><span>
+</span><span id="line-105"></span><span class="annot"><a href="Parser.html#parseTopLevel"><span class="hs-identifier hs-var">parseTopLevel</span></a></span><span> </span><span id="local-6989586621679033760"><span class="annot"><span class="annottext">[SingleToken]
+</span><a href="#local-6989586621679033760"><span class="hs-identifier hs-var">tokens</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-106"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Parser BuiltinType
 </span><a href="ParserHelper.html#parseBuiltinType"><span class="hs-identifier hs-var">H.parseBuiltinType</span></a></span><span> </span><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033854"><span class="hs-identifier hs-var">tokens</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><a href="#local-6989586621679033760"><span class="hs-identifier hs-var">tokens</span></a></span><span> </span><span class="hs-keyword">of</span><span>
 </span><span id="line-107"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span class="annot"><span class="annottext">(BuiltinType, [SingleToken])
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">Decl -&gt; Parser Decl
 </span><a href="Parser.html#parseVarDecl"><span class="hs-identifier hs-var">parseVarDecl</span></a></span><span>
@@ -278,12 +278,12 @@ forall a b. b -&gt; Either a b
 </span><a href="Ast.html#CompoundStmt"><span class="hs-identifier hs-var">A.CompoundStmt</span></a></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Maybe BuiltinType
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033854"><span class="hs-identifier hs-var">tokens</span></a></span><span>
-</span><span id="line-109"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621679033855"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679033855"><span class="hs-identifier hs-var">err</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Either String (Decl, [SingleToken])
+</span><a href="#local-6989586621679033760"><span class="hs-identifier hs-var">tokens</span></a></span><span>
+</span><span id="line-109"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621679033761"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679033761"><span class="hs-identifier hs-var">err</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Either String (Decl, [SingleToken])
 forall a b. a -&gt; Either a b
 </span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679033855"><span class="hs-identifier hs-var">err</span></a></span><span>
+</span><a href="#local-6989586621679033761"><span class="hs-identifier hs-var">err</span></a></span><span>
 </span><span id="line-110"></span><span>
 </span><span id="line-111"></span><span class="hs-comment">-- | Takes a @'Parser'@ @'SingleToken'@ list as parameter and returns a __Either__ @'String'@ ([@'A.Decl'@], [@'SingleToken'@]).</span><span>
 </span><span id="line-112"></span><span class="hs-comment">--</span><span>
@@ -295,26 +295,26 @@ forall a b. a -&gt; Either a b
 </span><a href="Parser.html#parseDecl"><span class="hs-identifier hs-var hs-var">parseDecl</span></a></span></span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">([Decl], [SingleToken]) -&gt; Either String ([Decl], [SingleToken])
 forall a b. b -&gt; Either a b
 </span><span class="hs-identifier hs-var">Right</span></span><span> </span><span class="hs-special">(</span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span>
-</span><span id="line-118"></span><span class="annot"><a href="Parser.html#parseDecl"><span class="hs-identifier hs-var">parseDecl</span></a></span><span> </span><span id="local-6989586621679033856"><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033856"><span class="hs-identifier hs-var">tokens</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
-</span><span id="line-119"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679033857"><span class="annot"><span class="annottext">Decl
-</span><a href="#local-6989586621679033857"><span class="hs-identifier hs-var">decl</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679033858"><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033858"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span>       </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser Decl
+</span><span id="line-118"></span><span class="annot"><a href="Parser.html#parseDecl"><span class="hs-identifier hs-var">parseDecl</span></a></span><span> </span><span id="local-6989586621679033762"><span class="annot"><span class="annottext">[SingleToken]
+</span><a href="#local-6989586621679033762"><span class="hs-identifier hs-var">tokens</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="hs-keyword">do</span><span>
+</span><span id="line-119"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679033763"><span class="annot"><span class="annottext">Decl
+</span><a href="#local-6989586621679033763"><span class="hs-identifier hs-var">decl</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679033764"><span class="annot"><span class="annottext">[SingleToken]
+</span><a href="#local-6989586621679033764"><span class="hs-identifier hs-var">xs</span></a></span></span><span class="hs-special">)</span><span>       </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser Decl
 </span><a href="Parser.html#parseTopLevel"><span class="hs-identifier hs-var">parseTopLevel</span></a></span><span> </span><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033856"><span class="hs-identifier hs-var">tokens</span></a></span><span>
-</span><span id="line-120"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679033859"><span class="annot"><span class="annottext">[Decl]
-</span><a href="#local-6989586621679033859"><span class="hs-identifier hs-var">decls</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679033860"><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033860"><span class="hs-identifier hs-var">xsfinal</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser [Decl]
+</span><a href="#local-6989586621679033762"><span class="hs-identifier hs-var">tokens</span></a></span><span>
+</span><span id="line-120"></span><span>    </span><span class="hs-special">(</span><span id="local-6989586621679033765"><span class="annot"><span class="annottext">[Decl]
+</span><a href="#local-6989586621679033765"><span class="hs-identifier hs-var">decls</span></a></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679033766"><span class="annot"><span class="annottext">[SingleToken]
+</span><a href="#local-6989586621679033766"><span class="hs-identifier hs-var">xsfinal</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Parser [Decl]
 </span><a href="Parser.html#parseDecl"><span class="hs-identifier hs-var">parseDecl</span></a></span><span> </span><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033858"><span class="hs-identifier hs-var">xs</span></a></span><span>
+</span><a href="#local-6989586621679033764"><span class="hs-identifier hs-var">xs</span></a></span><span>
 </span><span id="line-121"></span><span>    </span><span class="annot"><span class="annottext">([Decl], [SingleToken]) -&gt; Either String ([Decl], [SingleToken])
 forall a b. b -&gt; Either a b
 </span><span class="hs-identifier hs-var">Right</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Decl
-</span><a href="#local-6989586621679033857"><span class="hs-identifier hs-var">decl</span></a></span><span> </span><span class="annot"><span class="annottext">Decl -&gt; [Decl] -&gt; [Decl]
+</span><a href="#local-6989586621679033763"><span class="hs-identifier hs-var">decl</span></a></span><span> </span><span class="annot"><span class="annottext">Decl -&gt; [Decl] -&gt; [Decl]
 forall a. a -&gt; [a] -&gt; [a]
 </span><span class="hs-glyph hs-var">:</span></span><span> </span><span class="annot"><span class="annottext">[Decl]
-</span><a href="#local-6989586621679033859"><span class="hs-identifier hs-var">decls</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033860"><span class="hs-identifier hs-var">xsfinal</span></a></span><span class="hs-special">)</span><span>
+</span><a href="#local-6989586621679033765"><span class="hs-identifier hs-var">decls</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[SingleToken]
+</span><a href="#local-6989586621679033766"><span class="hs-identifier hs-var">xsfinal</span></a></span><span class="hs-special">)</span><span>
 </span><span id="line-122"></span><span>
 </span><span id="line-123"></span><span class="hs-comment">-- | Takes a [@'SingleToken'@] as parameter and returns a __Either__ @'String'@ [@'A.Decl'@].</span><span>
 </span><span id="line-124"></span><span class="hs-comment">--</span><span>
@@ -323,21 +323,21 @@ forall a. a -&gt; [a] -&gt; [a]
 </span><span id="line-127"></span><span class="hs-comment">-- On failure, this function returns a pretty formatted error message.</span><span>
 </span><span id="line-128"></span><span class="annot"><a href="Parser.html#parser"><span class="hs-identifier hs-type">parser</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Parser.html#SingleToken"><span class="hs-identifier hs-type">SingleToken</span></a></span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span> </span><span class="hs-special">[</span><span class="annot"><a href="Ast.html#Decl"><span class="hs-identifier hs-type">A.Decl</span></a></span><span class="hs-special">]</span><span>
 </span><span id="line-129"></span><span id="parser"><span class="annot"><span class="annottext">parser :: [SingleToken] -&gt; Either String [Decl]
-</span><a href="Parser.html#parser"><span class="hs-identifier hs-var hs-var">parser</span></a></span></span><span> </span><span id="local-6989586621679033861"><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033861"><span class="hs-identifier hs-var">tokens</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><a href="Parser.html#parser"><span class="hs-identifier hs-var hs-var">parser</span></a></span></span><span> </span><span id="local-6989586621679033767"><span class="annot"><span class="annottext">[SingleToken]
+</span><a href="#local-6989586621679033767"><span class="hs-identifier hs-var">tokens</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
 </span><span id="line-130"></span><span>    </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">Parser [Decl]
 </span><a href="Parser.html#parseDecl"><span class="hs-identifier hs-var">parseDecl</span></a></span><span> </span><span class="annot"><span class="annottext">[SingleToken]
-</span><a href="#local-6989586621679033861"><span class="hs-identifier hs-var">tokens</span></a></span><span> </span><span class="hs-keyword">of</span><span>
-</span><span id="line-131"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621679033862"><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679033862"><span class="hs-identifier hs-var">err</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Either String [Decl]
+</span><a href="#local-6989586621679033767"><span class="hs-identifier hs-var">tokens</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-131"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Left</span></span><span> </span><span id="local-6989586621679033768"><span class="annot"><span class="annottext">String
+</span><a href="#local-6989586621679033768"><span class="hs-identifier hs-var">err</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">String -&gt; Either String [Decl]
 forall a b. a -&gt; Either a b
 </span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="annot"><span class="annottext">String
-</span><a href="#local-6989586621679033862"><span class="hs-identifier hs-var">err</span></a></span><span>
-</span><span id="line-132"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679033863"><span class="annot"><span class="annottext">[Decl]
-</span><a href="#local-6989586621679033863"><span class="hs-identifier hs-var">decls</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Decl] -&gt; Either String [Decl]
+</span><a href="#local-6989586621679033768"><span class="hs-identifier hs-var">err</span></a></span><span>
+</span><span id="line-132"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span class="hs-special">(</span><span id="local-6989586621679033769"><span class="annot"><span class="annottext">[Decl]
+</span><a href="#local-6989586621679033769"><span class="hs-identifier hs-var">decls</span></a></span></span><span class="hs-special">,</span><span> </span><span class="hs-special">[</span><span class="hs-special">]</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">[Decl] -&gt; Either String [Decl]
 forall a b. b -&gt; Either a b
 </span><span class="hs-identifier hs-var">Right</span></span><span> </span><span class="annot"><span class="annottext">[Decl]
-</span><a href="#local-6989586621679033863"><span class="hs-identifier hs-var">decls</span></a></span><span>
+</span><a href="#local-6989586621679033769"><span class="hs-identifier hs-var">decls</span></a></span><span>
 </span><span id="line-133"></span><span>        </span><span class="annot"><span class="hs-identifier hs-type">Right</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">[Decl]
 </span><span class="hs-identifier">_</span></span><span class="hs-special">,</span><span> </span><span class="annot"><span class="annottext">[SingleToken]
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">(Int, Int) -&gt; String -&gt; Either String [Decl]
