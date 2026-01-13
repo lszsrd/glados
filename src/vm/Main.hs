@@ -9,46 +9,35 @@ module Main where
 
 import System.Environment (getProgName, getArgs)
 import System.IO (stderr, hPutStrLn)
-import System.FilePath (takeExtension)
-import System.Exit (exitSuccess, exitFailure)
+import System.Exit (exitFailure)
 
 import Data.List (isPrefixOf, group, sort)
 
-import Format (error)
-
+import ParseArgs (parseArgs, printUsage)
 import Parser (parseFunctions)
 import Interpreter (call)
 
--- files should start with a magic byte to identify as glados compiled byte code
--- check if multiples function share the same name inside all files
---  ==> can be solved by naming function by its file name (namespace) + function name
--- fecth decode execute
+fst3 :: (a, b, c) -> a
+fst3 (x, _, _) = x
 
-parseArgs :: [String] -> Either String [FilePath]
-parseArgs [] = Left $ ": " ++ Format.error ++ ": no input files"
-parseArgs (('-': _): _) = Left "USAGE"
-parseArgs (x: xs)
-    | takeExtension x /= ".bc"
-        = Left $ ": " ++ Format.error ++ ": " ++ x ++ ": unknown file type"
-    | null xs = Right [x]
-    | otherwise = case parseArgs xs of
-        Left e -> Left e
-        Right files -> Right $ x: files
+searchFunctionMD :: [[String]] -> String -> Maybe String
+searchFunctionMD [x@(_: xs), ys] y = case dropWhile (/= y) x of
+    [] -> searchFunctionMD [xs, ys] y
+    _ -> Just ("multiple definition of function " ++ y)
+searchFunctionMD [[], y: xs] _ = searchFunctionMD [xs, xs] y
+searchFunctionMD _ _ = Nothing
 
-printUsage :: String -> IO ()
-printUsage x = putStrLn $
-    "GLaDOS project (VM part) - Execute pre-compiled byte code.\n\n"
-    ++ "\ESC[1;33mUSAGE\ESC[0m: " ++ x ++ " <compiled files (.bc)>"
-
-interpret :: String -> IO ()
-interpret x = case parseFunctions $ lines x of
+run :: String -> IO ()
+run x = case parseFunctions $ lines x of
     Left e -> hPutStrLn stderr e >> exitFailure
-    Right symtab -> do
-        y <- call "main" symtab symtab []
-        case y of
-            Left e -> hPutStrLn stderr e >> exitFailure
-            Right Nothing -> return ()
-            Right (Just z) -> putStrLn ("### exit code " ++ show z ++ " ###")
+    Right ys -> case searchFunctionMD (replicate 2 (fst3 $ unzip3 ys)) [] of
+        Just e -> hPutStrLn stderr e >> exitFailure
+        Nothing -> do
+            y <- call "main" ys ys []
+            case y of
+                Left e -> hPutStrLn stderr e >> exitFailure
+                Right Nothing -> return ()
+                Right (Just z) -> putStrLn $ "### exit code " ++ show z
 
 main :: IO ()
 main = do
@@ -59,5 +48,5 @@ main = do
             then printUsage progName
             else hPutStrLn stderr (progName ++ e) >> exitFailure
         Right files -> do
-            x <- mapM (readFile . head) (group . sort $ files)
-            interpret (concat x) >> exitSuccess
+            files' <- mapM (readFile . head) (group . sort $ files)
+            run (concat files')

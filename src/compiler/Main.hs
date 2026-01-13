@@ -9,63 +9,23 @@ module Main where
 
 import System.Environment (getProgName, getArgs)
 import System.IO (stderr, hPutStrLn)
-import System.FilePath (takeExtension)
 import System.Exit (exitFailure)
 
 import Data.List (isPrefixOf, group, sort)
 
 import Format (error)
 
-import Rizz.Lexer (lexer)
-import Rizz.Parser (parser)
-import Bytecode (compileDecl)
-
-import Options (Options (..))
+import ParseArgs (parseArgs, printUsage)
 import Compiler (compile)
-
--- TODO: [(FilePath, lexer, parser, compiler)]
-parseArgs :: String -> [String] -> Either String (Options, [FilePath])
-parseArgs _ [] = Right (Options {dumpToks = False, dumpAst = False}, [])
-parseArgs extension ("--dump-tokens": x) = case parseArgs extension x of
-    Left e -> Left e
-    Right (Options _ y, z) -> Right (Options {dumpToks = True, dumpAst = y}, z)
-parseArgs extension ("--dump-ast": x) = case parseArgs extension x of
-    Left e -> Left e
-    Right (Options y _, z) -> Right (Options {dumpToks = y, dumpAst = True}, z)
-parseArgs _ (('-': _): _) = Left "USAGE"
-parseArgs extension (x: xs)
-    | takeExtension x /= extension
-        = Left $ ": " ++ Format.error ++ ": " ++ x ++ ": unknown file type"
-    | null xs = Right (Options {dumpToks = False, dumpAst = False}, [x])
-    | otherwise = case parseArgs extension xs of
-        Left e -> Left e
-        Right (opt, files) -> Right (opt, x: files)
-
-printUsage :: String -> String -> IO ()
-printUsage x y = putStrLn $
-    "GLaDOS project (compiler part) - Translate one or more source"
-    ++ " (code) file(s) to custom bytecode file(s).\n\n"
-    ++ "\ESC[1;33mUSAGE\ESC[0m: " ++ y ++ " [--dump-ast] [--dump-tokens] <sour"
-    ++ "ce files (" ++ x ++ ")>\n\nGenerated files are built from source file'"
-    ++ "s path and a custom \".bc\" extension is appened.\n\nByte code files "
-    ++ "are NOT object files which mean that they do not link to any object "
-    ++ "linker (i.e. ld on linux).\nTo use compiled files, you need to pass "
-    ++ "them to the GLaDOS interpreter (glados-interpreter binary)."
-
-dealWithIt :: (Options, [FilePath]) -> String -> IO ()
-dealWithIt e progName = case e of
-    (_, []) -> hPutStrLn stderr (progName ++ ": " ++ Format.error ++
-        ": no input files") >> exitFailure
-    (opts, files) -> compile
-        opts (map head . group . sort $ files) lexer parser compileDecl
 
 main :: IO ()
 main = do
-    let extension = ".rz"
-    progName <- getProgName
-    arguments <- parseArgs extension <$> getArgs
-    case arguments of
+    x <- getProgName
+    y <- parseArgs <$> getArgs
+    case y of
         Left e -> if "USAGE" `isPrefixOf` e
-            then printUsage extension progName
-            else hPutStrLn stderr (progName ++ e) >> exitFailure
-        Right e -> dealWithIt e progName
+            then printUsage x
+            else hPutStrLn stderr (x ++ e) >> exitFailure
+        Right (_, []) -> hPutStrLn stderr
+            (x ++ ": " ++ Format.error ++ ": no input files") >> exitFailure
+        Right (z, zs) -> compile z (map head . group . sort $ zs)
