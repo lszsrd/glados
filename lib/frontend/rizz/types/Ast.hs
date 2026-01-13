@@ -320,6 +320,7 @@ data BuiltinType
     -- ^ Float type keyword, see Float @'Keyword'@
     | ListType BuiltinType
     -- ^ List type, expressed in rizz code as @\`[Int]\`@, @\`[[Int]]\`@, etc.
+    | Struct Identifier
 
     deriving (
         Show
@@ -431,7 +432,7 @@ data ParmCallDecl
     -- ^ Function call, defined by @'CallExprDecl'@, see @'CallExprDecl'@.
     | ParmCallBExpr BinaryOpParm BinaryOp BinaryOpParm
     -- ^ Binary expression, an exact copy of @'BinaryOpExpr'@ without self calling @'BinaryOpConst'@ allowing expression in rizz code like @\`x - 1\`@ in function calls.
-
+    | ParmCallDeclList [ParmCallDecl]
     deriving (
         Show
         -- ^ Allows @'ParmCallDecl'@ to be printed.

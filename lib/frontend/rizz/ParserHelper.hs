@@ -239,7 +239,8 @@ parseBuiltinType ((T.Punctuator (T.SBracket T.OpenSBracket), _) : rest1) = do
 parseBuiltinType ((T.Keyword T.Bool, _) : rest) = Right (A.Boolean, rest)
 parseBuiltinType ((T.Keyword T.Char, _) : rest) = Right (A.Character, rest)
 parseBuiltinType ((T.Keyword T.Int, _) : rest) = Right (A.Integer, rest)
-parseBuiltinType ((T.Keyword T.Float, _) : r) = Right (A.SinglePrecision, r)
+parseBuiltinType ((T.Keyword T.Float, _) : rest) = Right (A.SinglePrecision, rest)
+parseBuiltinType ((T.Identifier i, _) : rest) = Right (A.Struct i, rest)
 parseBuiltinType ((token, position) : _) =
     errorAt position ("Expected builtintype, got " ++ show token)
 parseBuiltinType [] = errorAt (1,1) "Expected builtintype, got Nothing"
@@ -417,11 +418,23 @@ parseDeclAssignStmtLiteral f tokens = do
 -- This function is used to parse a variable declaration statement.
 parseVarDeclStmt :: A.Decl -> Parser A.VarDeclStmt
 parseVarDeclStmt f tokens = do
-    (typ, rest1) <- parseBuiltinType tokens
-    (name, rest2) <- parseIdentifier rest1
-    (op, rest3) <- parseAssignOp rest2
-    (value, rest4) <- parseParmCallDecl f rest3
-    Right (A.VarDeclStmt typ name op value, rest4)
+    case parseBuiltinType tokens of
+        Right (typ, rest1) ->
+            case typ of
+                A.Struct s -> do
+                    (name, rest2) <- parseIdentifier rest1
+                    (op, rest3) <- parseAssignOp rest2
+                    (_, rest4) <- expectToken (T.Punctuator (T.CBracket T.OpenCBracket))
+                                    "Wrong variable declaration" rest3
+                    (value, rest5) <- parseParmCallDeclList f rest4
+                    (_, rest6) <- expectToken (T.Punctuator (T.CBracket T.OpenCBracket))
+                                    "expected '}'" rest5
+                    Right (A.VarDeclStmt typ name op value, rest4)
+                _ -> do
+                    (name, rest2) <- parseIdentifier rest1
+                    (op, rest3) <- parseAssignOp rest2
+                    (value, rest4) <- parseParmCallDecl f rest3
+                    Right (A.VarDeclStmt typ name op value, rest4)
 
 -- | Takes an @'A.Decl'@ and a @'[SingleToken]'@ as parameter and
 -- returns a __Either__ @'String'@ @'A.DeclStmt'@.

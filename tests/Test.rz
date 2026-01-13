@@ -1,4 +1,15 @@
+struct bar2 {
+    Int: i,
+    Int: j
+}
+
+struct bar {
+    bar2: i,
+    Char: c
+}
+
 struct foo {
+    bar: b,
     Int: x,
     Int: j
 }
@@ -16,6 +27,7 @@ fn foo(Int: x) -> Int
 fn bar(Int: x) -> Int
 {
     Int y = 1;
+    foo f = {{{1, 2}, 'c'}, 1, 2};
  
     for (Int q = feur(y); feur(y) < x; y++) {
         if (foo(y) == 0) {
