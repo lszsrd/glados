@@ -42,7 +42,7 @@ module Tokens (
 -- $bnf
 -- For the full rizz lexical syntax definition, see the [BNF definition](https://github.com/lszsrd/glados/blob/main/docs/BNF/rizz-lexical.md) here.
 
-instance Show Token where
+{- instance Show Token where
     show (Keyword Bool) = "Bool"
     show (Keyword Char) = "Char"
     show (Keyword Int) = "Int"
@@ -55,6 +55,7 @@ instance Show Token where
     show (Keyword For) = "for"
     show (Keyword Foreach) = "foreach"
     show (Keyword Ret) = "ret"
+    show (Keyword Struct) = "struct"
 
     show (Identifier x) = x
 
@@ -97,7 +98,7 @@ instance Show Token where
     show (Punctuator (AssignOp DivEqual)) = "/="
     show (Punctuator (AssignOp ModEqual)) = "%="
     show (Punctuator (AssignOp AddEqual)) = "+="
-    show (Punctuator (AssignOp SubEqual)) = "-="
+    show (Punctuator (AssignOp SubEqual)) = "-=" -}
 
 -- | Defines @'Stream'@ type as a string representing a finite byte array.
 type Stream = String
@@ -123,6 +124,7 @@ data Token
     -- ^ Punctuator definition.
 
     deriving (
+        Show,
         Eq
         -- ^ Allows @'Token'@ to be compared, needed for unit tests.
     )
