@@ -16,6 +16,15 @@ module OpCodes (
 type Identifier = String
 type Label = String
 
+instance Show Operand where
+    show (Bool False) = "False"
+    show (Bool True) = "False"
+    show (Char x) = [x]
+    show (Integer x) = show x
+    show (Float x) = show x
+    show (List x) = showList' x
+    show (Struct x) = show x
+
 data Operand
     = Bool Bool
     | Char Char
@@ -25,8 +34,7 @@ data Operand
     | Struct [Operand]
 
     deriving (
-        Show
-        , Eq
+        Eq
         , Ord
     )
 
@@ -39,6 +47,7 @@ data OpCode
     | PushChar Operand
     | PushInt Operand
     | PushFloat Operand
+    | PushList Int
     | Pop
     | Jump Label
     | JumpFalse Label
@@ -63,3 +72,9 @@ data OpCode
         Show
         , Eq
     )
+
+showList' :: [Operand] -> String
+showList' [] = []
+showList' [x] = show x
+showList' ((Char x): xs) = x: showList' xs
+showList' (x: xs) = (" " ++ show x ++ ", ") ++ showList' xs

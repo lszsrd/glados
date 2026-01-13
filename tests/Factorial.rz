@@ -1,6 +1,8 @@
 fn main() -> Int
 {
-    ret factorial(5);
+    print("factorial(5) = ");
+    println(factorial(5));
+    ret 0;
 }
 
 fn factorial(Int: x) -> Int
