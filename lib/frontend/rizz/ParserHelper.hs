@@ -150,9 +150,7 @@ parseAssignOp ((token, position) : _) =
     errorAt position ("Expected AssignOp, got " ++ show token)
 parseAssignOp [] = errorAt (1, 1) "Expected AssignOp, got "
 
--- | Takes a @'[SingleToken]'@ as parameter and
--- returns a __Either__ @'String'@ @'[T.BinaryOp]'@.
---
+-- | Takes a @'[SingleToken]'@ as parameter and returns a __Either__ @'String'@ @'[T.BinaryOp]'@.
 -- On success, this function returns a @'T.BinaryOp'@.
 --
 -- On failure, this function returns a pretty formatted message error.
@@ -312,11 +310,10 @@ parseParmCallDecl f tokens@((T.Identifier _, _) :
 parseParmCallDecl f ((T.Identifier id1, pos) :
     (T.Punctuator (T.SBracket T.OpenSBracket), _) : rest1) = do
     _ <- doesVarExists pos f id1
-    (idxExpr, rest2) <- parseParmCallDecl f rest1
+    (idxExpr, rest2) <- parseOr (parseParmCallDeclBExpr f) (parseParmCallDecl f) rest1
     (_, rest3) <- expectToken (T.Punctuator (T.SBracket T.CloseSBracket))
         "Expected ']' after index" rest2
-    Right (A.ParmCallDeclIdx id1 idxExpr, rest3)
-
+    parseIdxChain f (A.ParmCallDeclIdx (A.ParmCallDeclIdent id1) idxExpr) rest3
 parseParmCallDecl f ((T.Identifier id1, pos) : rest) = do
     _ <- doesVarExists pos f id1
     Right (A.ParmCallDeclIdent id1, rest)
@@ -324,7 +321,17 @@ parseParmCallDecl _ ((T.Literal li, _) : rest) =
     Right (A.ParmCallDeclLiteral li, rest)
 parseParmCallDecl _ ((token, position) : _) =
     errorAt position ("Expected literal/ident/call-expr, got " ++ show token)
-parseParmCallDecl _ [] = errorAt (1, 1) "Expected ParmCallDecl, got " 
+parseParmCallDecl _ [] = errorAt (1, 1) "Expected ParmCallDecl, got "
+
+-- | Parses double index access (e.g.: @arr[i][j]@).
+parseIdxChain :: A.Decl -> A.ParmCallDecl -> Parser A.ParmCallDecl
+parseIdxChain f base ((T.Punctuator (T.SBracket T.OpenSBracket), _) : rest1) = do
+    (idxExpr, rest2) <- parseOr (parseParmCallDeclBExpr f) (parseParmCallDecl f) rest1
+    (_, rest3) <- expectToken (T.Punctuator (T.SBracket T.CloseSBracket))
+        "Expected ']' after index" rest2
+    parseIdxChain f (A.ParmCallDeclIdx base idxExpr) rest3
+parseIdxChain _ base rest = Right (base, rest) 
+
 
 -- | Takes an @'A.Decl'@ and a @'[SingleToken]'@ as parameter and
 -- returns a __Either__ @'String'@ @'A.ParmCallDecl'@.
