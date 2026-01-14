@@ -1,0 +1,35 @@
+
+
+
+.filetree {
+  padding: 8px;
+  background: #252526;
+  border-bottom: 1px solid #333;
+  font-size: 13px;
+}
+
+.folder,
+.file {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  color: #888;
+}
+
+.file {
+  padding-left: 24px;
+}
+
+.file.active {
+  color: #f0db4f;
+}
+
+.icon {
+  width: 16px;
+  height: 16px;
+}
+
+
+
+

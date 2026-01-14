@@ -1,0 +1,33 @@
+.terminal {
+  display: flex;
+  flex-direction: column;
+  background: #1e1e1e;
+  border-top: 1px solid #333;
+  height: 100%;
+}
+
+.terminal-header {
+  padding: 8px 12px;
+  background: #252526;
+  border-bottom: 1px solid #333;
+  flex-shrink: 0;
+}
+
+.terminal-title {
+  font-size: 12px;
+  color: #888;
+}
+
+.terminal-content {
+  flex: 1;
+  padding: 8px;
+  overflow: hidden;
+}
+
+.terminal-content .xterm {
+  height: 100%;
+}
+
+.terminal-content .xterm-viewport {
+  overflow-y: auto !important;
+}

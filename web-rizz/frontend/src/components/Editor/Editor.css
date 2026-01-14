@@ -1,0 +1,44 @@
+.editor-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.editor-toolbar {
+  padding: 4px 8px;
+  background: #252526;
+  border-bottom: 1px solid #333;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.vim-toggle {
+  padding: 4px 8px;
+  background: #333;
+  border: none;
+  border-radius: 25%;
+  color: #888;
+  cursor: pointer;
+  font-size: 11px;
+  font-family: monospace;
+}
+
+.vim-toggle.active {
+  background: #f0db4f;
+  color: #1e1e1e;
+}
+
+.editor {
+  flex: 1;
+  overflow: auto;
+}
+
+.editor .cm-editor {
+  height: 100%;
+}
+
+.editor .cm-scroller {
+  font-family: monospace;
+  font-size: 14px;
+}

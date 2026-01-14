@@ -1,0 +1,183 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.app {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #1e1e1e;
+  color: #d4d4d4;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.workspace-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.editor-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+
+.run-bar {
+  padding: 8px 12px;
+  background: #252526;
+  border-top: 1px solid #333;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.run-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.session-timer {
+  font-family: monospace;
+  font-size: 14px;
+  color: #f0db4f;
+}
+
+.session-hint {
+  font-size: 13px;
+  color: #666;
+}
+
+.run-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: #6a9955;
+  border: none;
+  border-radius: 4px;
+  color: #fff;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.run-btn:hover {
+  background: #5a8945;
+}
+
+.run-btn:focus-visible {
+  outline: 2px solid #f0db4f;
+  outline-offset: 2px;
+}
+
+.gutter {
+  background: #333;
+}
+
+.gutter:hover {
+  background: #f0db4f;
+}
+
+.gutter-horizontal {
+  cursor: col-resize;
+}
+
+.gutter-vertical {
+  cursor: row-resize;
+}
+
+/* Mobile */
+.main.mobile {
+  flex-direction: column;
+  position: relative;
+}
+
+.main.mobile .panel {
+  display: none;
+  flex: 1;
+  overflow: hidden;
+}
+
+.main.mobile .panel.active {
+  display: flex;
+  flex-direction: column;
+}
+
+.main.mobile .tutorial {
+  width: 100%;
+  border-right: none;
+}
+
+.main.mobile .workspace {
+  height: 100%;
+}
+
+.mobile-toggle {
+  display: none;
+  background: #252526;
+  border-top: 1px solid #333;
+  padding: 8px;
+  gap: 8px;
+}
+
+@media (max-width: 768px) {
+  .mobile-toggle {
+    display: flex;
+  }
+}
+
+.mobile-toggle button {
+  flex: 1;
+  padding: 12px;
+  background: #333;
+  border: none;
+  border-radius: 4px;
+  color: #888;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.mobile-toggle button.active {
+  background: #f0db4f;
+  color: #1e1e1e;
+}
+
+.mobile-toggle button:focus-visible {
+  outline: 2px solid #f0db4f;
+  outline-offset: 2px;
+}
+
+/* accessibility things */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #f0db4f;
+  color: #1e1e1e;
+  padding: 8px;
+  z-index: 100;
+}
+
+.skip-link:focus {
+  top: 0;
+}

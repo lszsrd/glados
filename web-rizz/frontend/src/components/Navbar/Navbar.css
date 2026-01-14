@@ -1,0 +1,68 @@
+.navbar {
+  height: 48px;
+  padding: 0 16px;
+  background: #1e1e1e;
+  border-bottom: 1px solid #333;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.logo {
+  font-size: 18px;
+  font-weight: 600;
+  color: #f0db4f;
+}
+
+.nav-link {
+  color: #888;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.nav-link:hover,
+.nav-link.active {
+  color: #f0db4f;
+}
+
+.nav-link:focus-visible {
+  outline: 2px solid #f0db4f;
+  outline-offset: 2px;
+}
+
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.github-link {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.github-link svg {
+  flex-shrink: 0;
+}
+
+.workers-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #888;
+}
+
+.workers-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #6a9955;
+}
