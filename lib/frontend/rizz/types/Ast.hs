@@ -431,6 +431,8 @@ data ParmCallDecl
     -- ^ Function call, defined by @'CallExprDecl'@, see @'CallExprDecl'@.
     | ParmCallBExpr BinaryOpParm BinaryOp BinaryOpParm
     -- ^ Binary expression, an exact copy of @'BinaryOpExpr'@ without self calling @'BinaryOpConst'@ allowing expression in rizz code like @\`x - 1\`@ in function calls.
+    | ParmCallDeclIdx Identifier ParmCallDecl
+    -- ^ List index access, like @`list[0]`@ or @`arr[i]`@.
 
     deriving (
         Show

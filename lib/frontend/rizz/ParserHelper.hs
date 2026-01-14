@@ -309,6 +309,14 @@ parseParmCallDecl f tokens@((T.Identifier _, _) :
     (T.Punctuator (T.RBracket T.OpenRBracket), _) : _) = do
     (call, rest) <- parseCallExprDecl f tokens
     Right (A.ParmCallDeclExpr call, rest)
+parseParmCallDecl f ((T.Identifier id1, pos) :
+    (T.Punctuator (T.SBracket T.OpenSBracket), _) : rest1) = do
+    _ <- doesVarExists pos f id1
+    (idxExpr, rest2) <- parseParmCallDecl f rest1
+    (_, rest3) <- expectToken (T.Punctuator (T.SBracket T.CloseSBracket))
+        "Expected ']' after index" rest2
+    Right (A.ParmCallDeclIdx id1 idxExpr, rest3)
+
 parseParmCallDecl f ((T.Identifier id1, pos) : rest) = do
     _ <- doesVarExists pos f id1
     Right (A.ParmCallDeclIdent id1, rest)
