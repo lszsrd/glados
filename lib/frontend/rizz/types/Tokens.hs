@@ -56,6 +56,8 @@ instance Show Token where
     show (Keyword For) = "for"
     show (Keyword Foreach) = "foreach"
     show (Keyword Ret) = "ret"
+    show (Keyword Break) = "break"
+    show (Keyword Continue) = "continue"
 
     show (Identifier x) = x
 
@@ -156,6 +158,10 @@ data Keyword
     -- ^ Return (from function) keyword, expressed in rizz code as @\`ret\`@.
     | Struct
     -- ^ Struct keyword, expressed in rizz code as @\`struct Foo = {...}\`@.
+    | Continue
+    -- ^ Continue keyword, expressed in rizz code as @\`continue;\`@.
+    | Break
+    -- ^ Break keyword, expressed in rizz code as @\`break;\`@.
     
     deriving (
         Show

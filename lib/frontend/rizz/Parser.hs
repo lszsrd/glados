@@ -90,7 +90,7 @@ parseFunctionDecl tokens = do
     (_, rest4) <- H.expectToken (T.Punctuator (T.RBracket T.CloseRBracket))
         "expected ')'" rest3
     (returntype, rest5) <- parseReturnType rest4
-    (compStmt, rest6)   <- PS.parseCompoundStmt ([], A.FunctionDecl n pvdelist
+    (compStmt, rest6)   <- PS.parseCompoundStmt False ([], A.FunctionDecl n pvdelist
         (A.CompoundStmt []) returntype) rest5
     Right (A.FunctionDecl n pvdelist compStmt returntype, rest6)
 

@@ -43,9 +43,9 @@ parseTernaryOperation f ((T.Punctuator (T.RBracket T.OpenRBracket), _) : r)
     (_, rest3) <- H.expectToken
         (T.Punctuator (T.RBracket T.CloseRBracket)) "Expected ')'" rest2
     (_, rest4) <- H.expectToken (T.Punctuator T.QMark) "Expected '?'" rest3
-    (compoundStmt1, rest5) <- parseCompoundStmt f rest4
+    (compoundStmt1, rest5) <- parseCompoundStmt False f rest4
     (_, rest6) <- H.expectToken (T.Punctuator T.Colon) "Expected ':'" rest5
-    (compoundStmt2, rest7) <- parseCompoundStmt f rest6
+    (compoundStmt2, rest7) <- parseCompoundStmt False f rest6
     Right (A.IfStmt binaryOpExpr compoundStmt1 (Just compoundStmt2), rest7)
 parseTernaryOperation _ [] = H.errorAt (1, 1)
     "Expected TernaryExpr, got End Of Stream"
@@ -60,17 +60,17 @@ parseTernaryOperation _ ((a, pos):_) = H.errorAt pos
 -- On failure, this function returns a pretty formatted message error.
 --
 -- This function is used to parse a statement list.
-parseStmtList :: ([A.Decl], A.Decl) -> Parser [A.Stmt]
-parseStmtList _ tokens@((T.Punctuator (T.CBracket T.CloseCBracket), _) : _)
+parseStmtList :: Bool -> ([A.Decl], A.Decl) -> Parser [A.Stmt]
+parseStmtList _ _ tokens@((T.Punctuator (T.CBracket T.CloseCBracket), _) : _)
     = Right ([], tokens)
-parseStmtList f@(fl, A.FunctionDecl n pvdelist bdy ret) tokens = do
-    (stmt, r1) <- parseStmt f tokens
+parseStmtList b f@(fl, A.FunctionDecl n pvdelist bdy ret) tokens = do
+    (stmt, r1) <- parseStmt b f tokens
     newParms <- H.addIfVarExpr (H.getPos 0 tokens) stmt pvdelist
-    (stmts, rest2) <- parseStmtList (fl, A.FunctionDecl n newParms bdy ret) r1
+    (stmts, rest2) <- parseStmtList b (fl, A.FunctionDecl n newParms bdy ret) r1
     Right (stmt : stmts, rest2)
-parseStmtList _ [] = H.errorAt (1, 1)
+parseStmtList _ _ [] = H.errorAt (1, 1)
     "Expected '{' or '}' after Stmt List, got End Of Stream"
-parseStmtList _ ((a, pos):_) = H.errorAt pos
+parseStmtList _ _ ((a, pos):_) = H.errorAt pos
     ("Expected '{' or '}', got " ++ show a)
 
 -- | Takes an @'([A.Decl], A.Decl)'@ and a @'[SingleToken]'@ as parameter and
@@ -81,11 +81,11 @@ parseStmtList _ ((a, pos):_) = H.errorAt pos
 -- On failure, this function returns a pretty formatted message error.
 --
 -- This function is used to parse a compound statement, (e.g.: a function's body, a for's body).
-parseCompoundStmt :: ([A.Decl], A.Decl) -> Parser A.CompoundStmt
-parseCompoundStmt f tokens = do
+parseCompoundStmt :: Bool -> ([A.Decl], A.Decl) -> Parser A.CompoundStmt
+parseCompoundStmt b f tokens = do
     (_, rest1) <- H.expectToken (T.Punctuator (T.CBracket T.OpenCBracket))
         "expected '{'" tokens
-    (stmts, rest2) <- parseStmtList f rest1
+    (stmts, rest2) <- parseStmtList b f rest1
     (_, rest3) <- H.expectToken (T.Punctuator (T.CBracket T.CloseCBracket))
         "expected '}'" rest2
     Right (A.CompoundStmt stmts, rest3)
@@ -104,6 +104,8 @@ parseBuiltinTypes f tokens@((tok, pos) : _) = case tok of
     T.Keyword T.Char    -> parseDeclVarExpr f tokens
     T.Keyword T.Int     -> parseDeclVarExpr f tokens
     T.Keyword T.Float   -> parseDeclVarExpr f tokens
+    T.Punctuator (T.SBracket T.OpenSBracket) -> parseDeclVarExpr f tokens
+    T.Punctuator (T.RBracket T.OpenRBracket) -> parseTernaryOperation f tokens
     _ -> H.errorAt pos "Unexpected token in stmt"
 parseBuiltinTypes _ [] =
     H.errorAt (1, 1) "Unexpected end of input in statement"
@@ -116,17 +118,17 @@ parseBuiltinTypes _ [] =
 -- On failure, this function returns a pretty formatted message error.
 --
 -- This function is used to parse all keywords statements.
-parseKeywords :: ([A.Decl], A.Decl) -> Parser A.Stmt
-parseKeywords f tokens@((tok, _) : _) = case tok of
+parseKeywords :: Bool -> ([A.Decl], A.Decl) -> Parser A.Stmt
+parseKeywords b f tokens@((tok, _) : _) = case tok of
     T.Keyword T.Foreach                      -> parseForeach f tokens
     T.Keyword T.While                        -> parseWhile f tokens
     T.Keyword T.Ret                          -> parseRet f tokens
     T.Keyword T.If                           -> parseIf f tokens
     T.Keyword T.For                          -> parseFor f tokens
-    T.Punctuator (T.SBracket T.OpenSBracket) -> parseDeclVarExpr f tokens
-    T.Punctuator (T.RBracket T.OpenRBracket) -> parseTernaryOperation f tokens
+    T.Keyword T.Continue                     -> parseLoopCtrlStmt b tokens
+    T.Keyword T.Break                        -> parseLoopCtrlStmt b tokens
     _ -> parseBuiltinTypes f tokens
-parseKeywords _ [] = H.errorAt (1, 1) "Unexpected end of input in statement"
+parseKeywords _ _  [] = H.errorAt (1, 1) "Unexpected end of input in statement"
 
 -- | Takes an @'([A.Decl], A.Decl)'@ and a @'[SingleToken]'@ as parameter and
 -- returns a __Either__ @'String'@ @'A.Stmt'@.
@@ -136,8 +138,8 @@ parseKeywords _ [] = H.errorAt (1, 1) "Unexpected end of input in statement"
 -- On failure, this function returns a pretty formatted message error.
 --
 -- This function is used to parse a statement.
-parseStmt :: ([A.Decl], A.Decl) -> Parser A.Stmt
-parseStmt f tokens@((tok, _) : xs) = case tok of
+parseStmt :: Bool -> ([A.Decl], A.Decl) -> Parser A.Stmt
+parseStmt b f tokens@((tok, _) : xs) = case tok of
     T.Identifier _ ->
         case xs of
             ((T.Punctuator (T.RBracket T.OpenRBracket), _) : _) ->
@@ -145,8 +147,8 @@ parseStmt f tokens@((tok, _) : xs) = case tok of
             ((T.Identifier _, _) : (T.Punctuator (T.AssignOp _), _) : _) ->
                 parseDeclVarExpr f tokens
             _ -> parseDeclStmtExpr f tokens
-    _ -> parseKeywords f tokens
-parseStmt _ [] = H.errorAt (1, 1) "Unexpected end of input in statement"
+    _ -> parseKeywords b f tokens
+parseStmt _ _ [] = H.errorAt (1, 1) "Unexpected end of input in statement"
 
 -- | Takes an @'([A.Decl], A.Decl)'@ and a @'[SingleToken]'@ as parameter and
 -- returns a __Either__ @'String'@ @'A.Stmt'@.
@@ -237,10 +239,10 @@ parseIfH f tokens = do
 parseIf :: ([A.Decl], A.Decl) -> Parser A.Stmt
 parseIf f tokens = do
     (cond, rest)   <- parseIfH f tokens 
-    (bdy, rest2)    <- parseCompoundStmt f rest
+    (bdy, rest2)    <- parseCompoundStmt False f rest
     case rest2 of
         (T.Keyword T.Else,_) : elseBdyNrest -> do
-            (elseBdy, rest4) <- parseCompoundStmt f elseBdyNrest
+            (elseBdy, rest4) <- parseCompoundStmt False f elseBdyNrest
             Right (A.IfStmt cond bdy (Just elseBdy), rest4)
         _ -> Right (A.IfStmt cond bdy Nothing, rest2)
 
@@ -292,6 +294,19 @@ parseForH f tokens = do
         (T.Punctuator (T.RBracket T.OpenRBracket)) "Expected '('" rest
     parseTemp f vDeclNRest
 
+
+parseLoopCtrlStmt :: Bool -> Parser A.Stmt
+parseLoopCtrlStmt False ((_, pos):_) = H.errorAt pos
+    "break or continue outside loop scope."
+parseLoopCtrlStmt True ((T.Keyword T.Continue, _):
+    (T.Punctuator T.Semicolon,_): rest) =
+    Right (A.LoopControlStmt T.Continue, rest)
+parseLoopCtrlStmt True ((T.Keyword T.Break, _):
+    (T.Punctuator T.Semicolon,_): rest) =
+    Right (A.LoopControlStmt T.Break, rest)
+parseLoopCtrlStmt _ e =
+    H.errorAt (1, 1) ("Expected Expression, got " ++ show e)
+
 -- | Takes an @'([A.Decl], A.Decl)'@ and a @'[SingleToken]'@ as parameter and
 -- returns a __Either__ @'String'@ @'A.Stmt'@.
 --
@@ -307,7 +322,7 @@ parseFor f@(fl, _) tokens = do
     (decl, rest2)   <- H.parseMaybe (H.parseDeclStmt (fl, newF)) rest1
     (_, bdyNRest) <- H.expectToken
         (T.Punctuator (T.RBracket T.CloseRBracket)) "Expected ')'" rest2
-    (bdy, rest3)    <- parseCompoundStmt (fl, newF) bdyNRest
+    (bdy, rest3)    <- parseCompoundStmt True (fl, newF) bdyNRest
     Right (A.ForStmt vDecl binOp decl bdy, rest3)
 
 -- | Takes a @'[SingleToken]'@ as parameter and
@@ -341,7 +356,7 @@ parseForeach f tokens = do
     (iterator, rest2) <- H.parseIdentifier rest1
     (_, rest3) <- H.expectToken (T.Punctuator (T.RBracket T.CloseRBracket))
         "Expected ')'" rest2
-    (body, rest4) <- parseCompoundStmt f rest3
+    (body, rest4) <- parseCompoundStmt False f rest3
     Right (A.ForeachStmt container iterator body, rest4)
 
 -- | Takes an @'([A.Decl], A.Decl)'@ and a @'[SingleToken]'@ as parameter and
@@ -360,5 +375,5 @@ parseWhile f tokens = do
     (cond, rest2) <- parseBinaryOpExpr f binOpNrest
     (_, bdyNrest) <- H.expectToken
         (T.Punctuator (T.RBracket T.CloseRBracket)) "Expected ')'" rest2
-    (body, rest3) <- parseCompoundStmt f bdyNrest
+    (body, rest3) <- parseCompoundStmt True f bdyNrest
     Right (A.WhileStmt cond body, rest3)

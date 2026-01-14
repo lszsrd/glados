@@ -252,6 +252,15 @@ data Stmt
     --  - @'BinaryOpExpr'@ which suits all needs, from constants to arithmetics or even function call.
     --  - A trailing @'Semicolon'@ to end the expression.
 
+    | LoopControlStmt Keyword
+    -- ^ Control exec from loop instruction, expressed in rizz code like @\`continue;\`@ or @\`break;\`@.
+    --
+    -- A @'LoopControlStmt'@ rizz grammar in-code is as follow, in the given order:
+    --
+    --  - A leading @'continue'@ or @'break'@.
+    --  - A trailing @'Semicolon'@ to end the expression.
+
+
     deriving (
         Show
         -- ^ Allows @'Stmt'@ to be printed.
