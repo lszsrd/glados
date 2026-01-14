@@ -1,7 +1,7 @@
 # Rizz Playground
 
 Web Playground for learning Rizz programming language
-
+https://rizzplayground.vercel.app/
 ## Run
 
 ```bash
