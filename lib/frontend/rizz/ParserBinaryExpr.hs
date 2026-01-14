@@ -34,7 +34,7 @@ type Parser a = [SingleToken] -> Either String (a, [SingleToken])
 -- representing a single parameter in a BinaryOpExpr
 -- 
 -- On failure, this function returns a pretty formatted error message.
-parseBinaryOpParm :: A.Decl -> Parser A.BinaryOpParm
+parseBinaryOpParm :: ([A.Decl], A.Decl) -> Parser A.BinaryOpParm
 parseBinaryOpParm f tokens = case tokens of
     ((T.Punctuator (T.RBracket T.OpenRBracket), _) : rest) -> do
         (e, rest1) <- parseFormBinaryOpExpr f rest
@@ -51,7 +51,7 @@ parseBinaryOpParm f tokens = case tokens of
 -- On success, this function returns a parsed BinaryOpExpr.
 -- 
 -- On failure, this function returns a pretty formatted error message.
-parseFormBinaryOpExpr :: A.Decl -> Parser A.BinaryOpExpr
+parseFormBinaryOpExpr :: ([A.Decl], A.Decl) -> Parser A.BinaryOpExpr
 parseFormBinaryOpExpr f tokens@(_ : (T.Punctuator (T.BinaryOp op), _) : rest) = do
     (parm1, _) <- parseBinaryOpParm f tokens
     (parm2, rest3) <- parseBinaryOpParm f rest
@@ -213,7 +213,7 @@ formatBinOpExpr _ = []
 --      - organise the expression and taking in account operator priorities.
 --
 -- On failure, this function returns a pretty formatted error message.
-parseBinaryOpExpr :: A.Decl -> Parser A.BinaryOpExpr
+parseBinaryOpExpr :: ([A.Decl], A.Decl) -> Parser A.BinaryOpExpr
 parseBinaryOpExpr f tokens = do
     (binOpPacked, rest) <- packBinOpExpr tokens
     let binOpFormatted = formatBinOpExpr binOpPacked

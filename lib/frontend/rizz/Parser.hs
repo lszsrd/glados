@@ -65,7 +65,7 @@ parseRecordDeclExpr tokens = do
 -- On success, this function returns a tuple made of the parsed variable declaration as @'A.VarDecl'@ and the remaining tokens.
 --
 -- On failure, this function returns a pretty formatted error message if invalid syntax or a semicolon is missing.
-parseVarDecl :: A.Decl -> Parser A.Decl
+parseVarDecl :: ([A.Decl], A.Decl) -> Parser A.Decl
 parseVarDecl f tokens = do
     (vardecl, rest1) <- H.parseVarDeclStmt f tokens
     (_, rest2) <- H.expectToken (T.Punctuator T.Semicolon) "Expected ';'" rest1
@@ -90,7 +90,7 @@ parseFunctionDecl tokens = do
     (_, rest4) <- H.expectToken (T.Punctuator (T.RBracket T.CloseRBracket))
         "expected ')'" rest3
     (returntype, rest5) <- parseReturnType rest4
-    (compStmt, rest6)   <- PS.parseCompoundStmt (A.FunctionDecl n pvdelist
+    (compStmt, rest6)   <- PS.parseCompoundStmt ([], A.FunctionDecl n pvdelist
         (A.CompoundStmt []) returntype) rest5
     Right (A.FunctionDecl n pvdelist compStmt returntype, rest6)
 
@@ -105,7 +105,7 @@ parseTopLevel tokens@((T.Keyword T.Struct, _) : _) = parseRecordDeclExpr tokens
 parseTopLevel tokens =
     case H.parseBuiltinType tokens of
         Right _ -> parseVarDecl
-            (A.FunctionDecl "" [] (A.CompoundStmt []) Nothing) tokens
+            ([], A.FunctionDecl "" [] (A.CompoundStmt []) Nothing) tokens
         Left err -> Left err
 
 -- | Takes a @'Parser'@ @'SingleToken'@ list as parameter and returns a __Either__ @'String'@ ([@'A.Decl'@], [@'SingleToken'@]).
