@@ -10,7 +10,7 @@ function Tutorial({ lesson, current, total, lessons, onPrev, onNext, onGoto }) {
             <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
           </svg>
         </button>
-        <select className="lesson-select" value={current} onChange={(e) => onGoto(Number(e.target.value))}>
+        <select className="lesson-select" value={current} onChange={(e) => onGoto(Number(e.target.value))} aria-label="Select lesson">
           {lessons.map((l, i) => (
             <option key={i} value={i}>{l.title}</option>
           ))}
