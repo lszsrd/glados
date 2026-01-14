@@ -40,6 +40,12 @@ exec symtab bOps (Call "print" _: ops) stack env = case unsnoc stack of
 exec symtab bOps (Call "println" _: ops) stack env = case unsnoc stack of
     Nothing -> return $ Left "not enough operands"
     Just (stack', x) -> print x >> exec symtab bOps ops stack' env
+exec symtab bOps (Call "read" _: ops) stack env = do
+    x <- getChar
+    exec symtab bOps ops (stack ++ [Char x] ) env
+exec symtab bOps (Call "readln" _: ops) stack env = do
+    x <- getLine
+    exec symtab bOps ops (stack ++ [stringToList x]) env
 exec symtab bOps (Call x _: ops) stack env = do
     y <- call x symtab symtab env
     case y of
@@ -284,3 +290,9 @@ pop2 x = case unsnoc x of
     Just (y, op1) -> case unsnoc y of
         Nothing -> Left "missing one operand"
         Just (z, op2) -> Right (op2, op1, z)
+
+stringToList :: String -> Operand
+stringToList [] = List []
+stringToList (x: xs) = case stringToList xs of
+    List y -> List $ Char x: y
+    y -> y
