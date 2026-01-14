@@ -37,25 +37,25 @@ type Parser a = [SingleToken] -> Either String (a, [SingleToken])
 -- On success, this function returns a tuple made of the parsed return type wrapped in @'Maybe'@ and the remaining tokens.
 --
 -- On faillure, if an arrow punctuator is found, it expects a builtin type after it. Otherwise, it returns @'Nothing'@ for the return type.
-parseReturnType :: Parser (Maybe A.BuiltinType)
-parseReturnType ((T.Punctuator T.Arrow, _) : rest1) = do
-    (returntype, rest2) <- H.parseBuiltinType rest1
+parseReturnType :: [A.Decl] -> Parser (Maybe A.BuiltinType)
+parseReturnType a ((T.Punctuator T.Arrow, _) : rest1) = do
+    (returntype, rest2) <- H.parseBuiltinType a rest1
     Right(Just returntype, rest2)
-parseReturnType toks = Right (Nothing, toks)
+parseReturnType _ toks = Right (Nothing, toks)
 
 -- | Takes a @'Parser'@ @'SingleToken'@ list as parameter and returns a __Either__ @'String'@ (@'A.Decl'@, [@'SingleToken'@]).
 --
 -- On success, this function returns a tuple made of the parsed return type and the remaining tokens.
 --
 -- On failure, this function return a error message in a @'String'@, this message contain what expected.
-parseRecordDeclExpr :: Parser A.Decl
-parseRecordDeclExpr tokens = do
+parseRecordDeclExpr :: [A.Decl] -> Parser A.Decl
+parseRecordDeclExpr a tokens = do
     (_, rest) <- H.expectToken (T.Keyword T.Struct)
         "expected struct" tokens
     (identifier, rest2) <- H.parseIdentifier rest
     (_, rest3) <- H.expectToken (T.Punctuator (T.CBracket T.OpenCBracket))
         "expected '{'" rest2
-    (pvdel, rest4) <- H.parsePVDEList rest3
+    (pvdel, rest4) <- H.parsePVDEList a rest3
     (_, rest5) <- H.expectToken (T.Punctuator (T.CBracket T.CloseCBracket))
         "expected '}'" rest4
     Right (A.RecordDecl (A.RecordDeclExpr identifier pvdel), rest5)
@@ -65,7 +65,7 @@ parseRecordDeclExpr tokens = do
 -- On success, this function returns a tuple made of the parsed variable declaration as @'A.VarDecl'@ and the remaining tokens.
 --
 -- On failure, this function returns a pretty formatted error message if invalid syntax or a semicolon is missing.
-parseVarDecl :: A.Decl -> Parser A.Decl
+parseVarDecl :: ([A.Decl], A.Decl) -> Parser A.Decl
 parseVarDecl f tokens = do
     (vardecl, rest1) <- H.parseVarDeclStmt f tokens
     (_, rest2) <- H.expectToken (T.Punctuator T.Semicolon) "Expected ';'" rest1
@@ -83,14 +83,14 @@ parseFunctionDeclH tokens = do
 -- On success, this function returns a tuple made of the parsed function decl.
 --
 -- On failure, this function returns a pretty formatted error message.
-parseFunctionDecl :: Parser A.Decl
-parseFunctionDecl tokens = do
+parseFunctionDecl :: [A.Decl] -> Parser A.Decl
+parseFunctionDecl a tokens = do
     (n, rest)        <- parseFunctionDeclH tokens 
-    (pvdelist, rest3)   <- H.parsePVDEList rest
+    (pvdelist, rest3)   <- H.parsePVDEList a rest
     (_, rest4) <- H.expectToken (T.Punctuator (T.RBracket T.CloseRBracket))
         "expected ')'" rest3
-    (returntype, rest5) <- parseReturnType rest4
-    (compStmt, rest6)   <- PS.parseCompoundStmt (A.FunctionDecl n pvdelist
+    (returntype, rest5) <- parseReturnType a rest4
+    (compStmt, rest6)   <- PS.parseCompoundStmt False (a, A.FunctionDecl n pvdelist
         (A.CompoundStmt []) returntype) rest5
     Right (A.FunctionDecl n pvdelist compStmt returntype, rest6)
 
@@ -99,13 +99,13 @@ parseFunctionDecl tokens = do
 -- On success, this function returns a tuple made of the parsed top-level declaration (either a function or variable declaration) and the remaining tokens.
 --
 -- On failure, this function returns a pretty formatted error message.
-parseTopLevel :: Parser A.Decl
-parseTopLevel tokens@((T.Keyword T.Fn, _) : _) = parseFunctionDecl tokens
-parseTopLevel tokens@((T.Keyword T.Struct, _) : _) = parseRecordDeclExpr tokens
-parseTopLevel tokens =
-    case H.parseBuiltinType tokens of
+parseTopLevel :: [A.Decl] -> Parser A.Decl
+parseTopLevel a tokens@((T.Keyword T.Fn, _) : _) = parseFunctionDecl a tokens
+parseTopLevel a tokens@((T.Keyword T.Struct, _) : _) = parseRecordDeclExpr a tokens
+parseTopLevel a tokens =
+    case H.parseBuiltinType a tokens of
         Right _ -> parseVarDecl
-            (A.FunctionDecl "" [] (A.CompoundStmt []) Nothing) tokens
+            (a, A.FunctionDecl "" [] (A.CompoundStmt []) Nothing) tokens
         Left err -> Left err
 
 -- | Takes a @'Parser'@ @'SingleToken'@ list as parameter and returns a __Either__ @'String'@ ([@'A.Decl'@], [@'SingleToken'@]).
@@ -113,11 +113,11 @@ parseTopLevel tokens =
 -- On success, this function returns a tuple made of the parsed declaration list and the remaining tokens.
 --
 -- On failure, this function returns a pretty formatted error message.
-parseDecl :: Parser [A.Decl]
-parseDecl [] = Right ([], [])
-parseDecl tokens = do
-    (decl, xs)       <- parseTopLevel tokens
-    (decls, xsfinal) <- parseDecl xs
+parseDecl :: [A.Decl] -> Parser [A.Decl]
+parseDecl _ [] = Right ([], [])
+parseDecl a tokens = do
+    (decl, xs)       <- parseTopLevel a tokens
+    (decls, xsfinal) <- parseDecl (decl : a) xs
     Right (decl : decls, xsfinal)
 
 -- | Takes a [@'SingleToken'@] as parameter and returns a __Either__ @'String'@ [@'A.Decl'@].
@@ -127,7 +127,7 @@ parseDecl tokens = do
 -- On failure, this function returns a pretty formatted error message.
 parser :: [SingleToken] -> Either String [A.Decl]
 parser tokens =
-    case parseDecl tokens of
+    case parseDecl [] tokens of
         Left err -> Left err
         Right (decls, []) -> Right decls
         Right (_, _) -> H.errorAt (1, 1) "Parser Exception."

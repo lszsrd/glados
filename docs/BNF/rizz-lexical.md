@@ -1,4 +1,4 @@
-\<keyword>                  ::= \<builtin-type> | "fn" | "if" | "else" | "while" | "for" | "foreach" | "ret"
+\<keyword>                  ::= \<builtin-type> | "fn" | "if" | "else" | "while" | "for" | "foreach" | "ret" | "struct" | "read" | "print"
 
 \<builtin-type>             ::= "Bool" | "Char" | "Int" | "Float" | "Double"
 
