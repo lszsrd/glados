@@ -5,6 +5,7 @@
   border-right: 1px solid #333;
   display: flex;
   flex-direction: column;
+  color: #fff;
 }
 
 .tutorial-header {
@@ -98,7 +99,7 @@
 
 .progress {
   font-size: 13px;
-  color: #666;
+  color: #fff;
 }
 
 .footer-nav {
