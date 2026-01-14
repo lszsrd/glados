@@ -10,7 +10,6 @@ module Bytecode (
 ) where
 
 import Ast
-import Tokens
 
 compileDecl :: [Expr] -> String
 compileDecl _ = []
