@@ -249,20 +249,22 @@ parseListLiteral [] = errorAt (1,1) "Expected list literal"
 -- On failure, this function returns a pretty formatted message error.
 --
 -- This function is used to parse a Rizz Builtin type (Int, Bool, Char, ...).
-parseBuiltinType :: Parser A.BuiltinType
-parseBuiltinType ((T.Punctuator (T.SBracket T.OpenSBracket), _) : rest1) = do
-    (innerType, rest2) <- parseBuiltinType rest1
+parseBuiltinType :: [A.Decl] -> Parser A.BuiltinType
+parseBuiltinType a ((T.Punctuator (T.SBracket T.OpenSBracket), _) : rest1) = do
+    (innerType, rest2) <- parseBuiltinType a rest1
     (_, rest3) <- expectToken (T.Punctuator (T.SBracket T.CloseSBracket))
         "Expected ']' for list type" rest2
     Right (A.ListType innerType, rest3)
-parseBuiltinType ((T.Keyword T.Bool, _) : rest) = Right (A.Boolean, rest)
-parseBuiltinType ((T.Keyword T.Char, _) : rest) = Right (A.Character, rest)
-parseBuiltinType ((T.Keyword T.Int, _) : rest) = Right (A.Integer, rest)
-parseBuiltinType ((T.Keyword T.Float, _) : rest) = Right (A.SinglePrecision, rest)
-parseBuiltinType ((T.Identifier i, _) : rest) = Right (A.Struct i, rest)
-parseBuiltinType ((token, position) : _) =
+parseBuiltinType _ ((T.Keyword T.Bool, _) : rest) = Right (A.Boolean, rest)
+parseBuiltinType _ ((T.Keyword T.Char, _) : rest) = Right (A.Character, rest)
+parseBuiltinType _ ((T.Keyword T.Int, _) : rest) = Right (A.Integer, rest)
+parseBuiltinType _ ((T.Keyword T.Float, _) : r) = Right (A.SinglePrecision, r)
+parseBuiltinType a ((T.Identifier i, pos) : rest) = do
+    _ <- doesVarExists pos (a, A.FunctionDecl "" [] (A.CompoundStmt []) Nothing) i
+    Right (A.Struct i, rest)
+parseBuiltinType _ ((token, position) : _) =
     errorAt position ("Expected builtintype, got " ++ show token)
-parseBuiltinType [] = errorAt (1,1) "Expected builtintype, got Nothing"
+parseBuiltinType _ [] = errorAt (1,1) "Expected builtintype, got Nothing"
 
 -- | Takes a @'[SingleToken]'@ as parameter and
 -- returns a __Either__ @'String'@ @'T.Identifier'@.
@@ -286,9 +288,9 @@ parseIdentifier ((token, position) : _) =
 -- On failure, this function returns a pretty formatted message error.
 --
 -- This function is used to parse a ParmVarDeclExpr (composed of a BuiltinType and an Identifier).
-parsePVDE :: Parser A.ParmVarDeclExpr
-parsePVDE token = do
-    (btype, rest1) <- parseBuiltinType token
+parsePVDE :: [A.Decl] -> Parser A.ParmVarDeclExpr
+parsePVDE a token = do
+    (btype, rest1) <- parseBuiltinType a token
     (_, rest2)          <-
         expectToken (T.Punctuator T.Colon) "Expected ':' in parameter" rest1
     (identifier, rest3) <- parseIdentifier rest2
@@ -302,14 +304,14 @@ parsePVDE token = do
 -- On failure, this function returns a pretty formatted message error.
 --
 -- This function is used to parse a list of ParmVarDeclExpr, typically function parameters.
-parsePVDEList :: Parser [A.ParmVarDeclExpr]
-parsePVDEList tokens@((T.Punctuator (T.RBracket T.CloseRBracket), _) : _)
+parsePVDEList :: [A.Decl] -> Parser [A.ParmVarDeclExpr]
+parsePVDEList _ tokens@((T.Punctuator (T.RBracket T.CloseRBracket), _) : _)
     = Right ([], tokens)
-parsePVDEList tokens = do
-    (param, rest1) <- parsePVDE tokens
+parsePVDEList a tokens = do
+    (param, rest1) <- parsePVDE a tokens
     case rest1 of
         ((T.Punctuator T.Comma, _) : rest2) -> do
-            (params, rest3) <- parsePVDEList rest2
+            (params, rest3) <- parsePVDEList a rest2
             Right(param : params, rest3)
         _ -> Right ([param], rest1)
 
@@ -441,8 +443,8 @@ parseDeclAssignStmtLiteral f tokens = do
 --
 -- This function is used to parse a variable declaration statement.
 parseVarDeclStmt :: ([A.Decl], A.Decl) -> Parser A.VarDeclStmt
-parseVarDeclStmt f tokens = do
-    (typ, rest1) <- parseBuiltinType tokens
+parseVarDeclStmt f@(fl, _) tokens = do
+    (typ, rest1) <- parseBuiltinType fl tokens
     (name, rest2) <- parseIdentifier rest1
     (op, rest3) <- parseAssignOp rest2
     (value, rest4) <- parseParmCallDecl f rest3
