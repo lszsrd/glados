@@ -89,6 +89,7 @@ executable glados-vm
         Function
         Stack
         Env
+        Fds
         ParseArgs
         Parser
         Interpreter
