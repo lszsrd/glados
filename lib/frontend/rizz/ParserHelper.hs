@@ -420,7 +420,7 @@ parseVarDeclStmt f tokens = do
     (typ, rest1) <- parseBuiltinType tokens
     (name, rest2) <- parseIdentifier rest1
     (op, rest3) <- parseAssignOp rest2
-    (value, rest4) <- parseParmCallDecl f rest3
+    (value, rest4) <- parseOr (parseParmCallDeclBExpr f) (parseParmCallDecl f) rest3
     Right (A.VarDeclStmt typ name op value, rest4)
 
 -- | Takes an @'A.Decl'@ and a @'[SingleToken]'@ as parameter and
