@@ -11,6 +11,8 @@ module OpCodes (
 
     , Operand               (..)
     , OpCode                (..)
+    
+    , showList'
 ) where
 
 type Identifier = String

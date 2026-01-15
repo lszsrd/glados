@@ -1,8 +1,26 @@
 fn main() -> Int
 {
-    print("factorial(5) = ");
-    println(factorial(5));
+    Int x = 5;
+
+    dumpFile("LICENSE.md");
+    print(1, "factorial(5) = ");
+    x = factorial(x);
+    println(1, x);
+    Int fd = open("bonjour.txt");
+    println(fd, x);
+    close(fd);
+    println(1, isOpen(fd));
     ret 0;
+}
+
+fn dumpFile ([Char]: path)
+{
+    Int fd = open(path);
+    
+    while (isOpen(fd) && isEOF(fd) == False) {
+        println(1, readln(fd));
+    }
+    close(fd);
 }
 
 fn factorial(Int: x) -> Int
