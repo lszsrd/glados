@@ -29,6 +29,23 @@ type SingleToken = (T.Token, (Int, Int))
 type Parser a = [SingleToken] -> Either String (a, [SingleToken])
 
 -- | Takes an @'([A.Decl], A.Decl)'@ and a @'[SingleToken]'@ as parameter and
+-- returns a __Either__ @'String'@ @'A.CompoundStmt'@.
+--
+-- On success, this function returns a @'A.Stmt'@.
+--
+-- On failure, this function returns a pretty formatted message error.
+--
+-- This function is used to parse a compound statement, (e.g.: a function's body, a for's body).
+parseCompoundStmt :: Bool -> ([A.Decl], A.Decl) -> Parser A.CompoundStmt
+parseCompoundStmt b f tokens = do
+    (_, rest1) <- H.expectToken (T.Punctuator (T.CBracket T.OpenCBracket))
+        "expected '{'" tokens
+    (stmts, rest2) <- parseStmtList b f rest1
+    (_, rest3) <- H.expectToken (T.Punctuator (T.CBracket T.CloseCBracket))
+        "expected '}'" rest2
+    Right (A.CompoundStmt stmts, rest3)
+
+-- | Takes an @'([A.Decl], A.Decl)'@ and a @'[SingleToken]'@ as parameter and
 -- returns a __Either__ @'String'@ @'A.Stmt'@.
 --
 -- On success, this function returns a @'A.Stmt'@.
@@ -72,23 +89,6 @@ parseStmtList _ _ [] = H.errorAt (1, 1)
     "Expected '{' or '}' after Stmt List, got End Of Stream"
 parseStmtList _ _ ((a, pos):_) = H.errorAt pos
     ("Expected '{' or '}', got " ++ show a)
-
--- | Takes an @'([A.Decl], A.Decl)'@ and a @'[SingleToken]'@ as parameter and
--- returns a __Either__ @'String'@ @'A.CompoundStmt'@.
---
--- On success, this function returns a @'A.Stmt'@.
---
--- On failure, this function returns a pretty formatted message error.
---
--- This function is used to parse a compound statement, (e.g.: a function's body, a for's body).
-parseCompoundStmt :: Bool -> ([A.Decl], A.Decl) -> Parser A.CompoundStmt
-parseCompoundStmt b f tokens = do
-    (_, rest1) <- H.expectToken (T.Punctuator (T.CBracket T.OpenCBracket))
-        "expected '{'" tokens
-    (stmts, rest2) <- parseStmtList b f rest1
-    (_, rest3) <- H.expectToken (T.Punctuator (T.CBracket T.CloseCBracket))
-        "expected '}'" rest2
-    Right (A.CompoundStmt stmts, rest3)
 
 -- | Takes an @'([A.Decl], A.Decl)'@ and a @'[SingleToken]'@ as parameter and
 -- returns a __Either__ @'String'@ @'A.Stmt'@.
@@ -140,10 +140,12 @@ parseKeywords _ _  [] = H.errorAt (1, 1) "Unexpected end of input in statement"
 -- This function is used to parse a statement.
 parseStmt :: Bool -> ([A.Decl], A.Decl) -> Parser A.Stmt
 parseStmt b f tokens@((tok, _) : xs) = case tok of
-    T.Identifier _ ->
+    T.Identifier id1 ->
         case xs of
             ((T.Punctuator (T.RBracket T.OpenRBracket), _) : _) ->
                 parseCallExpr f tokens
+            ((T.Punctuator T.Arrow, _) : (T.Identifier id2, _): (_, pos) : rest3) ->
+                parseDeclVarExpr f ((T.Identifier (H.craftIdentifierWithStructVarDecl id1 id2), pos) : rest3)
             ((T.Identifier _, _) : (T.Punctuator (T.AssignOp _), _) : _) ->
                 parseDeclVarExpr f tokens
             _ -> parseDeclStmtExpr f tokens
