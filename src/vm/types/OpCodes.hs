@@ -20,7 +20,7 @@ type Label = String
 
 instance Show Operand where
     show (Bool False) = "False"
-    show (Bool True) = "False"
+    show (Bool True) = "True"
     show (Char x) = [x]
     show (Integer x) = show x
     show (Float x) = show x
