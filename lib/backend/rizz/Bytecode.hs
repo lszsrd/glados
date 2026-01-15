@@ -172,7 +172,7 @@ compileLiteral :: Literal -> String
 compileLiteral (CharLiteral i)   = "PUSH_CHAR " ++ show i ++ "\n"
 compileLiteral (IntLiteral i)   = "PUSH_INT " ++ show i ++ "\n"
 compileLiteral (BoolLiteral b)  = "PUSH_BOOL " ++
-    (if b then "true\n" else "false\n")
+    (if b then "True\n" else "False\n")
 compileLiteral (FloatLiteral f) = "PUSH_FLOAT " ++ show f ++ "\n"
 compileLiteral (ListLiteral elems) =
     concatMap compileLiteral elems ++

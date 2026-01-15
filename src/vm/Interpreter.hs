@@ -14,14 +14,16 @@ module Interpreter (
     , pop2
 ) where
 
-import System.IO (Handle, hPutStr, hPrint, hGetChar, hGetLine)
+import System.IO (hPutStr, hPrint, hGetChar, hGetLine, openFile, IOMode (ReadWriteMode), hIsOpen, hIsEOF, hClose, hFlush)
 import Foreign (fromBool)
 
-import OpCodes (Operand (..), OpCode (..))
+import OpCodes (Operand (..), OpCode (..), showList')
 import Function (Function)
 import Stack (Stack)
 import Env (Env)
 import Fds (Fds)
+import Utils
+import Data.Char (digitToInt)
 
 -- invoke a new function and runs it
 call :: String -> [Function] -> [Function] -> Env -> Fds -> IO (Either String (Maybe Operand))
@@ -36,18 +38,51 @@ call fnName ((function, argc, opcodes): xs) symtab env fds
 -- run a function's body (all its instructions)
 exec :: [Function] -> [OpCode] -> [OpCode] -> Stack -> Env -> Fds -> IO (Either String (Maybe Operand))
 exec symtab bOps (Nop: ops) stack env fds = exec symtab bOps ops stack env fds
+exec symtab bOps (Call "open" _: ops) stack env fds = case unsnoc stack of
+    Nothing -> return $ Left "open: not enough operands"
+    Just (x, List y) -> do
+        z <- openFile (showList' y) ReadWriteMode
+        exec symtab bOps ops (x ++ [Integer fd]) env (fds ++ [(fd, z)])
+            where fd = 1 + maximum (map fst fds)
+    Just (_, x) -> return $ Left ("open: expected [Char], got " ++ show x)
+exec symtab bOps (Call "isOpen" _: ops) stack env fds = case unsnoc stack of
+    Nothing -> return $ Left "isOpen: not enough operands"
+    Just (x, Integer y) -> case getFd y fds of
+        Left _ -> exec symtab bOps ops (x ++ [Bool False] ) env fds
+        Right handle -> do
+            z <- hIsOpen handle
+            exec symtab bOps ops (x ++ [Bool z] ) env fds
+    Just (_, x) -> return $ Left ("read: expected fd, got " ++ show x)
+exec symtab bOps (Call "close" _: ops) stack env fds = case unsnoc stack of
+    Nothing -> return $ Left "close: not enough operands"
+    Just (x, Integer y) -> case getFd y fds of
+        Left e -> return $ Left ("close: " ++ e)
+        Right handle -> case hClose handle of
+            _ -> case dropWhile (\(a, _) -> a /= y) fds of
+                (_: zs) -> exec symtab bOps ops x env (z ++ zs)
+                _ -> exec symtab bOps ops x env z
+                where z = takeWhile (\(a, _) -> a /= y) fds
+    Just (_, x) -> return $ Left ("close: expected fd, got " ++ show x)
+exec symtab bOps (Call "isEOF" _: ops) stack env fds = case unsnoc stack of
+    Nothing -> return $ Left "isEOF: not enough operands"
+    Just (x, Integer y) -> case getFd y fds of
+        Left e -> return $ Left ("isEOF: " ++ e)
+        Right handle -> do
+            z <- hIsEOF handle
+            exec symtab bOps ops (x ++ [Bool z] ) env fds
+    Just (_, x) -> return $ Left ("read: expected fd, got " ++ show x)
 exec symtab bOps (Call "print" _: ops) stack env fds = case pop2 stack of
     Left e -> return $ Left ("print: " ++ e)
     Right (Integer x, y, z) -> case getFd x fds of
         Left e -> return $ Left ("print: " ++ e)
-        Right handle -> hPutStr handle (show y)
+        Right handle -> hPutStr handle (show y) >> hFlush handle
             >> exec symtab bOps ops z env fds
     Right (x, _, _) -> return $ Left ("print: expected fd, got " ++ show x)
 exec symtab bOps (Call "println" _: ops) stack env fds = case pop2 stack of
     Left e -> return $ Left ("println: " ++ e)
     Right (Integer x, y, z) -> case getFd x fds of
         Left e -> return $ Left ("println: " ++ e)
-        Right handle -> hPrint handle y
+        Right handle -> hPrint handle y >> hFlush handle
             >> exec symtab bOps ops z env fds
     Right (x, _, _) -> return $ Left ("println: expected fd, got " ++ show x)
 exec symtab bOps (Call "read" _: ops) stack env fds = case unsnoc stack of
@@ -194,9 +229,12 @@ exec _ _ x _ _ _
     | otherwise = return $ Left ("unknwon instruction: " ++ show (head x))
 
 addOperand :: Operand -> Operand -> Either String Float
+addOperand (Integer x)  (Integer y)   = Right (fromIntegral x + fromIntegral y)
 addOperand (Integer x)  (Float y)   = Right (fromIntegral x + y)
 addOperand (Float x)    (Integer y) = Right (x + fromIntegral y)
 addOperand (Float x)    (Float y)   = Right (x + y)
+addOperand (Char x) y = addOperand (Integer $ toInteger (digitToInt x)) y
+addOperand x (Char y) = addOperand x (Integer $ toInteger (digitToInt y))
 addOperand _ _                      =
      Left "ADD: non-numeric operands"
 
@@ -283,45 +321,3 @@ neqOperand (Integer x)  (Bool y)    = x /= fromBool y
 neqOperand (Bool x)     (Float y)   = fromBool x /= y
 neqOperand (Float x)    (Bool y)    = x /= fromBool y
 neqOperand x y                      = x /= y
-
--- https://github.com/haskell/core-libraries-committee/issues/165 
-unsnoc :: [a] -> Maybe ([a], a)
-unsnoc = foldr (\x -> Just . maybe ([], x) (\(~(a, b)) -> (x : a, b))) Nothing
-
-getEnv :: String -> Env -> Maybe Operand -- should remove from env?
-getEnv _ [] = Nothing
-getEnv x ((y, ys): z)
-    | x == y = Just ys
-    | otherwise = getEnv x z
-
-pushEnv :: Env -> (String, Operand) -> Env
-pushEnv [] x = [x]
-pushEnv env (x, y)
-    | x `notElem` map fst env = env ++ [(x, y)]
-    | otherwise = map (\(x', y') -> if x' == x then (x', y) else (x', y')) env
-
-jumpTo :: String -> [OpCode] -> Maybe [OpCode]
-jumpTo _ [] = Nothing
-jumpTo x (Label y: z)
-    | x == y = Just z
-jumpTo x (_: ys) = jumpTo x ys
-
-pop2 :: Stack -> Either String (Operand, Operand, Stack)
-pop2 x = case unsnoc x of
-    Nothing -> Left "not enough operands"
-    Just (y, op1) -> case unsnoc y of
-        Nothing -> Left "missing one operand"
-        Just (z, op2) -> Right (op2, op1, z)
-
-stringToList :: String -> Operand
-stringToList [] = List []
-stringToList (x: xs) = case stringToList xs of
-    List y -> List $ Char x: y
-    y -> y
-
-getFd :: Integer -> Fds -> Either String Handle
-getFd x [] = Left $ "invalid fd " ++ show x
-getFd x ((y, y'): ys)
-    | x == y = Right y'
-    | otherwise = getFd x ys
-
