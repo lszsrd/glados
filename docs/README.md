@@ -28,7 +28,7 @@ Implementing a programming language of our own design, in Haskell
 - Install both binaries with the install script
 
 ```bash
-curl --proto '=https' --tlsv1.2 -sSf https://shorturl.at/XzVaq | sh
+curl --proto '=https' --tlsv1.2 -sSf https://shorturl.at/WneSQ | sh
 ```
 
 **OR**
