@@ -6,7 +6,12 @@
 -}
 
 module Utils (
-    unsnoc
+    OpCode
+    , Stack
+    , Env
+    , Fds
+
+    , unsnoc
     , pop2
     , stringToList
     , getEnv

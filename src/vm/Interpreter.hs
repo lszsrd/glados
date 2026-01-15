@@ -8,31 +8,28 @@
 module Interpreter (
     call
     , exec
-    , unsnoc
-    , getEnv
-    , jumpTo
-    , pop2
 ) where
 
-import System.IO (hPutStr, hPrint, hGetChar, hGetLine, openFile, IOMode (ReadWriteMode), hIsOpen, hIsEOF, hClose, hFlush)
+import System.IO (hPutStr, hPrint, hGetChar, hGetLine, openFile, IOMode (ReadWriteMode), hIsOpen, hIsEOF, hClose, hFlush, hSetBinaryMode)
+
+import Data.Char (digitToInt)
+
 import Foreign (fromBool)
 
 import OpCodes (Operand (..), OpCode (..), showList')
 import Function (Function)
-import Stack (Stack)
-import Env (Env)
-import Fds (Fds)
 import Utils
-import Data.Char (digitToInt)
+
+-- TODO: urge to refactor arith operations AND handle list arith operations
 
 -- invoke a new function and runs it
 call :: String -> [Function] -> [Function] -> Env -> Fds -> IO (Either String (Maybe Operand))
-call fnName [] _ _ _ = return $ Left ("call to undeclared function: " ++ fnName)
+call fnName [] _ _ _ = return $ Left ("call to undeclared function " ++ fnName)
 call fnName ((function, argc, opcodes): xs) symtab env fds
     | fnName == function = if length env < argc
         then return $
             Left ("not enough arguments for function call: " ++ fnName)
-        else exec symtab opcodes opcodes [] env fds -- TODO: flush previous env
+        else exec symtab opcodes opcodes [] env fds -- TODO: flush env
     | otherwise = call fnName xs symtab env fds
 
 -- run a function's body (all its instructions)
@@ -42,6 +39,7 @@ exec symtab bOps (Call "open" _: ops) stack env fds = case unsnoc stack of
     Nothing -> return $ Left "open: not enough operands"
     Just (x, List y) -> do
         z <- openFile (showList' y) ReadWriteMode
+        _ <- hSetBinaryMode z True
         exec symtab bOps ops (x ++ [Integer fd]) env (fds ++ [(fd, z)])
             where fd = 1 + maximum (map fst fds)
     Just (_, x) -> return $ Left ("open: expected [Char], got " ++ show x)
