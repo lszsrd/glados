@@ -94,7 +94,7 @@ executable glados-vm
         ParseArgs
         Parser
         Interpreter
-    build-depends:      base, filepath, format
+    build-depends:      base, filepath, format, random
 
 test-suite unit_tests
     default-language:   Haskell2010
