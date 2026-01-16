@@ -203,7 +203,6 @@ parseIfExpr ((RBracket Open, _): (Atom (Operator Tokens.If), _):
         ((z', zs'): _) -> Left $ expect zs' "')'" $ show z'
 parseIfExpr ((RBracket Open, _): (Atom (Operator Tokens.If), _): xs)
     = case parseBinaryExpr xs of
-        Left e -> Left e
         Right (BinaryOp (CondExpr y) _ _, ys) -> do
             (a, as) <- parseExpr ys
             (b, bs) <- parseExpr as
