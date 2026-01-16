@@ -58,6 +58,7 @@
     * add builtins or a notation to read or write to standard input / output
         [OK]
     * add builtins or a notation for file handling
+        [OK]
     * bindings to graphical library, or networking primitives, etc.
     * a notation to interface with any external function (Foreign Function Interface)
 - Type inference:
