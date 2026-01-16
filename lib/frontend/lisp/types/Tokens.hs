@@ -68,6 +68,7 @@ data Token
         -- ^ Allows @'Token'@ to be compared, needed for unit tests.
     )
 
+-- | Defines @'RBracket'@ which are punctuators to declare an expression.
 data RBracket
     = Open
     -- ^ open bracket token, expressed in lisp code as @\`(\`@.
@@ -96,9 +97,9 @@ data Atom
 
     deriving (
         Show
-        -- ^ Allows @'RBracket'@ to be shown.
+        -- ^ Allows @'Atom'@ to be shown.
         , Eq
-        -- ^ Allows @'RBracket'@ to be compared, needed for unit tests.
+        -- ^ Allows @'Atom'@ to be compared, needed for unit tests.
     )
 
 -- | Defines @'Operator@ that are the basics functions in lisp language.
@@ -114,9 +115,9 @@ data Operator
     | Mul
     -- ^ Define mul operator, expressed in lisp language as @\`*\`@.
     | Div
-    -- ^ Define div operator, expressed in lisp language as @\`/\`@.
+    -- ^ Define div operator, expressed in lisp language as @\`\\\`@ or @\`div\`@.
     | Mod
-    -- ^ Define modulo operator, expressed in lisp language as @\`%\`@.
+    -- ^ Define modulo operator, expressed in lisp language as @\`mod\`@ or @\`remainder\`@.
     | Eq
     -- ^ Define equal operator, expressed in lisp language as @\`eq?\`@.
     | Lt
@@ -126,7 +127,7 @@ data Operator
 
     deriving (
         Show
-        -- ^ Allows @'RBracket'@ to be shown.
+        -- ^ Allows @'Operator'@ to be shown.
         , Eq
-        -- ^ Allows @'RBracket'@ to be compared, needed for unit tests.
+        -- ^ Allows @'Operator'@ to be compared, needed for unit tests.
     )

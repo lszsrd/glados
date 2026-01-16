@@ -97,11 +97,11 @@ parseDecl ((RBracket Open, _): (Atom (Operator Tokens.Define), _):
             ((z, zs): _) -> Left $ expect zs "')'" $ show z
 -- (define <Identifier> ([<Identifier>]) Expr)
 parseDecl ((RBracket Open, _): (Atom (Operator Tokens.Define), _):
-  (Atom (Tokens.Identifier a), _): (RBracket Open, x): xs)
+  (RBracket Open, x): xs)
     = case hParseDecl x xs of
         Left e -> Left e
         Right ([], _) -> Left $ expect (snd $ head xs) "<argument(s)>" "<none>"
-        Right (y: y', ys) -> hParseDecl' ys a y y'
+        Right (y: y', ys) -> hParseDecl' ys y y'
 -- (define <Identifier> <Atom>)
 parseDecl ((RBracket Open, _): (Atom (Operator Tokens.Define), _):
   (Atom (Tokens.Identifier x), _): xs)
@@ -115,18 +115,17 @@ parseDecl _ = Left []
 
 -- | Takes an @'[(Token, (Int, Int))]'@, and two @'Identifier'@ as parameters and returns a @'[Identifier]'@.
 --
--- On success, this function returns a list of Identifier.
+-- On success, this function returns a named function.
 --
 -- On failure, this function returns a pretty formatted error.
 -- 
--- This function serves as an helper to parse a list of params.
-hParseDecl' :: Tokens -> Identifier -> Identifier -> [Identifier]
-  -> Either String (Expr, Tokens)
-hParseDecl' ys a y y' = case parseExpr ys of
+-- This function serves as an helper to parse a function.
+hParseDecl' :: Tokens -> Identifier -> [Identifier] -> Either String (Expr, Tokens)
+hParseDecl' ys y y' = case parseExpr ys of
     Left e -> Left e
     Right (z, zs) -> case zs of
         ((RBracket Close, _): zs')
-            -> Right (Defun $ Ast.Define a (Defun $ Func y y' z), zs')
+            -> Right (Defun $ Ast.Define y (Defun $ Func y' z), zs')
         [] -> Left $ expect (snd $ head zs) "')'" "<EOF>"
         ((z', zs'): _) -> Left $ expect zs' "')'" $ show z'
 
