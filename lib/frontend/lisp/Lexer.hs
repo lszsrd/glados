@@ -8,7 +8,7 @@
 -------------------------------------------------------------------------------
 -- |
 -- Module      : Lexer
--- Description : Performs lexical analysis of a stream of bytes and extracts a list of rizz tokens.
+-- Description : Performs lexical analysis of a stream of bytes and extracts a list of lisp (Chez Scheme) tokens.
 -- License     : MIT
 -- Maintainer  : laszlo.serdet@epitech.eu
 --

@@ -130,6 +130,8 @@ parseKeyword _ = Nothing
 --
 -- @'parseKeyword'@'s helper function that checks if the very next character after the token is a space (to properly create a @'Token.Keyword'@ and not an @'Identifier'@) or a @'Colon'@ in case of function's parameter type.
 hParseKeyword :: (Token, Int, Stream) -> Maybe (Token, Int, Stream)
+hParseKeyword (Keyword Ret, tokSize, stream@(';': _))
+    = Just (Keyword Ret, tokSize, stream)
 hParseKeyword (Keyword Break, tokSize, stream@(';': _)) =
     Just (Keyword Break, tokSize, stream)
 hParseKeyword (Keyword Continue, tokSize, stream@(';': _)) =
