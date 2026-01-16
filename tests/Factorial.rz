@@ -1,15 +1,12 @@
 fn main() -> Int
 {
-    Int x = 5;
+    Int x = 50;
 
     dumpFile("LICENSE.md");
-    print(1, "factorial(5) = ");
-    x = factorial(x);
-    println(1, x);
-    Int fd = open("bonjour.txt");
-    println(fd, x);
-    close(fd);
-    println(1, isOpen(fd));
+    print(1, "factorial(");
+    print(1, x);
+    print(1, ") = ");
+    println(1, factorial(x));
     ret 0;
 }
 
