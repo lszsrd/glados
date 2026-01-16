@@ -5,10 +5,10 @@
 -- src/vm/types/Function.hs
 -}
 
-module Function (
-    Function
+module Fds (
+    Fds
 ) where
 
-import OpCodes (OpCode (..))
+import System.IO (Handle)
 
-type Function = (String, Int, [OpCode])
+type Fds = [(Integer, Handle)]

