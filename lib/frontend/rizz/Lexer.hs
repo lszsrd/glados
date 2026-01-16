@@ -149,6 +149,7 @@ hParseKeyword (token, tokSize, stream@(x: _))
 parseLiteral :: Stream -> Maybe (Token, Int, Stream)
 parseLiteral stream =
       parseBooleanConstant stream
+  <|> parseStringLiteral stream
   <|> fmap (\(x,y,z) -> (Literal (CharLiteral x), y, z))
         (parseCharacterConstant stream)
   <|> fmap (\(x,y,z) -> (Literal (FloatLiteral (read x)), y, z))
@@ -216,10 +217,10 @@ parseMultiLineComment begin (_: x) (l, c) y
 --
 -- This function is a wrapper around @'parseSCharSequence'@ that checks whether the string literal starts and ends with the @\`"\`@ character.
 -- As such, it returns the same components and increases the total length by 2, taking into account both @\`"\`@ characters.
-parseStringLiteral :: Stream -> Maybe (Lexeme, Int, Stream)
-parseStringLiteral ('"': '"': x) = Just ([], 2, x)
+parseStringLiteral :: Stream -> Maybe (Token, Int, Stream)
+parseStringLiteral ('"': '"': x) = Just (Literal (ListLiteral []), 2, x)
 parseStringLiteral ('"': x) = case parseSCharSequence x of
-    Just (a, y, '"': z) -> Just (a, 2 + y, z)
+    Just (a, y, '"': z) -> Just (Literal (ListLiteral a), 2 + y, z)
     _ -> Nothing
 parseStringLiteral _ = Nothing
 
@@ -228,12 +229,12 @@ parseStringLiteral _ = Nothing
 -- On success, this function returns a tuple made of the parsed string literal, the string length and the input stream stripped of the parsed string literal.
 --
 -- This function differs from @'parseCharacterConstant'@ in that it accepts one or many characters and is surrounded by @\`"\`@ characters.
-parseSCharSequence :: Stream -> Maybe (Lexeme, Int, Stream)
+parseSCharSequence :: Stream -> Maybe ([Literal], Int, Stream)
 parseSCharSequence stream = case parseSChar stream of
     Nothing -> Nothing
     Just (x, y, z) -> case parseSCharSequence z of
-        Nothing -> Just ([x], y, z)
-        Just (x', y', z') -> Just (x: x', y + y', z')
+        Nothing -> Just ([CharLiteral x], y, z)
+        Just (x', y', z') -> Just (CharLiteral x: x', y + y', z')
 
 -- | Takes a @'Stream'@ as parameter and returns a __Maybe__ (@'Data.Char'@, @'Data.Int'@, @'Stream'@) if the stream starts with a \<s-char\>.
 --
