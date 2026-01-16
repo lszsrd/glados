@@ -23,9 +23,6 @@ module Parser (
 
 import Tokens
 import Ast
-import Debug.Trace (trace)
-
--- TODO: check for unbound variables
 
 expect :: (Int, Int) -> String -> String -> String
 expect (x, x') y z = show x ++ ":" ++ show x' ++ " expected " ++ y
