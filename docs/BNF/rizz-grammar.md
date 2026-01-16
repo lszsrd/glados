@@ -39,3 +39,5 @@
 \<var-decl>                 ::= \<builtin-type> \<s-char-sequence> \<assign-op> \<parm-call-decl>
 
 \<assign-op>                ::= "=" | "*=" | "/=" | "%=" | "+=" | "-="
+
+\<record-decl-expr>           ::= "struct" |           \<identifier> "{" { \<parm-var-decl-expr-block> } "}"

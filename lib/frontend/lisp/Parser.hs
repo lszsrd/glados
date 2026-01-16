@@ -5,6 +5,17 @@
 -- lib/frontend/lisp/Parser.hs
 -}
 
+-------------------------------------------------------------------------------
+-- |
+-- Module      : Parser
+-- Description : Performs syntactic analysis of a list of tokens and builds an Abstract Syntax Tree.
+-- License     : MIT
+-- Maintainer  : laszlo.serdet@epitech.eu
+--
+-- Takes a list of __@'T.Token'@__ and do an syntaxic analysis, based on a BNF grammar, to build an __@'A.Decl'@__ list representing the program Abstract Syntax Tree.
+--
+-- If an unexpected token is found or the syntax is invalid, the @'parser'@ function returns an pretty :) error message.
+-------------------------------------------------------------------------------
 module Parser (
     expect
     , parser
@@ -24,10 +35,20 @@ module Parser (
 import Tokens
 import Ast
 
+-- | Takes a @'(Int, Int)'@, a @'String'@ and a @'String'@ as parameter and returns a @'String'@.
+--
+-- This function serves to format a error message.
 expect :: (Int, Int) -> String -> String -> String
 expect (x, x') y z = show x ++ ":" ++ show x' ++ " expected " ++ y
     ++ ", got " ++ z
 
+-- | Takes an @'[(Token, (Int, Int))]'@ as parameter and returns a __Either__ @'(String, [Expr])'@.
+--
+-- On success, this function returns a list of expressions.
+--
+-- On failure, this function returns a pretty formatted error.
+-- 
+-- This function serves to parse the token stream.
 parser :: Tokens -> Either String [Expr]
 parser [] = Right []
 parser x = case parseDecl x of
@@ -37,6 +58,13 @@ parser x = case parseDecl x of
         Left e -> Left e
         Right z -> Right $ y: z
 
+-- | Takes an @'[(Token, (Int, Int))]'@ as parameter and returns a __Either__ @'(String, [Expr])'@.
+--
+-- On success, this function returns a list of expressions.
+--
+-- On failure, this function returns a pretty formatted error.
+-- 
+-- This function serves as an helper to parse an expression.
 hParser :: Tokens -> Either String [Expr]
 hParser x = case parseExpr x of
     Left e -> Left e
@@ -49,6 +77,13 @@ hParser x = case parseExpr x of
         Left e -> Left e
         Right z -> Right $ y: z
 
+-- | Takes an @'[(Token, (Int, Int))]'@ as parameter and returns a __Either__ @'(String, (Expr, Tokens))'@.
+--
+-- On success, this function returns a parsed expression and the rest of the token stream.
+--
+-- On failure, this function returns a pretty formatted error.
+-- 
+-- This function serves to parse a declaration (e.g.: "(define foo 2)" ).
 parseDecl :: Tokens -> Either String (Expr, Tokens)
 -- (define <Identifier> (lambda ...)) which is a special case
 parseDecl ((RBracket Open, _): (Atom (Operator Tokens.Define), _):
@@ -78,6 +113,13 @@ parseDecl ((RBracket Open, _): (Atom (Operator Tokens.Define), _):
             ((z, zs): _) -> Left $ expect zs "')'" $ show z
 parseDecl _ = Left []
 
+-- | Takes an @'[(Token, (Int, Int))]'@, and two @'Identifier'@ as parameters and returns a @'[Identifier]'@.
+--
+-- On success, this function returns a list of Identifier.
+--
+-- On failure, this function returns a pretty formatted error.
+-- 
+-- This function serves as an helper to parse a list of params.
 hParseDecl' :: Tokens -> Identifier -> Identifier -> [Identifier]
   -> Either String (Expr, Tokens)
 hParseDecl' ys a y y' = case parseExpr ys of
@@ -88,7 +130,14 @@ hParseDecl' ys a y y' = case parseExpr ys of
         [] -> Left $ expect (snd $ head zs) "')'" "<EOF>"
         ((z', zs'): _) -> Left $ expect zs' "')'" $ show z'
 
--- fetch all identifiers for a named define (define (foo [<Identifier>]))
+-- | Takes a @'(Int, Int)'@, an @'[(Token, (Int, Int))]'@ as parameters and
+-- returns a __Either__ @'String'@ @'([Identifier], [(Token, (Int, Int))])'@.
+--
+-- On success, this function returns a list of parsed parameters.
+--
+-- On failure, this function returns a pretty formatted error.
+-- 
+-- This function serves as an helper to parse a list of params in a named define.
 hParseDecl :: (Int, Int) -> Tokens -> Either String ([Identifier], Tokens)
 hParseDecl x [] = Left $ expect x "')'" "<EOF>"
 hParseDecl x ((Atom (Tokens.Identifier y), _): ys) = case hParseDecl x ys of
@@ -97,6 +146,12 @@ hParseDecl x ((Atom (Tokens.Identifier y), _): ys) = case hParseDecl x ys of
 hParseDecl _ ((RBracket Close, _): xs) = Right ([], xs)
 hParseDecl _ ((x, y): _) = Left $ expect y "')'" $ show x
 
+-- | Takes an @'[(Token, (Int, Int))]'@ as parameters and
+-- returns a __Either__ @'String'@ @'(Expr, [(Token, (Int, Int))])'@.
+--
+-- On success, this function returns a parsed Expression.
+--
+-- On failure, this function returns a pretty formatted error.
 parseExpr :: Tokens -> Either String (Expr, Tokens)
 parseExpr tokens = case parseConstExpr tokens of
     Nothing -> case parseLambdaExpr tokens of
@@ -108,6 +163,12 @@ parseExpr tokens = case parseConstExpr tokens of
         x -> x
     Just x -> Right x
 
+-- | Takes an @'[(Token, (Int, Int))]'@ as parameters and
+-- returns a __Either__ @'String'@ @'(Expr, [(Token, (Int, Int))])'@.
+--
+-- On success, this function returns a parsed Const Expression.
+--
+-- On failure, this function returns a pretty formatted error.
 parseConstExpr :: Tokens -> Maybe (Expr, Tokens)
 parseConstExpr ((Atom (Bool x), _): xs) = Just (Const (Boolean x), xs)
 parseConstExpr ((Atom (Integer x), _): xs) = Just (Const (Int x), xs)
@@ -116,6 +177,12 @@ parseConstExpr ((Atom (Tokens.Identifier x), _): xs) =
     Just (Const (Ast.Identifier x), xs)
 parseConstExpr _ = Nothing
 
+-- | Takes an @'[(Token, (Int, Int))]'@ as parameters and
+-- returns a __Either__ @'String'@ @'(Expr, [(Token, (Int, Int))])'@.
+--
+-- On success, this function returns a parsed If Expression.
+--
+-- On failure, this function returns a pretty formatted error.
 parseIfExpr :: Tokens -> Either String (Expr, Tokens)
 parseIfExpr ((RBracket Open, _): (Atom (Operator Tokens.If), _):
   (Atom (Bool x), _): xs) = do
@@ -146,6 +213,12 @@ parseIfExpr ((RBracket Open, _): (Atom (Operator Tokens.If), _): xs)
         _ -> Left $ expect (snd $ head xs) "<condition>" $ show (fst $ head xs)
 parseIfExpr _ = Left []
 
+-- | Takes an @'[(Token, (Int, Int))]'@ as parameters and
+-- returns a __Either__ @'String'@ @'(Expr, [(Token, (Int, Int))])'@.
+--
+-- On success, this function returns a parsed Call Expression.
+--
+-- On failure, this function returns a pretty formatted error.
 parseCallExpr :: Tokens -> Either String (Expr, Tokens)
 parseCallExpr ((Atom (Tokens.Identifier x), _): xs) = Right (Call x [], xs)
 parseCallExpr (a@(Atom x, y): _) = case parseConstExpr [a] of
@@ -160,6 +233,14 @@ parseCallExpr ((RBracket Open, _): (Atom (Tokens.Identifier x), _): xs)
             ((z, zs): _) -> Left $ expect zs "')'" $ show z
 parseCallExpr _ = Left []
 
+-- | Takes an @'[(Token, (Int, Int))]'@ as parameters and
+-- returns a __Either__ @'String'@ @'(Expr, [(Token, (Int, Int))])'@.
+--
+-- On success, this function returns a parsed Call Expression.
+--
+-- On failure, this function returns a pretty formatted error.
+--
+-- This function serves as an helper to parse an expression inside a call.
 hParseCallExpr :: Tokens -> Either String ([Expr], Tokens)
 hParseCallExpr xs = case parseExpr xs of
     Left e -> Left e
@@ -167,6 +248,12 @@ hParseCallExpr xs = case parseExpr xs of
         Left _ -> Right ([y], ys)
         Right (z, zs) -> Right (y: z, zs)
 
+-- | Takes an @'[(Token, (Int, Int))]'@ as parameters and
+-- returns a __Either__ @'String'@ @'(Expr, [(Token, (Int, Int))])'@.
+--
+-- On success, this function returns a parsed Binary Expression.
+--
+-- On failure, this function returns a pretty formatted error.
 parseBinaryExpr :: Tokens -> Either String (Expr, Tokens)
 parseBinaryExpr ((RBracket Open, _): (Atom (Operator x), y): xs) = do
     (a, as) <- parseExpr xs
@@ -179,6 +266,14 @@ parseBinaryExpr ((RBracket Open, _): (Atom (Operator x), y): xs) = do
         ((z, zs): _) -> Left $ expect zs "')'" $ show z
 parseBinaryExpr _ = Left []
 
+-- | Takes an @'Operator'@ as parameter and
+-- returns a __Maybe__ @'BinaryOperator'@.
+--
+-- On success, this function returns a parsed Call Expression.
+--
+-- On failure, this function returns a pretty formatted error.
+--
+-- This function serves as an helper to parse a BinaryOperator.
 hParseBinaryExpr :: Operator -> Maybe BinaryOperator
 hParseBinaryExpr Add = Just (ArithExpr OpAdd)
 hParseBinaryExpr Sub = Just (ArithExpr OpSub)
@@ -189,7 +284,12 @@ hParseBinaryExpr Lt = Just (CondExpr OpLt)
 hParseBinaryExpr Eq = Just (CondExpr OpEq)
 hParseBinaryExpr _ = Nothing
 
--- (lambda ([<Identifier>]) Expr)
+-- | Takes an @'Operator'@ as parameter and
+-- returns a __Maybe__ @'BinaryOperator'@.
+--
+-- On success, this function returns a parsed Lambda Expression.
+--
+-- On failure, this function returns a pretty formatted error.
 parseLambdaExpr :: Tokens -> Either String (Expr, Tokens)
 parseLambdaExpr ((RBracket Open, _): (Atom (Operator Tokens.Lambda), _):
   (RBracket Open, x): xs)

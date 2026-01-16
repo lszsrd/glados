@@ -208,6 +208,9 @@ compileParmCall _   (ParmCallDeclLiteral lit) = compileLiteral lit
 compileParmCall _   (ParmCallDeclIdent ident) = "LOAD " ++ ident ++ "\n"
 compileParmCall env (ParmCallDeclExpr (CallExprDecl fname args)) =
     compileCallWithNamedParams env fname args
+
+-- TODO ; Manage Structs
+compileParmCall env (ParmCallDeclList l) = "\n"
 compileParmCall env (ParmCallBExpr l op r) =
     compileBinaryOpParm env l ++
     compileBinaryOpParm env r ++

@@ -120,12 +120,22 @@ parseKeyword ('f': 'o': 'r': 'e': 'a': 'c': 'h': x) =
     hParseKeyword (Keyword Foreach, 7, x)
 parseKeyword ('f': 'o': 'r': x) = hParseKeyword (Keyword For, 3, x)
 parseKeyword ('r': 'e': 't': x) = hParseKeyword (Keyword Ret, 3, x)
+parseKeyword ('c': 'o': 'n': 't': 'i': 'n': 'u': 'e': x) =
+    hParseKeyword (Keyword Continue, 8, x)
+parseKeyword ('b': 'r': 'e': 'a': 'k': x) =
+    hParseKeyword (Keyword Break, 5, x)
 parseKeyword _ = Nothing
 
 -- | Takes a (@'Token'@, @'Data.Int'@, @'Stream'@) as parameter and returns a __Maybe__ (@'Token'@, @'Data.Int'@, @'Stream'@) if the cut stream starts with a space character.
 --
 -- @'parseKeyword'@'s helper function that checks if the very next character after the token is a space (to properly create a @'Token.Keyword'@ and not an @'Identifier'@) or a @'Colon'@ in case of function's parameter type.
 hParseKeyword :: (Token, Int, Stream) -> Maybe (Token, Int, Stream)
+hParseKeyword (Keyword Ret, tokSize, stream@(';': _))
+    = Just (Keyword Ret, tokSize, stream)
+hParseKeyword (Keyword Break, tokSize, stream@(';': _)) =
+    Just (Keyword Break, tokSize, stream)
+hParseKeyword (Keyword Continue, tokSize, stream@(';': _)) =
+    Just (Keyword Continue, tokSize, stream)
 hParseKeyword (token, tokSize, []) = Just (token, tokSize, [])
 hParseKeyword (token, tokSize, stream@(':': _)) = Just (token, tokSize, stream)
 hParseKeyword (token, tokSize, stream@(']': _)) = Just (token, tokSize, stream)

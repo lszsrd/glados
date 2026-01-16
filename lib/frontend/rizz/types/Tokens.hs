@@ -42,12 +42,13 @@ module Tokens (
 -- $bnf
 -- For the full rizz lexical syntax definition, see the [BNF definition](https://github.com/lszsrd/glados/blob/main/docs/BNF/rizz-lexical.md) here.
 
-{- instance Show Token where
+instance Show Token where
     show (Keyword Bool) = "Bool"
     show (Keyword Char) = "Char"
     show (Keyword Int) = "Int"
     show (Keyword Float) = "Float"
     show (Keyword Double) = "Double"
+    show (Keyword Struct) = "Struct"
     show (Keyword Fn) = "fn"
     show (Keyword If) = "if"
     show (Keyword Else) = "else"
@@ -55,7 +56,8 @@ module Tokens (
     show (Keyword For) = "for"
     show (Keyword Foreach) = "foreach"
     show (Keyword Ret) = "ret"
-    show (Keyword Struct) = "struct"
+    show (Keyword Break) = "break"
+    show (Keyword Continue) = "continue"
 
     show (Identifier x) = x
 
@@ -98,7 +100,7 @@ module Tokens (
     show (Punctuator (AssignOp DivEqual)) = "/="
     show (Punctuator (AssignOp ModEqual)) = "%="
     show (Punctuator (AssignOp AddEqual)) = "+="
-    show (Punctuator (AssignOp SubEqual)) = "-=" -}
+    show (Punctuator (AssignOp SubEqual)) = "-="
 
 -- | Defines @'Stream'@ type as a string representing a finite byte array.
 type Stream = String
@@ -124,7 +126,6 @@ data Token
     -- ^ Punctuator definition.
 
     deriving (
-        Show,
         Eq
         -- ^ Allows @'Token'@ to be compared, needed for unit tests.
     )
@@ -157,6 +158,10 @@ data Keyword
     -- ^ Return (from function) keyword, expressed in rizz code as @\`ret\`@.
     | Struct
     -- ^ Struct keyword, expressed in rizz code as @\`struct Foo = {...}\`@.
+    | Continue
+    -- ^ Continue keyword, expressed in rizz code as @\`continue;\`@.
+    | Break
+    -- ^ Break keyword, expressed in rizz code as @\`break;\`@.
     
     deriving (
         Show
