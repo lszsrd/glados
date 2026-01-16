@@ -83,7 +83,7 @@ compileStmt env (BinaryOperator expr) =
     compileBinaryOpExpr env expr ++
     "POP\n"
 
-compileStmt env (RetStmt expr) =
+compileStmt env (RetStmt (Just expr)) =
     compileBinaryOpExpr env expr ++
     "RET\n"
 

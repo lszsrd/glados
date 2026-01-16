@@ -243,7 +243,7 @@ data Stmt
     --  - Function's name as an @'Identifier'@.
     --  - Function's parameters enclosed in @'OpenRBracket'@ and @'CloseRBracket'@ expressed as @'ParmCallDecl'@ (both round brackets are still required even if no arguments are provided to the function).
     --  - A trailing @'Semicolon'@ to end the expression.
-    | RetStmt BinaryOpExpr
+    | RetStmt (Maybe BinaryOpExpr)
     -- ^ Return from function, expressed in rizz code like @\`ret 42;\`@.
     --
     -- A @'RetStmt'@ rizz grammar in-code is as follow, in the given order:

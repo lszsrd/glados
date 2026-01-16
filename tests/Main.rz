@@ -5,6 +5,7 @@
 fn main() -> Int
 {
     Int x = 42;
+    [Int] a = [1,2,4];
 
     if (x == 42) {
         ret 2 * 4 + 3;

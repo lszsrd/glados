@@ -33,6 +33,7 @@ module ParserHelper (
     expectToken,
     parseMaybe,
     getPos,
+    doesVarExists,
     addIfVarExpr,
     findString
 ) where
@@ -106,11 +107,11 @@ getIden (A.RecordDecl (A.RecordDeclExpr n _)) = n
 -- On failure, this function returns a the result of the second parser passed as parameter.
 --
 -- This function is used to parse an expression that can be two different things.
-searchInFile :: [A.Decl] -> T.Identifier -> Either String String
+searchInFile :: [A.Decl] -> T.Identifier -> Either String A.Decl 
 searchInFile [] n = Left ("Undefined reference to " ++ show n)
 searchInFile (decl:xs) vName =
     if getIden decl == vName
-        then Right "OK"
+        then Right decl
         else searchInFile xs vName
 
 -- | Takes a (@'Data.Int'@, @'Data.Int'@), an @'([A.Decl], A.Decl)'@ and an @'T.Identifier'@ as parameters and
@@ -122,18 +123,20 @@ searchInFile (decl:xs) vName =
 --
 -- This function is used to verify that a variable used is defined before.
 doesVarExists :: (Int, Int) -> ([A.Decl], A.Decl) -> T.Identifier
-    -> Either String String
-doesVarExists _ _ "True" = Right "OK"
-doesVarExists _ _ "False" = Right "OK"
+    -> Either String A.Decl 
+doesVarExists _ _ "True" = Right (A.ParmVarDecl
+    (A.ParmVarDeclExpr A.Boolean "True"))
+doesVarExists _ _ "False" = Right (A.ParmVarDecl
+    (A.ParmVarDeclExpr A.Boolean "False"))
 doesVarExists pos (file, A.FunctionDecl _ [] _ _) iden =
     case searchInFile file iden of
         Left e -> errorAt pos e
         Right a -> Right a
 doesVarExists pos (fl, A.FunctionDecl n
-    (A.ParmVarDeclExpr _ id1:xs) bdy ret) id2 =
-    if id1 == id2 then Right "OK"
+    (p1@(A.ParmVarDeclExpr _ id1):xs) bdy ret) id2 =
+    if id1 == id2 then Right (A.ParmVarDecl p1)
         else doesVarExists pos (fl, A.FunctionDecl n xs bdy ret) id2
-doesVarExists _ _ _ = Left "1:1 Error"
+doesVarExists p _ _ = errorAt p "var detection Error"
 
 -- | Takes a (@'Data.Int'@, @'Data.Int'@), an @'A.Stmt@ and a list of @'A.ParmVarDeclExpr'@ as parameters and
 -- returns a __Either__ @'String'@ @'[A.ParmVarDeclExpr]'@.
@@ -154,6 +157,22 @@ addIfVarExpr p var@(A.DeclVarExpr (A.VarDeclStmt _ iden _ _))
             rest <- addIfVarExpr p var xs
             Right (x:rest)
 addIfVarExpr _ _ parms = Right parms
+
+
+canAssign :: (Int, Int) -> A.Decl -> A.Decl -> Either String String
+canAssign p (A.FunctionDecl {}) _ = errorAt p
+    "Cannot assign value to function definition"
+canAssign p (A.RecordDecl _) _ = errorAt p
+    "Cannot assign value to struct definition"
+canAssign p (A.ParmVarDecl (A.ParmVarRecord _)) _ = errorAt p
+    "Cannot assign value to struct"
+canAssign p (A.ParmVarDecl (A.ParmVarDeclExpr tp _)) toAss = case toAss of
+    (A.FunctionDecl _ _ _ retTp) -> case retTp of
+        Nothing -> errorAt p "Cannot assign from function returning void"
+        Just jTp -> if jTp == tp then Right "OK" else errorAt p ("Cannot "
+         ++ "assign from function returning " ++ show jTp ++ "to" ++ show tp)
+    _ -> Right "e"
+canAssign p (A.VarDecl (A.VarDeclStmt tp _ _ _)) toAss = Left "Feur"
 
 -- | Takes a @'[SingleToken]'@ as parameter and
 -- returns a __Either__ @'String'@ @'[T.AssignOp]'@.
@@ -257,8 +276,8 @@ parseBuiltinType _ ((T.Keyword T.Bool, _) : rest) = Right (A.Boolean, rest)
 parseBuiltinType _ ((T.Keyword T.Char, _) : rest) = Right (A.Character, rest)
 parseBuiltinType _ ((T.Keyword T.Int, _) : rest) = Right (A.Integer, rest)
 parseBuiltinType _ ((T.Keyword T.Float, _) : r) = Right (A.SinglePrecision, r)
-parseBuiltinType a ((T.Identifier i, pos) : rest) = do
-    _ <- doesVarExists pos (a, A.FunctionDecl "" [] (A.CompoundStmt []) Nothing) i
+parseBuiltinType a ((T.Identifier i, p) : rest) = do
+    _ <-doesVarExists p (a, A.FunctionDecl "" [] (A.CompoundStmt []) Nothing) i
     Right (A.Struct i, rest)
 parseBuiltinType _ ((token, position) : _) =
     errorAt position ("Expected builtintype, got " ++ show token)
@@ -332,7 +351,8 @@ parseParmCallDecl f tokens@((T.Identifier _, _) :
 parseParmCallDecl f ((T.Identifier id1, pos) :
     (T.Punctuator (T.SBracket T.OpenSBracket), _) : rest1) = do
     _ <- doesVarExists pos f id1
-    (idxExpr, rest2) <- parseOr (parseParmCallDeclBExpr f) (parseParmCallDecl f) rest1
+    (idxExpr, rest2) <- parseOr
+        (parseParmCallDeclBExpr f) (parseParmCallDecl f) rest1
     (_, rest3) <- expectToken (T.Punctuator (T.SBracket T.CloseSBracket))
         "Expected ']' after index" rest2
     parseIdxChain f (A.ParmCallDeclIdx (A.ParmCallDeclIdent id1) idxExpr) rest3
@@ -353,7 +373,8 @@ parseParmCallDecl _ [] = errorAt (1, 1) "Expected ParmCallDecl, got "
 -- | Parses double index access (e.g.: @arr[i][j]@).
 parseIdxChain :: ([A.Decl], A.Decl) -> A.ParmCallDecl -> Parser A.ParmCallDecl
 parseIdxChain f base ((T.Punctuator (T.SBracket T.OpenSBracket), _) : rest1) = do
-    (idxExpr, rest2) <- parseOr (parseParmCallDeclBExpr f) (parseParmCallDecl f) rest1
+    (idxExpr, rest2) <- parseOr
+        (parseParmCallDeclBExpr f) (parseParmCallDecl f) rest1
     (_, rest3) <- expectToken (T.Punctuator (T.SBracket T.CloseSBracket))
         "Expected ']' after index" rest2
     parseIdxChain f (A.ParmCallDeclIdx base idxExpr) rest3
@@ -431,6 +452,21 @@ parseCallExprDecl f tokens = do
         (T.RBracket T.CloseRBracket)) "Expected ')'" rest3
     Right (A.CallExprDecl fname parmcldllist, rest4)
 
+getDecl :: (Int, Int) -> ([A.Decl], A.Decl) -> A.ParmCallDecl
+    -> Either String A.Decl
+getDecl _ _ (A.ParmCallDeclLiteral l) = case l of
+    (T.BoolLiteral _) -> Right (A.ParmVarDecl
+        (A.ParmVarDeclExpr A.Boolean "cDefined"))
+    (T.CharLiteral _) -> Right (A.ParmVarDecl
+        (A.ParmVarDeclExpr A.Character "cDefined"))
+    (T.IntLiteral _) -> Right (A.ParmVarDecl
+        (A.ParmVarDeclExpr A.Integer "cDefined"))
+    (T.FloatLiteral _) -> Right (A.ParmVarDecl
+        (A.ParmVarDeclExpr A.SinglePrecision "cDefined"))
+    (T.ListLiteral _) -> Right (A.ParmVarDecl
+        (A.ParmVarDeclExpr (A.ListType A.Integer) "cDefined"))
+getDecl _ _ _ = Right (A.ParmVarDecl (A.ParmVarDeclExpr A.Boolean "cDefined"))
+
 -- | Takes an @'([A.Decl], A.Decl)'@ and a @'[SingleToken]'@ as parameter and
 -- returns a __Either__ @'String'@ @'A.DeclStmt'@.
 --
@@ -438,14 +474,16 @@ parseCallExprDecl f tokens = do
 --
 -- On failure, this function returns a pretty formatted message error.
 --
--- This function is used to parse an assignment statement.
+-- This function is used to parse an assignment statement (@`foo = bar`@ or @`foo++`@).
 parseDeclAssignStmtLiteral :: ([A.Decl], A.Decl) -> Parser A.DeclStmt
 parseDeclAssignStmtLiteral f tokens = do
     (id1, rest1) <- parseIdentifier tokens
-    _ <- doesVarExists (getPos 0 tokens) f id1
+    var <- doesVarExists (getPos 0 tokens) f id1
     (ap, rest2) <- parseAssignOp rest1
     (parmcldl, rest3)
         <- parseOr (parseParmCallDeclBExpr f) (parseParmCallDecl f) rest2
+    var2 <- getDecl (getPos 0 tokens) f parmcldl
+    _ <- canAssign (getPos 0 tokens) var var2
     Right (A.DeclAssignStmtLiteral id1 ap parmcldl, rest3)
 
 -- | Takes an @'([A.Decl], A.Decl)'@ and a @'[SingleToken]'@ as parameter and
@@ -455,14 +493,17 @@ parseDeclAssignStmtLiteral f tokens = do
 --
 -- On failure, this function returns a pretty formatted message error.
 --
--- This function is used to parse a variable declaration statement.
+-- This function is used to parse a variable declaration statement (@`Int foo = 1`@).
 parseVarDeclStmt :: ([A.Decl], A.Decl) -> Parser A.VarDeclStmt
 parseVarDeclStmt f@(fl, _) tokens = do
     (typ, rest1) <- parseBuiltinType fl tokens
     (name, rest2) <- parseIdentifier rest1
     (op, rest3) <- parseAssignOp rest2
-    (value, rest4) <- parseOr (parseParmCallDeclBExpr f) (parseParmCallDecl f) rest3
-    Right (A.VarDeclStmt typ name op value, rest4)
+    (value, rest4) <-
+        parseOr (parseParmCallDeclBExpr f) (parseParmCallDecl f) rest3
+    case doesVarExists (1, 1) f name of 
+        Right _ -> Left ("variable already exists " ++ show name)
+        Left _ -> Right (A.VarDeclStmt typ name op value, rest4)
 
 -- | Takes an @'([A.Decl], A.Decl)'@ and a @'[SingleToken]'@ as parameter and
 -- returns a __Either__ @'String'@ @'A.DeclStmt'@.
@@ -474,9 +515,10 @@ parseVarDeclStmt f@(fl, _) tokens = do
 -- This function is used to parse an operation on an existing variable.
 parseDeclStmt :: ([A.Decl], A.Decl) -> Parser A.DeclStmt
 parseDeclStmt f tokens@((T.Identifier i, pos) : rest1) = do
-    _ <- doesVarExists pos f i
+    var <- doesVarExists pos f i
     case rest1 of
-        ((T.Punctuator (T.UnaryOp u), _) : rest2) -> 
+        ((T.Punctuator (T.UnaryOp u), _) : rest2) -> do
+            _ <- canAssign pos var var
             Right (A.DeclAssignStmtUnary (A.UnaryOperatorExpr i u), rest2)
         _ -> parseDeclAssignStmtLiteral f tokens
 parseDeclStmt _ ((token, position) : _) =
