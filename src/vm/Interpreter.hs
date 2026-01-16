@@ -222,6 +222,8 @@ exec symtab bOps (Mul: ops) stack env fds = case pop2 stack of
         Right z -> exec symtab bOps ops (rest ++ [Float z]) env fds
 exec symtab bOps (Add: ops) stack env fds = case pop2 stack of
     Left e -> return $ Left ("ADD: " ++ e)
+    Right (List x, List y, z)
+        -> exec symtab bOps ops (z ++ [List (x ++ y)]) env fds
     Right (Integer x, Integer y, z) ->
         exec symtab bOps ops (z ++ [Integer (x + y)]) env fds
     Right (x, y, rest) -> case addOperand x y of
