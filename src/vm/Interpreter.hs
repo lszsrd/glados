@@ -27,7 +27,7 @@ import Utils
 foreign import ccall "stdlib.h &exit"
   p_exit:: FunPtr (CInt -> IO ())
 
-foreign import ccall "dynamic"  
+foreign import ccall "dynamic"
   mkFun :: FunPtr (CInt -> IO ()) -> (CInt -> IO ())
 
 -- invoke a new function and runs it
