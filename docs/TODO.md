@@ -25,6 +25,7 @@
     [OK]
 - Your could include in your delivery a standard library, coded in your language, extending the basic functionalities of your language.
 - Your language could support closures.
+    [KO]
 
 # Documentation and accessibility
 
@@ -55,6 +56,7 @@
     * HashMaps
 - Side effects:
     * add builtins or a notation to read or write to standard input / output
+        [OK]
     * add builtins or a notation for file handling
     * bindings to graphical library, or networking primitives, etc.
     * a notation to interface with any external function (Foreign Function Interface)

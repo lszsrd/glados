@@ -35,7 +35,8 @@ module ParserHelper (
     getPos,
     doesVarExists,
     addIfVarExpr,
-    findString
+    findString,
+    craftIdentifierWithStructVarDecl
 ) where
 
 import qualified Ast as A
@@ -331,6 +332,11 @@ parsePVDEList a tokens = do
             (params, rest3) <- parsePVDEList a rest2
             Right(param : params, rest3)
         _ -> Right ([param], rest1)
+
+craftIdentifierWithStructVarDecl :: T.Identifier -> T.Identifier
+    -> T.Identifier
+craftIdentifierWithStructVarDecl id1 id2 =
+    show id1 ++ "@" ++ show id2
 
 -- | Takes an @'([A.Decl], A.Decl)'@ and a @'[SingleToken]'@ as parameter and
 -- returns a __Either__ @'String'@ @'A.ParmCallDecl'@.

@@ -19,6 +19,7 @@ fn babar(Int: x) -> Int
     Int y = 5;
     foo f = foo(1);
  
+    foo->x = 1;
     for (Int q = feur(y); feur(y) < x; y++) {
         if (foo(y) == 0) {
             ret 10;
