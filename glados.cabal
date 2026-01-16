@@ -45,7 +45,7 @@ library backend-lisp
     ghc-options:        -Wall -O2
     exposed-modules:
         Bytecode
-    build-depends:      base, frontend-lisp
+    build-depends:      base, frontend-lisp, containers
 
 library backend-rizz
     default-language:   Haskell2010
