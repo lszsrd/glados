@@ -12,9 +12,22 @@ fn main() -> Int
 
 fn dumpFile ([Char]: path)
 {
-    Int fd = open(path);
+    println(1, rand('a', 'z'));
+    Int fd = open_r(path);
     
-    while (isOpen(fd) && isEOF(fd) == False) {
+    if (isOpen(fd) == False) {
+        exit(1);
+    }
+    while (isEOF(fd) == False) {
+        println(1, readln(fd));
+    }
+    /* seek_e(fd, 0 - tell(fd));
+    while (isEOF(fd) == False) {
+        println(1, readln(fd));
+    } */
+    close(fd);
+    fd = open_r("/dev/urandom");
+    for (Int i = 0; i < 5; i++) {
         println(1, readln(fd));
     }
     close(fd);

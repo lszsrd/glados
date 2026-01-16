@@ -243,7 +243,7 @@ data Stmt
     --  - Function's name as an @'Identifier'@.
     --  - Function's parameters enclosed in @'OpenRBracket'@ and @'CloseRBracket'@ expressed as @'ParmCallDecl'@ (both round brackets are still required even if no arguments are provided to the function).
     --  - A trailing @'Semicolon'@ to end the expression.
-    | RetStmt BinaryOpExpr
+    | RetStmt (Maybe BinaryOpExpr)
     -- ^ Return from function, expressed in rizz code like @\`ret 42;\`@.
     --
     -- A @'RetStmt'@ rizz grammar in-code is as follow, in the given order:
@@ -251,6 +251,15 @@ data Stmt
     --  - A leading @'Ret'@.
     --  - @'BinaryOpExpr'@ which suits all needs, from constants to arithmetics or even function call.
     --  - A trailing @'Semicolon'@ to end the expression.
+
+    | LoopControlStmt Keyword
+    -- ^ Control exec from loop instruction, expressed in rizz code like @\`continue;\`@ or @\`break;\`@.
+    --
+    -- A @'LoopControlStmt'@ rizz grammar in-code is as follow, in the given order:
+    --
+    --  - A leading @'continue'@ or @'break'@.
+    --  - A trailing @'Semicolon'@ to end the expression.
+
 
     deriving (
         Show
@@ -320,6 +329,7 @@ data BuiltinType
     -- ^ Float type keyword, see Float @'Keyword'@
     | ListType BuiltinType
     -- ^ List type, expressed in rizz code as @\`[Int]\`@, @\`[[Int]]\`@, etc.
+    | Struct Identifier
 
     deriving (
         Show
@@ -431,6 +441,9 @@ data ParmCallDecl
     -- ^ Function call, defined by @'CallExprDecl'@, see @'CallExprDecl'@.
     | ParmCallBExpr BinaryOpParm BinaryOp BinaryOpParm
     -- ^ Binary expression, an exact copy of @'BinaryOpExpr'@ without self calling @'BinaryOpConst'@ allowing expression in rizz code like @\`x - 1\`@ in function calls.
+    | ParmCallDeclIdx ParmCallDecl ParmCallDecl
+    -- ^ List index access, like @`list[0]`@ or @`arr[i]`@.
+    | ParmCallDeclList [ParmCallDecl]
 
     deriving (
         Show
