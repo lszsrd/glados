@@ -24,6 +24,7 @@ import qualified Ast as A
 import qualified Tokens as T
 import qualified ParserHelper as H
 import ParserBinaryExpr (parseBinaryOpExpr)
+import Data.Maybe (isNothing)
 
 type SingleToken = (T.Token, (Int, Int))
 type Parser a = [SingleToken] -> Either String (a, [SingleToken])
@@ -80,10 +81,10 @@ parseTernaryOperation _ ((a, pos):_) = H.errorAt pos
 parseStmtList :: Bool -> ([A.Decl], A.Decl) -> Parser [A.Stmt]
 parseStmtList _ _ tokens@((T.Punctuator (T.CBracket T.CloseCBracket), _) : _)
     = Right ([], tokens)
-parseStmtList b f@(fl, A.FunctionDecl n pvdelist bdy ret) tokens = do
+parseStmtList b f@(fl, A.FunctionDecl n pvdelist bdy r) tokens = do
     (stmt, r1) <- parseStmt b f tokens
     newParms <- H.addIfVarExpr (H.getPos 0 tokens) stmt pvdelist
-    (stmts, rest2) <- parseStmtList b (fl, A.FunctionDecl n newParms bdy ret) r1
+    (stmts, rest2) <- parseStmtList b (fl, A.FunctionDecl n newParms bdy r) r1
     Right (stmt : stmts, rest2)
 parseStmtList _ _ [] = H.errorAt (1, 1)
     "Expected '{' or '}' after Stmt List, got End Of Stream"
@@ -203,13 +204,16 @@ parseDeclVarExpr f tokens = do
 --
 -- This function is used to parse a Ret statement.
 parseRet :: ([A.Decl], A.Decl) -> Parser A.Stmt
-parseRet f@(_, A.FunctionDecl _ _ _ (Just _)) tokens = do
+parseRet f@(_, A.FunctionDecl _ _ _ ret) tokens = do
     (_, rest)      <- H.expectToken (T.Keyword T.Ret) "Expected 'ret'" tokens
-    (expr, rest1) <- parseBinaryOpExpr f rest
+    (expr, rest1) <- H.parseMaybe (parseBinaryOpExpr f) rest
     (_, r2) <- H.expectToken (T.Punctuator T.Semicolon) "Expected ';'" rest1
-    Right (A.RetStmt expr, r2)
-parseRet (_, A.FunctionDecl _ _ _ Nothing) ((_, pos): _) =
-    H.errorAt pos "Function return type not specified"
+    case ret of
+        Nothing -> if isNothing expr then Right (A.RetStmt expr, r2) else 
+            H.errorAt (H.getPos 0 rest1) "Function return type not specified"
+        Just rt -> if isNothing expr then 
+            H.errorAt (H.getPos 0 rest1) ("returning void in function typed "
+            ++ show rt) else Right (A.RetStmt expr, r2)
 parseRet _ e = H.errorAt (1,1) ("Expected Ret stmt, got " ++ show e)
 
 -- | Takes an @'([A.Decl], A.Decl)'@ and a @'[SingleToken]'@ as parameter and
