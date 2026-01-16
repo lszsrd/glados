@@ -24,8 +24,6 @@ module Parser (
 import Tokens
 import Ast
 
--- TODO: check for unbound variables
-
 expect :: (Int, Int) -> String -> String -> String
 expect (x, x') y z = show x ++ ":" ++ show x' ++ " expected " ++ y
     ++ ", got " ++ z
@@ -139,9 +137,13 @@ parseIfExpr ((RBracket Open, _): (Atom (Operator Tokens.If), _):
 parseIfExpr ((RBracket Open, _): (Atom (Operator Tokens.If), _): xs)
     = case parseBinaryExpr xs of
         Left e -> Left e
-        Right (BinaryOp y ifExpr elseExpr, ys) -> case y of
-            CondExpr condition -> Right (Ast.If condition ifExpr elseExpr, ys)
-            _ -> Left $ expect (snd $ head xs) "<condition>" $ show y
+        Right (BinaryOp (CondExpr y) _ _, ys) -> do
+            (a, as) <- parseExpr ys
+            (b, bs) <- parseExpr as
+            case bs of
+                ((RBracket Close, _): zs') -> Right (Ast.If y a b, zs')
+                [] -> Left $ expect (snd $ head as) "')'" "<EOF>"
+                ((z', zs'): _) -> Left $ expect zs' "')'" $ show z'
         _ -> Left $ expect (snd $ head xs) "<condition>" $ show (fst $ head xs)
 parseIfExpr _ = Left []
 
