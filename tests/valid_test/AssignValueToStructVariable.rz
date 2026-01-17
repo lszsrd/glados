@@ -1,0 +1,18 @@
+struct foo {
+    Int: a,
+    Int: b,
+    Char: c
+}
+
+/* comment block
+            */
+fn main() -> Int
+{
+    [Char] h = "Hello";
+
+    foreach (foo: h) {
+        foo = 'c';
+    }
+    ret 0;
+}
+//endof file
