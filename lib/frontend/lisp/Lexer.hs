@@ -61,6 +61,7 @@ unexpectedChar lexeme = "unexpected token '" ++ lexeme ++ "'"
 -- This function is the main lexing function
 lexerWrapper :: Stream -> Stream -> (Int, Int) -> Either String Tokens
 lexerWrapper _ [] _ = Right []
+lexerWrapper x (';': ';': xs) y = lexerWrapper x (dropWhile (/= '\n') xs) y
 lexerWrapper begin ('\n': xs) (l, _) = lexerWrapper begin xs (l + 1, 1)
 lexerWrapper begin (x: xs) (l, c)
     | isSpace x = lexerWrapper begin xs (l, c + 1)
