@@ -79,4 +79,4 @@ showList' :: [Operand] -> String
 showList' [] = []
 showList' [x] = show x
 showList' ((Char x): xs) = x: showList' xs
-showList' (x: xs) = (" " ++ show x ++ ", ") ++ showList' xs
+showList' (x: xs) = show x ++ showList' xs
