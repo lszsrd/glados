@@ -16,11 +16,11 @@ code: |
 
 Comparison expressions return a `Bool`.
 
-| Operator | Meaning          |
-| -------- | ---------------- |
-| `==`     | equal            |
-| `!=`     | not equal        |
-| `<`      | less than        |
-| `>`      | greater than     |
-| `<=`     | less or equal    |
-| `>=`     | greater or equal |
+```
+==    equal
+!=    not equal
+<     less than
+>     greater than
+<=    less or equal
+>=    greater or equal
+```

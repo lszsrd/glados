@@ -1,6 +1,8 @@
 .tutorial {
   width: 400px;
   min-width: 300px;
+  height: 100%;
+  max-height: 100vh;
   background: #1e1e1e;
   border-right: 1px solid #333;
   display: flex;
@@ -69,8 +71,7 @@
 
 .tutorial-content pre {
   background: #2d2d2d;
-  padding: 12px;
-  border-radius: 4px;
+  padding: 12px; border-radius: 4px;
   overflow-x: auto;
   margin-bottom: 16px;
 }
