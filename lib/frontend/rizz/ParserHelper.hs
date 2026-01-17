@@ -35,8 +35,7 @@ module ParserHelper (
     getPos,
     doesVarExists,
     addIfVarExpr,
-    findString,
-    craftIdentifierWithStructVarDecl
+    findString
 ) where
 
 import qualified Ast as A
@@ -170,8 +169,8 @@ doesVarExists p _ _ = errorAt p "var detection Error"
 createList :: [A.ParmVarDeclExpr] -> A.ParmCallDecl -> T.Identifier
     -> [A.Decl] -> Either String [A.ParmVarDeclExpr]
 createList [] (A.ParmCallDeclList []) _ _ = Right []
-createList [] (A.ParmCallDeclList (_:_)) _ _ = Left "Wrong number of Params"
-createList (_:_) (A.ParmCallDeclList []) _ _ = Left "Wrong number of Params"
+createList [] (A.ParmCallDeclList (_:_)) _ _ = Left "    Wrong number of Param"
+createList (_:_) (A.ParmCallDeclList []) _ _ = Left "    Wrong number of Param"
 createList ((A.ParmVarRecord (A.RecordDeclExpr _ ls)):as)
     (A.ParmCallDeclList (x:xs)) t fl = do
     first <- createList ls x t fl
@@ -180,9 +179,9 @@ createList ((A.ParmVarRecord (A.RecordDeclExpr _ ls)):as)
 createList (A.ParmVarDeclExpr tp n:as) (A.ParmCallDeclList (x:xs)) t fl = do
     rest <- createList as (A.ParmCallDeclList xs) t fl
     if getType fl x == Just tp
-        then Right (A.ParmVarDeclExpr tp (t ++ n) : rest)
-        else Left ("Wrong variable type :" ++ show x)
-createList _ _ _ _ = Right []
+        then Right (A.ParmVarDeclExpr tp (t ++ "@" ++ n) : rest)
+        else Left ("    Wrong variable type :" ++ show x)
+createList a _ _ _ = Right a
 
 addIfList :: A.BuiltinType -> T.Identifier -> A.ParmCallDecl -> [A.Decl]
     -> Either String [A.ParmVarDeclExpr]
@@ -207,7 +206,7 @@ addIfVarExpr :: (Int, Int) -> A.Stmt -> [A.Decl] -> [A.ParmVarDeclExpr]
     -> Either String [A.ParmVarDeclExpr]
 addIfVarExpr pos (A.DeclVarExpr (A.VarDeclStmt t iden _ pcallDecl)) fl [] = do
     case addIfList t iden pcallDecl fl of
-        Left e -> errorAt pos e
+        Left e -> errorAt pos (drop 4 e)
         Right parms -> Right (A.ParmVarDeclExpr t iden : parms)
 addIfVarExpr p var@(A.DeclVarExpr (A.VarDeclStmt _ iden _ _)) fl
     (x@(A.ParmVarDeclExpr _ id2): xs) =
@@ -355,6 +354,8 @@ parseBuiltinType _ [] = errorAt (1,1) "Expected builtintype, got Nothing"
 -- This function is used to parse an Identifier (e.g.: foo, bar, a, ...).
 parseIdentifier :: Parser T.Identifier
 parseIdentifier [] = errorAt (1, 1) "Unexpected err"
+parseIdentifier ((T.Identifier id1, _): (T.Punctuator T.Arrow, _) :
+    (T.Identifier id2, _): rest) = Right (id1 ++ "@" ++ id2, rest)
 parseIdentifier ((T.Identifier id1, _) : rest) = Right (id1, rest)
 parseIdentifier ((token, position) : _) =
     errorAt position ("Expected identifier, got " ++ show token)
@@ -394,11 +395,6 @@ parsePVDEList a tokens = do
             Right(param : params, rest3)
         _ -> Right ([param], rest1)
 
-craftIdentifierWithStructVarDecl :: T.Identifier -> T.Identifier
-    -> T.Identifier
-craftIdentifierWithStructVarDecl id1 id2 =
-    show id1 ++ "@" ++ show id2
-
 -- | Takes an @'([A.Decl], A.Decl)'@ and a @'[SingleToken]'@ as parameter and
 -- returns a __Either__ @'String'@ @'A.ParmCallDecl'@.
 --
@@ -423,7 +419,8 @@ parseParmCallDecl f ((T.Identifier id1, pos) :
     (_, rest3) <- expectToken (T.Punctuator (T.SBracket T.CloseSBracket))
         "Expected ']' after index" rest2
     parseIdxChain f (A.ParmCallDeclIdx (A.ParmCallDeclIdent id1) idxExpr) rest3
-parseParmCallDecl f ((T.Identifier id1, pos) : rest) = do
+parseParmCallDecl f t@((T.Identifier _, pos) : _) = do
+    (id1, rest) <- parseIdentifier t
     _ <- doesVarExists pos f id1
     Right (A.ParmCallDeclIdent id1, rest)
 parseParmCallDecl _ ((T.Literal li, _) : rest) =
@@ -581,7 +578,8 @@ parseVarDeclStmt f@(fl, _) tokens = do
 --
 -- This function is used to parse an operation on an existing variable.
 parseDeclStmt :: ([A.Decl], A.Decl) -> Parser A.DeclStmt
-parseDeclStmt f tokens@((T.Identifier i, pos) : rest1) = do
+parseDeclStmt f tokens@((T.Identifier _, pos) : _) = do
+    (i, rest1) <- parseIdentifier tokens
     var <- doesVarExists pos f i
     case rest1 of
         ((T.Punctuator (T.UnaryOp u), _) : rest2) -> do
