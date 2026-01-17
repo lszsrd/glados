@@ -136,6 +136,8 @@ data Keyword
     -- ^ Boolean type keyword, expressed in rizz code as @\`Bool\`@.
     | Char
     -- ^ Character type keyword, expressed in rizz code as @\`Char\`@.
+    | String
+    -- ^ Sugar for [Char] type keyword, expressed in rizz code as @\`String\`@.
     | Int
     -- ^ Integer type keyword, expressed in rizz code as @\`Int\`@.
     | Float

@@ -348,10 +348,11 @@ parseBuiltinType a ((T.Punctuator (T.SBracket T.OpenSBracket), _) : rest1) = do
     (_, rest3) <- expectToken (T.Punctuator (T.SBracket T.CloseSBracket))
         "Expected ']' for list type" rest2
     Right (A.ListType innerType, rest3)
-parseBuiltinType _ ((T.Keyword T.Bool, _) : rest) = Right (A.Boolean, rest)
-parseBuiltinType _ ((T.Keyword T.Char, _) : rest) = Right (A.Character, rest)
-parseBuiltinType _ ((T.Keyword T.Int, _) : rest) = Right (A.Integer, rest)
+parseBuiltinType _ ((T.Keyword T.Bool, _) : r) = Right (A.Boolean, r)
+parseBuiltinType _ ((T.Keyword T.Char, _) : r) = Right (A.Character, r)
+parseBuiltinType _ ((T.Keyword T.Int, _) : r) = Right (A.Integer, r)
 parseBuiltinType _ ((T.Keyword T.Float, _) : r) = Right (A.SinglePrecision, r)
+parseBuiltinType _ ((T.Keyword T.String, _) : r) = Right (A.String, r)
 parseBuiltinType a ((T.Identifier i, p) : rest) = do
     _ <-doesVarExists p (a, A.FunctionDecl "" [] (A.CompoundStmt []) Nothing) i
     Right (A.Struct i, rest)
