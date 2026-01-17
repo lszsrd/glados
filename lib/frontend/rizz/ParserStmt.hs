@@ -145,8 +145,8 @@ parseStmt b f tokens@((tok, _) : xs) = case tok of
         case xs of
             ((T.Punctuator (T.RBracket T.OpenRBracket), _) : _) ->
                 parseCallExpr f tokens
-            ((T.Punctuator T.Arrow, _) : (T.Identifier id2, _): (_, pos) : rest3) ->
-                parseDeclVarExpr f ((T.Identifier (H.craftIdentifierWithStructVarDecl id1 id2), pos) : rest3)
+            ((T.Punctuator T.Arrow, _) : (T.Identifier id2, pos): rest3) ->
+                parseDeclStmtExpr f ((T.Identifier (id1 ++ "@" ++ id2), pos) : rest3)
             ((T.Identifier _, _) : (T.Punctuator (T.AssignOp _), _) : _) ->
                 parseDeclVarExpr f tokens
             _ -> parseDeclStmtExpr f tokens
