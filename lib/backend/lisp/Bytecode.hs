@@ -24,10 +24,10 @@ type FuncEnv = Map Identifier [Identifier]
 buildFuncEnv :: [Expr] -> FuncEnv
 buildFuncEnv = foldr collect Map.empty
   where
-    collect (Defun (Func params _)) acc =
-        case params of
-            [] -> acc
-            (name:args) -> Map.insert name args acc
+    collect (Defun (Func (name:params) _)) acc =
+        Map.insert name params acc
+    collect (Defun (Define name (Defun (Func params _)))) acc =
+        Map.insert name params acc
     collect (Defun (Define name (Defun (Lambda params _)))) acc =
         Map.insert name params acc
     collect _ acc = acc
@@ -48,6 +48,12 @@ compileTop env e             = compileExpr env e ++ "POP\n"
 compileDeclFromDecl :: FuncEnv -> Decl -> String
 
 compileDeclFromDecl env (Func (name:params) body) =
+    let header = "FUNC " ++ name ++ " " ++ show (length params) ++ "\n"
+        bodyCode = compileExpr env body
+        footer = "RET\nENDFUNC\n"
+    in header ++ bodyCode ++ footer
+
+compileDeclFromDecl env (Define name (Defun (Func params body))) =
     let header = "FUNC " ++ name ++ " " ++ show (length params) ++ "\n"
         bodyCode = compileExpr env body
         footer = "RET\nENDFUNC\n"
