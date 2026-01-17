@@ -35,7 +35,8 @@ module ParserHelper (
     getPos,
     doesVarExists,
     addIfVarExpr,
-    findString
+    findString,
+    getTypeDecl
 ) where
 
 import qualified Ast as A
@@ -217,23 +218,19 @@ addIfVarExpr p var@(A.DeclVarExpr (A.VarDeclStmt _ iden _ _)) fl
 addIfVarExpr _ _ _ parms = Right parms
 
 
-canAssign :: (Int, Int) -> A.Decl -> A.Decl -> Either String String
+canAssign :: (Int, Int) -> A.Decl -> A.BuiltinType -> Either String String
 canAssign p (A.FunctionDecl {}) _ = errorAt p
     "Cannot assign value to function definition"
 canAssign p (A.RecordDecl _) _ = errorAt p
     "Cannot assign value to struct definition"
 canAssign p (A.ParmVarDecl (A.ParmVarRecord _)) _ = errorAt p
     "Cannot assign value to struct"
-canAssign p (A.ParmVarDecl (A.ParmVarDeclExpr tp _)) toAss =
-    case getTypeDecl toAss of
-        Nothing -> errorAt p "Cannot assign from function returning void"
-        Just typ -> if typ == tp then Right "OK" else errorAt p (
-            "Trying to assign from " ++ show typ ++ " to " ++ show tp)
-canAssign p (A.VarDecl (A.VarDeclStmt tp _ _ _)) toAss =
-    case getTypeDecl toAss of
-        Nothing -> errorAt p "Cannot assign from function returning void"
-        Just typ -> if typ == tp then Right "OK" else errorAt p (
-            "Trying to assign from " ++ show typ ++ " to " ++ show tp)
+canAssign p (A.ParmVarDecl (A.ParmVarDeclExpr tp _)) typ =
+    if typ == tp then Right "OK" else errorAt p (
+        "Trying to assign from " ++ show typ ++ " to " ++ show tp)
+canAssign p (A.VarDecl (A.VarDeclStmt tp _ _ _)) typ =
+    if typ == tp then Right "OK" else errorAt p (
+        "Trying to assign from " ++ show typ ++ " to " ++ show tp)
 
 -- | Takes a @'[SingleToken]'@ as parameter and
 -- returns a __Either__ @'String'@ @'[T.AssignOp]'@.
@@ -516,21 +513,6 @@ parseCallExprDecl f tokens = do
         (T.RBracket T.CloseRBracket)) "Expected ')'" rest3
     Right (A.CallExprDecl fname parmcldllist, rest4)
 
-getDecl :: (Int, Int) -> ([A.Decl], A.Decl) -> A.ParmCallDecl
-    -> Either String A.Decl
-getDecl _ _ (A.ParmCallDeclLiteral l) = case l of
-    (T.BoolLiteral _) -> Right (A.ParmVarDecl
-        (A.ParmVarDeclExpr A.Boolean "cDefined"))
-    (T.CharLiteral _) -> Right (A.ParmVarDecl
-        (A.ParmVarDeclExpr A.Character "cDefined"))
-    (T.IntLiteral _) -> Right (A.ParmVarDecl
-        (A.ParmVarDeclExpr A.Integer "cDefined"))
-    (T.FloatLiteral _) -> Right (A.ParmVarDecl
-        (A.ParmVarDeclExpr A.SinglePrecision "cDefined"))
-    (T.ListLiteral _) -> Right (A.ParmVarDecl
-        (A.ParmVarDeclExpr (A.ListType A.Integer) "cDefined"))
-getDecl _ _ _ = Right (A.ParmVarDecl (A.ParmVarDeclExpr A.Boolean "cDefined"))
-
 -- | Takes an @'([A.Decl], A.Decl)'@ and a @'[SingleToken]'@ as parameter and
 -- returns a __Either__ @'String'@ @'A.DeclStmt'@.
 --
@@ -540,15 +522,17 @@ getDecl _ _ _ = Right (A.ParmVarDecl (A.ParmVarDeclExpr A.Boolean "cDefined"))
 --
 -- This function is used to parse an assignment statement (@`foo = bar`@ or @`foo++`@).
 parseDeclAssignStmtLiteral :: ([A.Decl], A.Decl) -> Parser A.DeclStmt
-parseDeclAssignStmtLiteral f tokens = do
+parseDeclAssignStmtLiteral f@(fl, _) tokens = do
     (id1, rest1) <- parseIdentifier tokens
     var <- doesVarExists (getPos 0 tokens) f id1
     (ap, rest2) <- parseAssignOp rest1
     (parmcldl, rest3)
         <- parseOr (parseParmCallDeclBExpr f) (parseParmCallDecl f) rest2
-    var2 <- getDecl (getPos 0 tokens) f parmcldl
-    _ <- canAssign (getPos 0 tokens) var var2
-    Right (A.DeclAssignStmtLiteral id1 ap parmcldl, rest3)
+    case getType fl parmcldl of
+        Nothing -> Right (A.DeclAssignStmtLiteral id1 ap parmcldl, rest3)
+        Just tp -> do
+            _ <- canAssign (getPos 0 tokens) var tp
+            Right (A.DeclAssignStmtLiteral id1 ap parmcldl, rest3)
 
 -- | Takes an @'([A.Decl], A.Decl)'@ and a @'[SingleToken]'@ as parameter and
 -- returns a __Either__ @'String'@ @'A.VarDeclStmt'@.
@@ -582,8 +566,7 @@ parseDeclStmt f tokens@((T.Identifier _, pos) : _) = do
     (i, rest1) <- parseIdentifier tokens
     var <- doesVarExists pos f i
     case rest1 of
-        ((T.Punctuator (T.UnaryOp u), _) : rest2) -> do
-            _ <- canAssign pos var var
+        ((T.Punctuator (T.UnaryOp u), _) : rest2) ->
             Right (A.DeclAssignStmtUnary (A.UnaryOperatorExpr i u), rest2)
         _ -> parseDeclAssignStmtLiteral f tokens
 parseDeclStmt _ ((token, position) : _) =
