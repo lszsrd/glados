@@ -58,6 +58,7 @@ make
 ## 📃 Documentation
 
 [https://lszsrd.github.io/glados/](https://lszsrd.github.io/glados/)
+[Rizz Playground](https://rizzplayground.vercel.app)
 
 ## ✍️ Authors
 
