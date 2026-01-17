@@ -42,7 +42,6 @@ module ParserHelper (
 import qualified Ast as A
 import qualified Tokens as T
 import Data.List
-import Debug.Trace (trace)
 
 type SingleToken = (T.Token, (Int, Int))
 type Parser a = [SingleToken] -> Either String (a, [SingleToken])
@@ -571,7 +570,8 @@ parseVarDeclStmt f@(fl, _) tokens = do
     (value, rest4) <-
         parseOr (parseParmCallDeclBExpr f) (parseParmCallDecl f) rest3
     case doesVarExists (1, 1) f name of 
-        Right _ -> Left ("variable already exists " ++ show name)
+        Right _ -> errorAt (getPos 0 rest1)
+            ("variable already exists " ++ show name)
         Left _ -> Right (A.VarDeclStmt typ name op value, rest4)
 
 canUnaryAssign :: (Int, Int) -> A.Decl -> Either String String
