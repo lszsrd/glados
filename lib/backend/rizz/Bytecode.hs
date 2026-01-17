@@ -19,6 +19,7 @@ It handles:
   * Binary expressions
   * Control structures (if, while, for)
   * Literals and arithmetic/logical operations
+  * Loop controls (break / continue)
 -}
 
 module Bytecode (
@@ -34,6 +35,13 @@ import qualified Data.Map as Map
 -- | Function environment
 -- Maps a function identifier to its list of parameters
 type FuncEnv = Map Identifier [Identifier]
+
+-- | Context used for loop compilation
+-- Allows break and continue to know where to jump
+data LoopCtx = LoopCtx {
+    continueLabel :: String,
+    breakLabel    :: String
+}
 
 -- | Builds the function environment from a list of declarations
 --
@@ -64,26 +72,17 @@ compileDeclWithEnv env (FunctionDecl name params body _ret) =
 compileDeclWithEnv _ _ = ""
 
 -- | Compiles a complete function (start and end)
-compileFunctionWithEnv
-    :: FuncEnv
-    -> Identifier
-    -> [ParmVarDeclExpr]
-    -> CompoundStmt
-    -> String
+compileFunctionWithEnv :: FuncEnv -> Identifier -> [ParmVarDeclExpr] -> CompoundStmt -> String
 compileFunctionWithEnv env name params (CompoundStmt stmts) =
     let header = "FUNC " ++ name ++ " " ++ show (length params) ++ "\n"
-        body = concatMap (compileStmt env) stmts
+        body = concatMap (compileStmt env Nothing) stmts
         footer = "ENDFUNC\n"
     in header ++ body ++ footer
 
 -- | Compiles a standalone function declaration
 --
 -- A minimal environment is created containing only the current function
-compileFunctionDecl
-    :: Identifier
-    -> [ParmVarDeclExpr]
-    -> CompoundStmt
-    -> String
+compileFunctionDecl :: Identifier -> [ParmVarDeclExpr] -> CompoundStmt -> String
 compileFunctionDecl name params =
     compileFunctionWithEnv
         (Map.singleton name
@@ -92,20 +91,20 @@ compileFunctionDecl name params =
         params
 
 -- | Compiles a statement into bytecode
-compileStmt :: FuncEnv -> Stmt -> String
+compileStmt :: FuncEnv -> Maybe LoopCtx -> Stmt -> String
 
 -- Variable declaration with initialization
-compileStmt env (DeclVarExpr (VarDeclStmt _ ident _ rhs)) =
+compileStmt env _ (DeclVarExpr (VarDeclStmt _ ident _ rhs)) =
     compileParmCall env rhs ++
     "STORE " ++ ident ++ "\n"
 
 -- Simple assignment
-compileStmt env (DeclStmt (DeclAssignStmtLiteral ident _ rhs)) =
+compileStmt env _ (DeclStmt (DeclAssignStmtLiteral ident _ rhs)) =
     compileParmCall env rhs ++
     "STORE " ++ ident ++ "\n"
 
 -- Increment / decrement unary operation
-compileStmt _ (DeclStmt (DeclAssignStmtUnary (UnaryOperatorExpr ident op))) =
+compileStmt _ _ (DeclStmt (DeclAssignStmtUnary (UnaryOperatorExpr ident op))) =
     case op of
         IdentIncrement ->
             "LOAD " ++ ident ++ "\n" ++
@@ -119,59 +118,74 @@ compileStmt _ (DeclStmt (DeclAssignStmtUnary (UnaryOperatorExpr ident op))) =
             "STORE " ++ ident ++ "\n"
 
 -- Function call
-compileStmt env (CallExpr (CallExprDecl fname args)) =
+compileStmt env _ (CallExpr (CallExprDecl fname args)) =
     compileCallWithNamedParams env fname args
 
 -- Binary expression used as a statement
-compileStmt env (BinaryOperator expr) =
+compileStmt env _ (BinaryOperator expr) =
     compileBinaryOpExpr env expr ++
     "POP\n"
 
 -- Return statement
-compileStmt env (RetStmt (Just expr)) =
+compileStmt env _ (RetStmt (Just expr)) =
     compileBinaryOpExpr env expr ++
     "RET\n"
 
 -- If / else statement
-compileStmt env (IfStmt cond (CompoundStmt body) mElse) =
+compileStmt env ctx (IfStmt cond (CompoundStmt body) mElse) =
     let condCode = compileBinaryOpExpr env cond
-        thenCode = concatMap (compileStmt env) body
+        thenCode = concatMap (compileStmt env ctx) body
         elseCode = maybe ""
-            (\(CompoundStmt b) -> concatMap (compileStmt env) b) mElse
+            (\(CompoundStmt b) -> concatMap (compileStmt env ctx) b) mElse
     in condCode ++
        "JMP_IF_FALSE endif\n" ++
        thenCode ++
        "LABEL endif\n" ++
        elseCode
 
--- While loop
-compileStmt env (WhileStmt cond (CompoundStmt body)) =
-    "LABEL while_start\n" ++
-    compileBinaryOpExpr env cond ++
-    "JMP_IF_FALSE while_end\n" ++
-    concatMap (compileStmt env) body ++
-    "JMP while_start\n" ++
-    "LABEL while_end\n"
+-- While loop with break/continue support
+compileStmt env _ (WhileStmt cond (CompoundStmt body)) =
+    let ctx = LoopCtx {
+            continueLabel = "while_start",
+            breakLabel = "while_end"
+        }
+    in "LABEL while_start\n" ++
+       compileBinaryOpExpr env cond ++
+       "JMP_IF_FALSE while_end\n" ++
+       concatMap (compileStmt env (Just ctx)) body ++
+       "JMP while_start\n" ++
+       "LABEL while_end\n"
 
--- For loop
-compileStmt env (ForStmt mInit mCond mStep (CompoundStmt body)) =
-    compileForInit env mInit ++
-    "LABEL for_start\n" ++
-    compileForCond env mCond ++
-    concatMap (compileStmt env) body ++
-    compileForStep env mStep ++
-    "JMP for_start\n" ++
-    "LABEL for_end\n"
+-- For loop with break/continue support
+compileStmt env _ (ForStmt mInit mCond mStep (CompoundStmt body)) =
+    let ctx = LoopCtx {
+            continueLabel = "for_continue",
+            breakLabel = "for_end"
+        }
+    in compileForInit env mInit ++
+       "LABEL for_start\n" ++
+       compileForCond env mCond ++
+       concatMap (compileStmt env (Just ctx)) body ++
+       "LABEL for_continue\n" ++
+       compileForStep env mStep ++
+       "JMP for_start\n" ++
+       "LABEL for_end\n"
+
+-- Loop control statements (break / continue)
+compileStmt _ Nothing (LoopControlStmt _) =
+    "NOP\n"
+
+compileStmt _ (Just ctx) (LoopControlStmt kw) =
+    case kw of
+        Continue -> "JMP " ++ continueLabel ctx ++ "\n"
+        Break    -> "JMP " ++ breakLabel ctx ++ "\n"
+        _        -> "NOP\n"
 
 -- Unrecognized statement
-compileStmt _ _ = "NOP\n"
+compileStmt _ _ _ = "NOP\n"
 
 -- | Compiles a function call with named parameters
-compileCallWithNamedParams
-    :: FuncEnv
-    -> Identifier
-    -> [ParmCallDecl]
-    -> String
+compileCallWithNamedParams :: FuncEnv -> Identifier -> [ParmCallDecl] -> String
 compileCallWithNamedParams env fname args =
     let argsCode = concatMap (compileParmCall env) args
     in case Map.lookup fname env of
@@ -209,8 +223,7 @@ compileParmCall _   (ParmCallDeclIdent ident) = "LOAD " ++ ident ++ "\n"
 compileParmCall env (ParmCallDeclExpr (CallExprDecl fname args)) =
     compileCallWithNamedParams env fname args
 
--- TODO ; Manage Structs
-compileParmCall env (ParmCallDeclList l) = "\n"
+compileParmCall env (ParmCallDeclList _) = "\n"
 compileParmCall env (ParmCallBExpr l op r) =
     compileBinaryOpParm env l ++
     compileBinaryOpParm env r ++
@@ -219,7 +232,7 @@ compileParmCall env (ParmCallBExpr l op r) =
 -- | Compiles the initialization part of a for loop
 compileForInit :: FuncEnv -> Maybe VarDeclStmt -> String
 compileForInit _   Nothing = ""
-compileForInit env (Just vds) = compileStmt env (DeclVarExpr vds)
+compileForInit env (Just vds) = compileStmt env Nothing (DeclVarExpr vds)
 
 -- | Compiles the condition part of a for loop
 compileForCond :: FuncEnv -> Maybe BinaryOpExpr -> String
@@ -231,7 +244,7 @@ compileForCond env (Just cond) =
 -- | Compiles the step part of a for loop
 compileForStep :: FuncEnv -> Maybe DeclStmt -> String
 compileForStep _   Nothing = ""
-compileForStep env (Just ds) = compileStmt env (DeclStmt ds)
+compileForStep env (Just ds) = compileStmt env Nothing (DeclStmt ds)
 
 -- | Compiles a literal into bytecode
 compileLiteral :: Literal -> String
