@@ -21,6 +21,7 @@ import Foreign.C (CInt (..))
 import OpCodes (Operand (..), OpCode (..), showList')
 import Function (Function)
 import Utils
+import Debug.Trace (trace)
 
 -- TODO: urge to refactor arith operations AND handle list arith operations
 
@@ -184,8 +185,10 @@ exec symtab bOps (PushFloat x: ops) stack env fds =
     exec symtab bOps ops (stack ++ [x]) env fds
 exec symtab bOps (PushList x: ops) stack env fds = if length stack < x
         then return $ Left "PUSH_LIST: not enough operands on stack"
-        else exec symtab bOps ops (drop x (reverse stack) ++ y) env fds
-        where y = [List $ reverse (take x $ reverse stack)]
+        else exec symtab bOps ops
+            (take (length stack - x) stack
+            ++ [List $ drop (length stack - x) stack])
+            env fds
 exec symtab bOps (Pop: ops) [] env fds = exec symtab bOps ops [] env fds
 exec symtab bOps (Pop: ops) stack env fds
     = exec symtab bOps ops (init stack) env fds
@@ -222,13 +225,13 @@ exec symtab bOps (Mul: ops) stack env fds = case pop2 stack of
         Right z -> exec symtab bOps ops (rest ++ [Float z]) env fds
 exec symtab bOps (Add: ops) stack env fds = case pop2 stack of
     Left e -> return $ Left ("ADD: " ++ e)
-    Right (List x, List y, z)
-        -> exec symtab bOps ops (z ++ [List (x ++ y)]) env fds
     Right (Integer x, Integer y, z) ->
         exec symtab bOps ops (z ++ [Integer (x + y)]) env fds
-    Right (x, y, rest) -> case addOperand x y of
-        Left e -> return $ Left e
-        Right z -> exec symtab bOps ops (rest ++ [Float z]) env fds
+    Right (x, y, rest) -> case addList x y of
+        Nothing -> case addOperand x y of
+            Left e -> return $ Left e
+            Right z -> exec symtab bOps ops (rest ++ [Float z]) env fds
+        Just z -> exec symtab bOps ops (rest ++ [z]) env fds
 exec symtab bOps (Sub: ops) stack env fds = case pop2 stack of
     Left e -> return $ Left ("SUB: " ++ e)
     Right (Integer x, Integer y, z) ->
@@ -290,6 +293,12 @@ exec _ _ x _ _ _
     | null x = return $ Right Nothing
     | otherwise = return $ Left ("unknwon instruction: " ++ show (head x))
 
+addList :: Operand -> Operand -> Maybe Operand
+addList (List x) y = Just $ List (x ++ [y])
+addList x (List y) = Just $ List (x: y)
+addList _ _ = Nothing
+
+
 addOperand :: Operand -> Operand -> Either String Float
 addOperand (Integer x)  (Integer y)   = Right (fromIntegral x + fromIntegral y)
 addOperand (Integer x)  (Float y)   = Right (fromIntegral x + y)
@@ -297,7 +306,7 @@ addOperand (Float x)    (Integer y) = Right (x + fromIntegral y)
 addOperand (Float x)    (Float y)   = Right (x + y)
 addOperand (Char x) y = addOperand (Integer $ toInteger (digitToInt x)) y
 addOperand x (Char y) = addOperand x (Integer $ toInteger (digitToInt y))
-addOperand _ _                      =
+addOperand x y                      = trace (show x ++ "," ++ show y)
      Left "ADD: non-numeric operands"
 
 subOperand :: Operand -> Operand -> Either String Float
