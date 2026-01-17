@@ -18,11 +18,10 @@ struct foo {
 fn babar(Int: x) -> Int
 {
     Int y = 5;
-    bar2 f = {1,1};
+    foo f = {{{1, 2}, 'c'},1, 2};
  
-    
-    f->i = 1;
-    for (Int q = feur(y); feur(y) < f->i; y++) {
+    f->b->i->i = 1;
+    for (Int q = feur(y); feur(y) < a[1]; y++) {
         if (0) {
             ret 0;
         }
@@ -46,7 +45,7 @@ fn baz()
     if (ll == 0) {
         ret ;
     }
-    // ll->i = -5;
-    // s[1] = 3;
+    ll->i = -5;
+    s[1] = 4;
     // ret babar(foo(100) + 4 - 5) * feur(10) + 4 - 5 / 1;
 }
