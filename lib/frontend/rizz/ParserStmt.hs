@@ -141,12 +141,10 @@ parseKeywords _ _  [] = H.errorAt (1, 1) "Unexpected end of input in statement"
 -- This function is used to parse a statement.
 parseStmt :: Bool -> ([A.Decl], A.Decl) -> Parser A.Stmt
 parseStmt b f tokens@((tok, _) : xs) = case tok of
-    T.Identifier id1 ->
+    T.Identifier _ ->
         case xs of
             ((T.Punctuator (T.RBracket T.OpenRBracket), _) : _) ->
                 parseCallExpr f tokens
-            ((T.Punctuator T.Arrow, _) : (T.Identifier id2, _): (_, pos) : rest3) ->
-                parseDeclVarExpr f ((T.Identifier (H.craftIdentifierWithStructVarDecl id1 id2), pos) : rest3)
             ((T.Identifier _, _) : (T.Punctuator (T.AssignOp _), _) : _) ->
                 parseDeclVarExpr f tokens
             _ -> parseDeclStmtExpr f tokens
@@ -331,6 +329,24 @@ parseFor f@(fl, _) tokens = do
     (bdy, rest3)    <- parseCompoundStmt True (fl, newF) bdyNRest
     Right (A.ForStmt vDecl binOp decl bdy, rest3)
 
+-- | Takes a @'(Int, Int)'@, two @'Identifier'@ and a @'([A.Decl], A.Decl)'@ as parameter and
+-- returns a __Either__ @'String'@ @'([A.Decl], A.Decl)'@.
+--
+-- On success, this function returns a @'([A.Decl], A.Decl)'@, the env of the for.
+--
+-- On failure, this function returns a pretty formatted message error.
+--
+-- This function is an helper to add a variable defined only in the foreach body.
+addForEachParm :: (Int, Int) -> T.Identifier -> T.Identifier ->
+    ([A.Decl], A.Decl) -> Either String ([A.Decl], A.Decl)
+addForEachParm pos nm lst f@(fl, A.FunctionDecl n p bdy ret) = do
+    var <- H.doesVarExists pos f lst
+    case H.getTypeDecl var of
+        Just (A.ListType tp) -> Right (fl, A.FunctionDecl n 
+            (A.ParmVarDeclExpr tp nm: p) bdy ret)
+        _ -> H.errorAt pos "Foreach var assignation could not happen"
+addForEachParm p _ _ _ = H.errorAt p "ForEach var definition seems wrong"
+
 -- | Takes a @'[SingleToken]'@ as parameter and
 -- returns a __Either__ @'String'@ @'A.Stmt'@.
 --
@@ -362,7 +378,9 @@ parseForeach f tokens = do
     (iterator, rest2) <- H.parseIdentifier rest1
     (_, rest3) <- H.expectToken (T.Punctuator (T.RBracket T.CloseRBracket))
         "Expected ')'" rest2
-    (body, rest4) <- parseCompoundStmt False f rest3
+
+    newP <- addForEachParm (H.getPos 0 rest1) container iterator f
+    (body, rest4) <- parseCompoundStmt False newP rest3
     Right (A.ForeachStmt container iterator body, rest4)
 
 -- | Takes an @'([A.Decl], A.Decl)'@ and a @'[SingleToken]'@ as parameter and
