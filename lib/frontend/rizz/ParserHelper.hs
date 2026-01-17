@@ -35,8 +35,7 @@ module ParserHelper (
     getPos,
     doesVarExists,
     addIfVarExpr,
-    findString,
-    craftIdentifierWithStructVarDecl
+    findString
 ) where
 
 import qualified Ast as A
@@ -100,6 +99,34 @@ getIden (A.ParmVarDecl n) = case n of
 getIden (A.VarDecl (A.VarDeclStmt _ n _ _)) = n
 getIden (A.RecordDecl (A.RecordDeclExpr n _)) = n
 
+
+getTypeDecl :: A.Decl -> Maybe A.BuiltinType
+getTypeDecl (A.FunctionDecl _ _ _ ret) = ret
+getTypeDecl (A.ParmVarDecl n) = case n of
+    (A.ParmVarDeclExpr tp _) -> Just tp
+    (A.ParmVarRecord (A.RecordDeclExpr na _)) -> Just (A.Struct na)
+getTypeDecl (A.VarDecl (A.VarDeclStmt n _ _ _)) = Just n
+getTypeDecl (A.RecordDecl (A.RecordDeclExpr n _)) = Just (A.Struct n)
+
+getType :: [A.Decl] -> A.ParmCallDecl -> Maybe A.BuiltinType
+getType _ (A.ParmCallDeclLiteral (T.BoolLiteral _)) = Just A.Boolean
+getType _ (A.ParmCallDeclLiteral (T.CharLiteral _)) = Just A.Character
+getType _ (A.ParmCallDeclLiteral (T.IntLiteral _)) = Just A.Integer
+getType _ (A.ParmCallDeclLiteral (T.FloatLiteral _)) = Just A.SinglePrecision
+getType fl (A.ParmCallDeclLiteral (T.ListLiteral (a :_))) =
+    getType fl (A.ParmCallDeclLiteral a)
+getType fl (A.ParmCallDeclIdent id1) =
+    case doesVarExists (1,1) (fl, A.FunctionDecl "n" []
+        (A.CompoundStmt []) Nothing) id1 of
+        Left _ -> Nothing
+        Right var -> getTypeDecl var
+getType fl (A.ParmCallDeclExpr (A.CallExprDecl f _)) =
+    case doesVarExists (1,1) (fl, A.FunctionDecl "n" []
+        (A.CompoundStmt []) Nothing) f of
+        Left _ -> Nothing
+        Right var -> getTypeDecl var
+getType _ _ = Nothing
+
 -- | Takes two @'Parser'@ @'a'@ and a list as parameters and
 -- returns a __Either__ @'String'@ (@'a'@, [@'SingleToken'@]).
 --
@@ -139,6 +166,34 @@ doesVarExists pos (fl, A.FunctionDecl n
         else doesVarExists pos (fl, A.FunctionDecl n xs bdy ret) id2
 doesVarExists p _ _ = errorAt p "var detection Error"
 
+createList :: [A.ParmVarDeclExpr] -> A.ParmCallDecl -> T.Identifier
+    -> [A.Decl] -> Either String [A.ParmVarDeclExpr]
+createList [] (A.ParmCallDeclList []) _ _ = Right []
+createList [] (A.ParmCallDeclList (_:_)) _ _ = Left "    Wrong number of Param"
+createList (_:_) (A.ParmCallDeclList []) _ _ = Left "    Wrong number of Param"
+createList ((A.ParmVarRecord (A.RecordDeclExpr _ ls)):as)
+    (A.ParmCallDeclList (x:xs)) t fl = do
+    first <- createList ls x t fl
+    rest <- createList as (A.ParmCallDeclList xs) t fl
+    Right (first ++ rest)
+createList (A.ParmVarDeclExpr tp n:as) (A.ParmCallDeclList (x:xs)) t fl = do
+    rest <- createList as (A.ParmCallDeclList xs) t fl
+    if getType fl x == Just tp
+        then Right (A.ParmVarDeclExpr tp (t ++ "@" ++ n) : rest)
+        else Left ("    Wrong variable type :" ++ show x)
+createList a _ _ _ = Right a
+
+addIfList :: A.BuiltinType -> T.Identifier -> A.ParmCallDecl -> [A.Decl]
+    -> Either String [A.ParmVarDeclExpr]
+addIfList _ _ (A.ParmCallDeclList []) _ = Right []
+addIfList (A.Struct tp) t l@(A.ParmCallDeclList _) fl = do
+    var <- doesVarExists (1, 1) (fl, A.FunctionDecl "n" []
+        (A.CompoundStmt []) Nothing) tp
+    case var of
+        A.RecordDecl (A.RecordDeclExpr _ list) -> createList list l t fl 
+        _ -> Right []
+addIfList _ _ _ _ = Right []
+
 -- | Takes a (@'Data.Int'@, @'Data.Int'@), an @'A.Stmt@ and a list of @'A.ParmVarDeclExpr'@ as parameters and
 -- returns a __Either__ @'String'@ @'[A.ParmVarDeclExpr]'@.
 --
@@ -147,17 +202,19 @@ doesVarExists p _ _ = errorAt p "var detection Error"
 -- On failure, this function returns a pretty formatted message error.
 --
 -- This function is used to add a variable to the defined variables.
-addIfVarExpr :: (Int, Int) -> A.Stmt -> [A.ParmVarDeclExpr]
+addIfVarExpr :: (Int, Int) -> A.Stmt -> [A.Decl] -> [A.ParmVarDeclExpr]
     -> Either String [A.ParmVarDeclExpr]
-addIfVarExpr _ (A.DeclVarExpr (A.VarDeclStmt t iden _ _)) [] =
-    Right [A.ParmVarDeclExpr t iden]
-addIfVarExpr p var@(A.DeclVarExpr (A.VarDeclStmt _ iden _ _))
+addIfVarExpr pos (A.DeclVarExpr (A.VarDeclStmt t iden _ pcallDecl)) fl [] = do
+    case addIfList t iden pcallDecl fl of
+        Left e -> errorAt pos (drop 4 e)
+        Right parms -> Right (A.ParmVarDeclExpr t iden : parms)
+addIfVarExpr p var@(A.DeclVarExpr (A.VarDeclStmt _ iden _ _)) fl
     (x@(A.ParmVarDeclExpr _ id2): xs) =
     if iden == id2 then errorAt p ("Multiple definition of " ++ show iden)
         else do
-            rest <- addIfVarExpr p var xs
+            rest <- addIfVarExpr p var fl xs
             Right (x:rest)
-addIfVarExpr _ _ parms = Right parms
+addIfVarExpr _ _ _ parms = Right parms
 
 
 canAssign :: (Int, Int) -> A.Decl -> A.Decl -> Either String String
@@ -167,13 +224,16 @@ canAssign p (A.RecordDecl _) _ = errorAt p
     "Cannot assign value to struct definition"
 canAssign p (A.ParmVarDecl (A.ParmVarRecord _)) _ = errorAt p
     "Cannot assign value to struct"
-canAssign p (A.ParmVarDecl (A.ParmVarDeclExpr tp _)) toAss = case toAss of
-    (A.FunctionDecl _ _ _ retTp) -> case retTp of
+canAssign p (A.ParmVarDecl (A.ParmVarDeclExpr tp _)) toAss =
+    case getTypeDecl toAss of
         Nothing -> errorAt p "Cannot assign from function returning void"
-        Just jTp -> if jTp == tp then Right "OK" else errorAt p ("Cannot "
-         ++ "assign from function returning " ++ show jTp ++ "to" ++ show tp)
-    _ -> Right "e"
-canAssign p (A.VarDecl (A.VarDeclStmt tp _ _ _)) toAss = Left "Feur"
+        Just typ -> if typ == tp then Right "OK" else errorAt p (
+            "Trying to assign from " ++ show typ ++ " to " ++ show tp)
+canAssign p (A.VarDecl (A.VarDeclStmt tp _ _ _)) toAss =
+    case getTypeDecl toAss of
+        Nothing -> errorAt p "Cannot assign from function returning void"
+        Just typ -> if typ == tp then Right "OK" else errorAt p (
+            "Trying to assign from " ++ show typ ++ " to " ++ show tp)
 
 -- | Takes a @'[SingleToken]'@ as parameter and
 -- returns a __Either__ @'String'@ @'[T.AssignOp]'@.
@@ -294,6 +354,8 @@ parseBuiltinType _ [] = errorAt (1,1) "Expected builtintype, got Nothing"
 -- This function is used to parse an Identifier (e.g.: foo, bar, a, ...).
 parseIdentifier :: Parser T.Identifier
 parseIdentifier [] = errorAt (1, 1) "Unexpected err"
+parseIdentifier ((T.Identifier id1, _): (T.Punctuator T.Arrow, _) :
+    (T.Identifier id2, _): rest) = Right (id1 ++ "@" ++ id2, rest)
 parseIdentifier ((T.Identifier id1, _) : rest) = Right (id1, rest)
 parseIdentifier ((token, position) : _) =
     errorAt position ("Expected identifier, got " ++ show token)
@@ -333,11 +395,6 @@ parsePVDEList a tokens = do
             Right(param : params, rest3)
         _ -> Right ([param], rest1)
 
-craftIdentifierWithStructVarDecl :: T.Identifier -> T.Identifier
-    -> T.Identifier
-craftIdentifierWithStructVarDecl id1 id2 =
-    show id1 ++ "@" ++ show id2
-
 -- | Takes an @'([A.Decl], A.Decl)'@ and a @'[SingleToken]'@ as parameter and
 -- returns a __Either__ @'String'@ @'A.ParmCallDecl'@.
 --
@@ -362,7 +419,8 @@ parseParmCallDecl f ((T.Identifier id1, pos) :
     (_, rest3) <- expectToken (T.Punctuator (T.SBracket T.CloseSBracket))
         "Expected ']' after index" rest2
     parseIdxChain f (A.ParmCallDeclIdx (A.ParmCallDeclIdent id1) idxExpr) rest3
-parseParmCallDecl f ((T.Identifier id1, pos) : rest) = do
+parseParmCallDecl f t@((T.Identifier _, pos) : _) = do
+    (id1, rest) <- parseIdentifier t
     _ <- doesVarExists pos f id1
     Right (A.ParmCallDeclIdent id1, rest)
 parseParmCallDecl _ ((T.Literal li, _) : rest) =
@@ -520,7 +578,8 @@ parseVarDeclStmt f@(fl, _) tokens = do
 --
 -- This function is used to parse an operation on an existing variable.
 parseDeclStmt :: ([A.Decl], A.Decl) -> Parser A.DeclStmt
-parseDeclStmt f tokens@((T.Identifier i, pos) : rest1) = do
+parseDeclStmt f tokens@((T.Identifier _, pos) : _) = do
+    (i, rest1) <- parseIdentifier tokens
     var <- doesVarExists pos f i
     case rest1 of
         ((T.Punctuator (T.UnaryOp u), _) : rest2) -> do

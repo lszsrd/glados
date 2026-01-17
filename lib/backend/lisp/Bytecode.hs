@@ -2,7 +2,7 @@
 -- EPITECH PROJECT, 2025
 -- Generic Language And Data Operand Syntax
 -- File description:
--- lib/frontend/rizz/types/Ast.hs
+-- lib/frontend/lisp/types/Ast.hs
 -}
 
 --doc a changer temporairemnt
@@ -101,7 +101,7 @@ compileExpr env (Defun d) =
 
 compileNumber :: Number -> String
 compileNumber (Boolean b) =
-    "PUSH_BOOL " ++ if b then "true\n" else "false\n"
+    "PUSH_BOOL " ++ if b then "True\n" else "False\n"
 compileNumber (Int i) =
     "PUSH_INT " ++ show i ++ "\n"
 compileNumber (SPrecision f) =
@@ -112,7 +112,7 @@ compileNumber (Identifier i) =
 
 compileCond :: FuncEnv -> CondOperator -> String
 compileCond _ (OpBool b) =
-    "PUSH_BOOL " ++ if b then "true\n" else "false\n"
+    "PUSH_BOOL " ++ if b then "True\n" else "False\n"
 compileCond _ (OpIdentifier i) =
     "LOAD " ++ i ++ "\n"
 compileCond _ OpLt = "LT\n"

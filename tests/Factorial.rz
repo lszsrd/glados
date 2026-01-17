@@ -1,12 +1,9 @@
 fn main() -> Int
 {
-    Int x = 50;
+    Int x = rand(5, 100);
 
     dumpFile("LICENSE.md");
-    print(1, "factorial(");
-    print(1, x);
-    print(1, ") = ");
-    println(1, factorial(x));
+    println(1, ("factorial(" + x) + (") = " + factorial(x)));
     ret 0;
 }
 
@@ -21,16 +18,16 @@ fn dumpFile ([Char]: path)
     while (isEOF(fd) == False) {
         println(1, readln(fd));
     }
-    /* seek_e(fd, 0 - tell(fd));
-    while (isEOF(fd) == False) {
+    seek_e(fd, 0 - tell(fd));
+    /* while (isEOF(fd) == False) {
         println(1, readln(fd));
     } */
     close(fd);
-    fd = open_r("/dev/urandom");
+    Int fd2 = open_r("/dev/urandom");
     for (Int i = 0; i < 5; i++) {
-        println(1, readln(fd));
+        println(1, readln(fd2));
     }
-    close(fd);
+    close(fd2);
 }
 
 fn factorial(Int: x) -> Int
