@@ -14,10 +14,6 @@ struct foo {
     Int: j
 }
 
-fn feur(Int: a) -> Int
-{
-    ret a + 10;
-}
  
 fn babar(Int: x) -> Int
 {
@@ -44,7 +40,7 @@ fn babar(Int: x) -> Int
 fn baz()
 {
     [Int] s = [1, 2, 56];
-    bar2 ll = {1, 50, 6542};
+    bar2 ll = {1, 50};
     Int foo2do = 1;
 
     if (ll == 0) {

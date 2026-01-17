@@ -553,6 +553,12 @@ parseVarDeclStmt f@(fl, _) tokens = do
         Right _ -> Left ("variable already exists " ++ show name)
         Left _ -> Right (A.VarDeclStmt typ name op value, rest4)
 
+canUnaryAssign :: (Int, Int) -> A.Decl -> Either String String
+canUnaryAssign p var =
+    case getTypeDecl var of
+        Nothing -> errorAt p "Trying to increment void"
+        Just tp -> canAssign p var tp
+
 -- | Takes an @'([A.Decl], A.Decl)'@ and a @'[SingleToken]'@ as parameter and
 -- returns a __Either__ @'String'@ @'A.DeclStmt'@.
 --
@@ -566,7 +572,8 @@ parseDeclStmt f tokens@((T.Identifier _, pos) : _) = do
     (i, rest1) <- parseIdentifier tokens
     var <- doesVarExists pos f i
     case rest1 of
-        ((T.Punctuator (T.UnaryOp u), _) : rest2) ->
+        ((T.Punctuator (T.UnaryOp u), _) : rest2) -> do
+            _ <- canUnaryAssign pos var
             Right (A.DeclAssignStmtUnary (A.UnaryOperatorExpr i u), rest2)
         _ -> parseDeclAssignStmtLiteral f tokens
 parseDeclStmt _ ((token, position) : _) =
