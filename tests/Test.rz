@@ -13,17 +13,20 @@ struct foo {
     Int: x,
     Int: j
 }
+
+fn feur(Int: a) -> Int
+{
+    ret a + 10;
+}
  
 fn babar(Int: x) -> Int
 {
     Int y = 5;
-    foo f = foo(1);
+    bar2 f = {1,1};
  
-    foo->x = 1;
-    for (Int q = feur(y); feur(y) < x; y++) {
-        if (foo(y) == 0) {
-            ret 10;
-        }
+    
+    f->i = 1;
+    for (Int q = feur(y); feur(y) < f->i; y++) {
         if (0) {
             ret 0;
         }
@@ -42,6 +45,7 @@ fn baz()
 {
     [Int] s = [1, 2, 56];
     bar2 ll = {1, 50, 6542};
+    Int foo2do = 1;
 
     if (ll == 0) {
         ret ;
