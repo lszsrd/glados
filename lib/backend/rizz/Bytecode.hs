@@ -95,8 +95,12 @@ compileDeclWithEnv _ _ = ""
 -- | Compile a function declaration (wrap / dispatch)
 compileFunctionWithEnv :: Env -> Decl -> String
 compileFunctionWithEnv env (FunctionDecl name params (CompoundStmt stmts) _mret) =
-    let env' = env { eNextId = eNextId env } -- start with same counter
-        header = "FUNC " ++ name ++ " " ++ show (length params) ++ "\n"
+    let env' = env { eNextId = eNextId env }
+        paramNames = map (\(ParmVarDeclExpr _ ident) -> ident) params
+        header =
+            "FUNC " ++ name
+            ++ (if null paramNames then "" else " " ++ unwords paramNames)
+            ++ "\n"
         body = concatMap (\s -> compileStmt env' s) stmts
         footer = "ENDFUNC\n"
     in header ++ body ++ footer
