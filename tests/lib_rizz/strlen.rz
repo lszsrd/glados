@@ -1,0 +1,11 @@
+fn strlen([Char]: str) -> Int
+{
+    Int len = 0;
+
+    foreach (s : str) {
+        len++;
+    }
+    ret len;
+}
+
+fn main() -> Int { ret 0; }

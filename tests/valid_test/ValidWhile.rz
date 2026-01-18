@@ -1,0 +1,9 @@
+fn main() -> Int
+{
+    Int i = 10;
+
+    while (i > 0) {
+        i--;
+    }
+    ret i;
+}

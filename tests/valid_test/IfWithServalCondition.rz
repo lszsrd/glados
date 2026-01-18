@@ -1,0 +1,11 @@
+fn main() -> Int
+{
+    Int b = 0;
+    Int a = 1;
+    Int c = 2;
+
+    if (a > b && a > 0 && a != c) {
+        ret 1;
+    }
+    ret 0;
+}

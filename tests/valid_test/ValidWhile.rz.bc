@@ -1,0 +1,17 @@
+FUNC main 0
+PUSH_INT 10
+STORE i
+LABEL while_start
+LOAD i
+PUSH_INT 0
+GT
+JMP_IF_FALSE while_end
+LOAD i
+PUSH_INT 1
+SUB
+STORE i
+JMP while_start
+LABEL while_end
+LOAD i
+RET
+ENDFUNC

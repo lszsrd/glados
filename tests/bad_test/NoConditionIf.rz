@@ -1,0 +1,7 @@
+fn main() -> Int
+{
+    if () {
+        ret 1;
+    }
+    ret 0;
+}

@@ -46,9 +46,11 @@ instance Show Token where
     show (Keyword Bool) = "'Bool'"
     show (Keyword Char) = "'Char'"
     show (Keyword Int) = "'Int'"
-    show (Keyword Float) = "'Float"
+    show (Keyword Float) = "'Float'"
     show (Keyword Double) = "'Double'"
     show (Keyword Struct) = "'struct'"
+    show (Keyword String) = "'String'"
+
     show (Keyword Fn) = "'fn'"
     show (Keyword If) = "'if'"
     show (Keyword Else) = "'else'"
@@ -136,6 +138,8 @@ data Keyword
     -- ^ Boolean type keyword, expressed in rizz code as @\`Bool\`@.
     | Char
     -- ^ Character type keyword, expressed in rizz code as @\`Char\`@.
+    | String
+    -- ^ Sugar for [Char] type keyword, expressed in rizz code as @\`String\`@.
     | Int
     -- ^ Integer type keyword, expressed in rizz code as @\`Int\`@.
     | Float

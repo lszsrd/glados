@@ -1,0 +1,7 @@
+Int a = 0;
+Char a = 0;
+
+fn main() -> Int
+{
+    ret 0;
+}

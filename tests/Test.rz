@@ -21,7 +21,7 @@ fn babar(Int: x) -> Int
     foo f = {{{1, 2}, 'c'},1, 2};
  
     f->b->i->i = 1;
-    for (Int q = feur(y); feur(y) < a[1]; y++) {
+    for (Int q = feur(y); feur(y) < 1; y++) {
         if (0) {
             ret 0;
         }

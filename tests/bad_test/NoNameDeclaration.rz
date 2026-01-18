@@ -1,0 +1,6 @@
+fn main() -> Int
+{
+    Int = 0;
+
+    ret 0;
+}
