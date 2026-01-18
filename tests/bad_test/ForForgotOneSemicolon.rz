@@ -1,0 +1,5 @@
+fn main() -> Int
+{
+    for (Int i = 0; i < 10) {}
+    ret 0;
+}

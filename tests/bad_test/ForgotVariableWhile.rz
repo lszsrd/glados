@@ -2,7 +2,7 @@ fn main() -> Int
 {
     Int a = 1;
 
-    while (>) {
+    while (a > ) {
         ret 1;
     }
     ret 0;

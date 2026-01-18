@@ -14,7 +14,7 @@ PUSH_BOOL True
 RET
 ENDFUNC
 FUNC main 0
-PUSH_CHAR '6'
+PUSH_CHAR 'C'
 STORE c
 CALL is_alpha 1
 JMP_IF_FALSE endif
