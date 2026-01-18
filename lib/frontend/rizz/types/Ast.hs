@@ -323,6 +323,8 @@ data BuiltinType
     -- ^ Boolean type keyword, see Bool @'Keyword'@
     | Character
     -- ^ Character type keyword, see Char @'Keyword'@
+    | String
+    -- ^ Sugar for [Char] type keyword, see String @'Keyword'@
     | Integer
     -- ^ Integer type keyword, see Int @'Keyword'@
     | SinglePrecision

@@ -32,6 +32,7 @@ import Tokens
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Char (ord)
+import Data.List (isInfixOf, isPrefixOf, tails)
 
 -- | Function environment: maps function name -> parameter names (in order)
 type FuncEnv   = Map Identifier [Identifier]
@@ -83,62 +84,146 @@ compileDecl decls =
 compileDeclWithEnv :: Env -> Decl -> String
 compileDeclWithEnv env d@(FunctionDecl _ _ _ _) =
     compileFunctionWithEnv env d
+
 -- Emit a STRUCT descriptor for RecordDecl (informational)
-compileDeclWithEnv env (RecordDecl (RecordDeclExpr name fields)) =
+compileDeclWithEnv _ (RecordDecl (RecordDeclExpr name fields)) =
     "STRUCT " ++ name ++ " " ++ show (length fields) ++ " "
         ++ unwords (map (\(ParmVarDeclExpr _ ident) -> ident) fields) ++ "\n"
+
+-- Top-level var declaration (if any)
 compileDeclWithEnv env (VarDecl vds) =
-    -- top-level var declaration (if present in your AST)
-    compileTopVarDecl env vds
+    compileVarDecl env vds
 compileDeclWithEnv _ _ = ""
 
 -- | Compile a function declaration (wrap / dispatch)
+--   We keep header: FUNC <name> <param1> <param2> ...
 compileFunctionWithEnv :: Env -> Decl -> String
-compileFunctionWithEnv env (FunctionDecl name params
-    (CompoundStmt stmts) _mret) =
-    let env' = env { eNextId = eNextId env } -- start with same counter
-        header = "FUNC " ++ name ++ (z' ++ unwords z) ++ "\n"
-            where z = map (\(ParmVarDeclExpr _ ident) -> ident) params
-                  z' = if null z then "" else " "
+compileFunctionWithEnv env (FunctionDecl name params (CompoundStmt stmts) _mret) =
+    let env' = env { eNextId = eNextId env }
+        paramNames = map (\(ParmVarDeclExpr _ ident) -> ident) params
+        header =
+            "FUNC " ++ name ++
+            (if null paramNames then "" else " " ++ unwords paramNames)
+            ++ "\n"
         body = concatMap (\s -> compileStmt env' s) stmts
         footer = "ENDFUNC\n"
     in header ++ body ++ footer
 compileFunctionWithEnv _ _ = ""
 
--- | Helper to compile a top-level VarDecl if present
-compileTopVarDecl :: Env -> VarDeclStmt -> String
-compileTopVarDecl env vds@(VarDeclStmt typ ident _ rhs) =
-    compileVarDecl env vds
-
-
 -- Loop context used to generate per-loop labels (continue / break)
 data LoopCtx = LoopCtx { lblStart :: String, lblContinue :: String, lblEnd :: String }
 
--- compileStmt: compile statement to bytecode, using the (global) Env.
--- Some statements need to thread / create a LoopCtx for break/continue.
+
+-- find first position where a substring occurs (returns index into the string)
+findSubIndex :: String -> String -> Maybe Int
+findSubIndex sub s =
+    case filter (isPrefixOf sub) (tails s) of
+        (x:_) -> Just (length s - length x)
+        []    -> Nothing
+
+-- extract an identifier after a pattern like '(ParmCallDeclIdent "name")'
+extractIdentWithPos :: String -> String -> Maybe (String, Int)
+extractIdentWithPos pattern s =
+    case findSubIndex pattern s of
+        Nothing -> Nothing
+        Just pos ->
+            let start = pos + length pattern
+                rest  = drop start s
+                ident = takeWhile (/= '"') (dropWhile (== '"') rest)
+            in Just (ident, start)
+
+-- extract integer literal after '(ParmCallDeclLiteral (IntLiteral '
+extractIntWithPos :: String -> String -> Maybe (Int, Int)
+extractIntWithPos pattern s =
+    case findSubIndex pattern s of
+        Nothing -> Nothing
+        Just pos ->
+            let start = pos + length pattern
+                rest  = drop start s
+                numStr = takeWhile (\c -> c /= ')' && c /= ' ' ) rest
+            in case reads numStr :: [(Int,String)] of
+                ((n,_):_) -> Just (n, start)
+                _         -> Nothing
+
+-- indexAsString: either the identifier or the decimal literal string
+parseIndexedTarget :: String -> Maybe (String, String)
+parseIndexedTarget s =
+    if not ("ParmCallDeclIdx" `isInfixOf` s)
+        then Nothing
+        else
+            case findSubIndex "ParmCallDeclIdx" s of
+                Nothing -> Nothing
+                Just idx0 ->
+                    let afterIdx = drop (idx0 + length "ParmCallDeclIdx") s
+                        mbBase = extractIdentWithPos "(ParmCallDeclIdent \"" afterIdx
+                        mbIdxLit = extractIntWithPos "(ParmCallDeclLiteral (IntLiteral " afterIdx
+                        mbIdxIdent =
+                            case mbBase of
+                                Nothing -> Nothing
+                                Just (_, basePosRel) ->
+                                    let relStart = basePosRel
+                                        restAfterBase = drop relStart afterIdx
+                                    in fmap (\(i,_) -> i) (extractIdentWithPos "(ParmCallDeclIdent \"" restAfterBase >>= (\(x,p)->Just (x,p)))
+                    in case mbBase of
+                        Nothing -> Nothing
+                        Just (base, _) ->
+                            case mbIdxLit of
+                                Just (n, _) -> Just (base, show n)
+                                Nothing ->
+                                    case findSecondIdentAfter afterIdx of
+                                        Just idxIdent -> Just (base, idxIdent)
+                                        Nothing -> Nothing
+
+-- find second occurrence of "(ParmCallDeclIdent \"" and return the identifier
+findSecondIdentAfter :: String -> Maybe String
+findSecondIdentAfter s =
+    case extractIdentWithPos "(ParmCallDeclIdent \"" s of
+        Nothing -> Nothing
+        Just (_, pos1) ->
+            let rest = drop (pos1 + length "(ParmCallDeclIdent \"") s
+            in case extractIdentWithPos "(ParmCallDeclIdent \"" rest of
+                Nothing -> Nothing
+                Just (ident2, _) -> Just ident2
+
 compileStmt :: Env -> Stmt -> String
 
 -- Typed variable declaration (possibly struct or list)
 compileStmt env (DeclVarExpr vds) = compileVarDecl env vds
 
--- Assignment without type
-compileStmt env (DeclStmt (DeclAssignStmtLiteral ident _ rhs)) =
-    compileParmCall env rhs ++ "STORE " ++ ident ++ "\n"
+-- If the parser produced a textual representation for an indexed target,
+-- detect it and emit STORE_INDEX, otherwise simple STORE.
+compileStmt env (DeclStmt (DeclAssignStmtLiteral target _ rhs))
+    | "ParmCallDeclIdx" `isInfixOf` target =
+        case words target of
+            (_ : "(ParmCallDeclIdent" : base : ")" :
+                 "(ParmCallDeclIdent" : idx : ")" : _) ->
+                let clean x = filter (\c -> c /= '"' && c /= ')') x
+                    b = clean base
+                    i = clean idx
+                in compileParmCall env rhs ++
+                   "LOAD " ++ b ++ "\n" ++
+                   "LOAD " ++ i ++ "\n" ++
+                   "STORE_INDEX\n"
+            _ ->
+                "NOP\n"
+
+compileStmt env (DeclStmt (DeclAssignStmtLiteral target _ rhs)) =
+    compileParmCall env rhs ++
+    "STORE " ++ target ++ "\n"
+
 
 -- Unary assignment (x++ / x--)
 compileStmt _ (DeclStmt (DeclAssignStmtUnary (UnaryOperatorExpr ident op))) =
     case op of
-        IdentIncrement -> "LOAD " ++ ident ++ "\nPUSH_INT 1\nADD\nSTORE " 
-            ++ ident ++ "\n"
-        IdentDecrement -> "LOAD " ++ ident ++ "\nPUSH_INT 1\nSUB\nSTORE "
-            ++ ident ++ "\n"
+        IdentIncrement -> "LOAD " ++ ident ++ "\nPUSH_INT 1\nADD\nSTORE " ++ ident ++ "\n"
+        IdentDecrement -> "LOAD " ++ ident ++ "\nPUSH_INT 1\nSUB\nSTORE " ++ ident ++ "\n"
         _              -> "NOP\n"
 
--- Function call as statement
+-- Function call used as statement
 compileStmt env (CallExpr (CallExprDecl fname args)) =
     compileCallWithNamedParams env fname args
 
--- Binary expression used as statement
+-- Binary expression used as a statement
 compileStmt env (BinaryOperator expr) =
     compileBinaryOpExpr env expr ++ "POP\n"
 
@@ -148,46 +233,49 @@ compileStmt env (RetStmt mexpr) =
         Nothing   -> "RET\n"
         Just expr -> compileBinaryOpExpr env expr ++ "RET\n"
 
--- If / else
-compileStmt env (IfStmt cond (CompoundStmt thenStmts) mElse) =
+-- If / else statement with unique labels
+compileStmt env (IfStmt cond (CompoundStmt body) mElse) =
     let nid = eNextId env
         elseLbl = mkLabel "else" nid
         endLbl  = mkLabel "endif" (nid + 1)
         env' = env { eNextId = nid + 2 }
         condCode = compileBinaryOpExpr env' cond
-        thenCode = concatMap (compileStmt env') thenStmts
-        elseCode = maybe "" (\(CompoundStmt es) ->
-            concatMap (compileStmt env') es) mElse
-    in condCode
-       ++ "JMP_IF_FALSE " ++ elseLbl ++ "\n" ++ thenCode ++ "JMP " ++ endLbl
-       ++ "\n" ++ "LABEL " ++ elseLbl ++ "\n" ++ elseCode
-       ++ "LABEL " ++ endLbl ++ "\n"
+        thenCode = concatMap (compileStmt env') body
+        elseCode = maybe "" (\(CompoundStmt b) -> concatMap (compileStmt env') b) mElse
+    in condCode ++
+       "JMP_IF_FALSE " ++ elseLbl ++ "\n" ++
+       thenCode ++
+       "JMP " ++ endLbl ++ "\n" ++
+       "LABEL " ++ elseLbl ++ "\n" ++
+       elseCode ++
+       "LABEL " ++ endLbl ++ "\n"
 
--- While loop with unique labels and loop ctx
+-- While loop with unique labels (and optional support for break/continue via compileStmtWithLoop)
 compileStmt env (WhileStmt cond (CompoundStmt body)) =
     let nid = eNextId env
         startLbl = mkLabel "while_start" nid
-        endLbl   = mkLabel "while_end" nid
-        contLbl  = mkLabel "while_continue" nid
-        env' = env { eNextId = nid + 1 }
+        endLbl   = mkLabel "while_end" (nid + 1)
+        contLbl  = mkLabel "while_continue" (nid + 2)
+        env' = env { eNextId = nid + 3 }
         ctx  = LoopCtx startLbl contLbl endLbl
-        entry = "LABEL " ++ startLbl ++ "\n"
-    in entry
+    in "LABEL " ++ startLbl ++ "\n"
        ++ compileBinaryOpExpr env' cond ++ "JMP_IF_FALSE " ++ endLbl ++ "\n"
-       ++ concatMap (compileStmtWithLoop env' ctx) body ++ "LABEL " ++ contLbl
-       ++ "\n" ++ "JMP " ++ startLbl ++ "\n" ++ "LABEL " ++ endLbl ++ "\n"
+       ++ concatMap (compileStmtWithLoop env' ctx) body
+       ++ "LABEL " ++ contLbl ++ "\n"
+       ++ "JMP " ++ startLbl ++ "\n"
+       ++ "LABEL " ++ endLbl ++ "\n"
 
--- For loop: init; LABEL start; cond; body; continue label; step; jump start; end
+-- For loop (init ; cond ; step) with unique labels — pass explicit for_end label to cond compiler
 compileStmt env (ForStmt mInit mCond mStep (CompoundStmt body)) =
     let nid = eNextId env
         startLbl = mkLabel "for_start" nid
-        contLbl  = mkLabel "for_continue" nid
-        endLbl   = mkLabel "for_end" nid
-        env' = env { eNextId = nid + 1 }
-        ctx = LoopCtx startLbl contLbl endLbl
+        contLbl  = mkLabel "for_continue" (nid + 1)
+        endLbl   = mkLabel "for_end" (nid + 2)
+        env' = env { eNextId = nid + 3 }
         initCode = compileForInit env' mInit
-        condCode = compileForCond env' mCond
+        condCode = compileForCond env' mCond endLbl
         stepCode = compileForStep env' mStep
+        ctx = LoopCtx startLbl contLbl endLbl
     in initCode
        ++ "LABEL " ++ startLbl ++ "\n"
        ++ condCode
@@ -197,78 +285,70 @@ compileStmt env (ForStmt mInit mCond mStep (CompoundStmt body)) =
        ++ "JMP " ++ startLbl ++ "\n"
        ++ "LABEL " ++ endLbl ++ "\n"
 
--- Foreach not implemented / fallback
+-- Foreach fallback (not implemented fully)
 compileStmt env (ForeachStmt _ _ (CompoundStmt body)) =
     concatMap (compileStmt env) body
 
--- Call used as expression already handled above; fallback:
+-- Fallback
 compileStmt _ _ = "NOP\n"
 
--- compileStmtWithLoop: variant that knows current loop context for break/continue
+-- | compileStmtWithLoop: variant that handles loop control statements
 compileStmtWithLoop :: Env -> LoopCtx -> Stmt -> String
 compileStmtWithLoop env ctx (LoopControlStmt kw) =
     case kw of
-        -- adjust names if your Keyword constructors differ
-        Continue -> "JMP " ++ lblContinueLabel ctx ++ "\n"
-        Break    -> "JMP " ++ lblEndLabel ctx ++ "\n"
+        Continue -> "JMP " ++ lblContinue ctx ++ "\n"
+        Break    -> "JMP " ++ lblEnd ctx ++ "\n"
         _        -> "NOP\n"
-  where
-    lblContinueLabel = lblContinue
-    lblEndLabel = lblEnd
+compileStmtWithLoop env _ st = compileStmt env st
 
-compileStmtWithLoop env ctx st = compileStmt env st
-
--- helpers to access LoopCtx fields (names)
-lblContinueLabel :: LoopCtx -> String
-lblContinueLabel = lblContinue
-
-lblEndLabel :: LoopCtx -> String
-lblEndLabel = lblEnd
-
-
--- compileVarDecl: handle typed var declarations including Struct and List
+-- | compileVarDecl: handle typed var declarations including Struct and List
 compileVarDecl :: Env -> VarDeclStmt -> String
 compileVarDecl env (VarDeclStmt typ ident _ rhs) =
     case (typ, rhs) of
-        -- Struct initialization: VarDeclStmt (Struct "S") name = [ elems... ]
         (Ast.Struct sname, ParmCallDeclList elems) ->
             concatMap (compileParmCall env) elems ++
             "BUILD_STRUCT " ++ sname ++ " " ++ show (length elems) ++ "\n" ++
             "STORE " ++ ident ++ "\n"
 
-        -- List initialization: push elements then PUSH_LIST n
         (ListType _, ParmCallDeclList elems) ->
             concatMap (compileParmCall env) elems ++
             "PUSH_LIST " ++ show (length elems) ++ "\n" ++
             "STORE " ++ ident ++ "\n"
 
-        -- Normal typed var with expression RHS
         _ ->
             compileParmCall env rhs ++
             "STORE " ++ ident ++ "\n"
 
--- compileForInit / cond / step
+-- For init/cond/step helpers
 compileForInit :: Env -> Maybe VarDeclStmt -> String
 compileForInit _ Nothing = ""
 compileForInit env (Just vds) = compileVarDecl env vds
 
-compileForCond :: Env -> Maybe BinaryOpExpr -> String
-compileForCond _ Nothing = ""
-compileForCond env (Just cond) = compileBinaryOpExpr env cond
-    ++ "JMP_IF_FALSE " ++ mkLabel "for_end" nid ++ "\n"
-    where nid = 1 - eNextId env
+-- cond now accepts explicit end label to jump to
+compileForCond :: Env -> Maybe BinaryOpExpr -> String -> String
+compileForCond _ Nothing _ = ""
+compileForCond env (Just cond) endLbl =
+    compileBinaryOpExpr env cond ++ "JMP_IF_FALSE " ++ endLbl ++ "\n"
 
 compileForStep :: Env -> Maybe DeclStmt -> String
 compileForStep _ Nothing = ""
 compileForStep env (Just ds) = compileDeclStmt env ds
 
 compileDeclStmt :: Env -> DeclStmt -> String
-compileDeclStmt env (DeclAssignStmtLiteral ident _ rhs) =
-    compileParmCall env rhs ++ "STORE " ++ ident ++ "\n"
+compileDeclStmt env (DeclAssignStmtLiteral target _ rhs) =
+    case parseIndexedTarget target of
+        Just (base, idx) ->
+            compileParmCall env rhs ++
+            "LOAD " ++ base ++ "\n" ++
+            "LOAD " ++ idx ++ "\n" ++
+            "STORE_INDEX\n"
+        Nothing ->
+            compileParmCall env rhs ++
+            "STORE " ++ target ++ "\n"
 compileDeclStmt env (DeclAssignStmtUnary u) =
     compileStmt env (DeclStmt (DeclAssignStmtUnary u))
 
-
+-- | Binary expression compilation
 compileBinaryOpExpr :: Env -> BinaryOpExpr -> String
 compileBinaryOpExpr env (BinaryOpConst p) = compileParmCall env p
 compileBinaryOpExpr env (BinaryOpExpr l op r) =
@@ -280,66 +360,42 @@ compileBinaryOpParm :: Env -> BinaryOpParm -> String
 compileBinaryOpParm env (BinaryOpParm p)   = compileParmCall env p
 compileBinaryOpParm env (BinaryOpParmBOp b) = compileBinaryOpExpr env b
 
--- compileParmCall: updated to support indexing ParmCallDeclIdx
+-- | compileParmCall: supports all ParmCallDecl variants, including indexing
 compileParmCall :: Env -> ParmCallDecl -> String
 compileParmCall _   (ParmCallDeclLiteral lit) = compileLiteral lit
 compileParmCall _   (ParmCallDeclIdent ident) = "LOAD " ++ ident ++ "\n"
 compileParmCall env (ParmCallDeclExpr (CallExprDecl fname args)) =
     compileCallWithNamedParams env fname args
 compileParmCall env (ParmCallDeclList elems) =
-    concatMap (compileParmCall env) elems ++ "PUSH_LIST "
-        ++ show (length elems) ++ "\n"
+    concatMap (compileParmCall env) elems ++ "PUSH_LIST " ++ show (length elems) ++ "\n"
 compileParmCall env (ParmCallBExpr l op r) =
-    compileBinaryOpParm env l ++
-    compileBinaryOpParm env r ++
-    opToInstr op ++ "\n"
+    compileBinaryOpParm env l ++ compileBinaryOpParm env r ++ opToInstr op ++ "\n"
 
---   - compile base (LOAD z)
---   - if index is a literal integer, emit: IND <name> <index>\n
---   - otherwise compile index (push index) then emit: IND <name>\n
+-- Indexing: compile base then index then IND instruction.
 compileParmCall env (ParmCallDeclIdx base idx) =
-   case base of
-       ParmCallDeclIdent name ->
-           let idxCode = case idx of
-                   ParmCallDeclLiteral (IntLiteral i) ->
-                       "IND " ++ name ++ " " ++ show i ++ "\n"
-                   _ ->
-                       compileParmCall env idx ++
-                       "IND " ++ name ++ "\n"
-           in idxCode
-       _ ->
-           let baseCode = compileParmCall env base
-           in case idx of
-               ParmCallDeclLiteral (IntLiteral i) ->
-                   baseCode ++ "IND TMP " ++ show i ++ "\n"
-               _ ->
-                   baseCode ++ compileParmCall env idx ++ "IND TMP\n"
+    compileParmCall env base ++ compileParmCall env idx ++ "IND\n"
 
--- compileCallWithNamedParams: pushes args, then either STORE into param names (reversed),
--- then CALL <fname> <arity>.
+-- | Call with named params: push args, optionally STORE into param names (reversed), then CALL
 compileCallWithNamedParams :: Env -> Identifier -> [ParmCallDecl] -> String
 compileCallWithNamedParams env fname args =
     let argsCode = concatMap (compileParmCall env) args
-        fenv = eFuncs env
-    in case Map.lookup fname fenv of
-        Nothing -> argsCode ++ "CALL " ++ fname ++ " " ++ show (length args)
-            ++ "\n"
+    in case Map.lookup fname (eFuncs env) of
+        Nothing -> argsCode ++ "CALL " ++ fname ++ " " ++ show (length args) ++ "\n"
         Just params ->
-            let storeCode = concatMap (\p -> "STORE " ++ p++ "\n") (reverse params)
+            let storeCode = concatMap (\p -> "STORE " ++ p ++ "\n") (reverse params)
             in argsCode ++ storeCode ++ "CALL " ++ fname ++ " " ++ show (length args) ++ "\n"
 
-
+-- | Literals
 compileLiteral :: Literal -> String
 compileLiteral (CharLiteral c)   = "PUSH_CHAR " ++ show c ++ "\n"
 compileLiteral (IntLiteral i)    = "PUSH_INT " ++ show i ++ "\n"
-compileLiteral (BoolLiteral b)   = "PUSH_BOOL "
-    ++ (if b then "True\n" else "False\n")
+compileLiteral (BoolLiteral b)   = "PUSH_BOOL " ++ (if b then "True\n" else "False\n")
 compileLiteral (FloatLiteral f)  = "PUSH_FLOAT " ++ show f ++ "\n"
 compileLiteral (ListLiteral elems) =
-    concatMap compileLiteral elems ++ "PUSH_LIST "
-    ++ show (length elems) ++ "\n"
+    concatMap compileLiteral elems ++ "PUSH_LIST " ++ show (length elems) ++ "\n"
 compileLiteral _ = "PUSH_UNKNOWN\n"
 
+-- | Operators
 opToInstr :: BinaryOp -> String
 opToInstr Add = "ADD"
 opToInstr Sub = "SUB"
@@ -356,6 +412,6 @@ opToInstr And = "AND"
 opToInstr Or  = "OR"
 opToInstr _   = "NOP"
 
-
+-- | Label generator using eNextId values (stringify the numeric id)
 mkLabel :: String -> Int -> String
 mkLabel base i = base ++ "_" ++ show i

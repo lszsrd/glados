@@ -170,6 +170,12 @@ exec (Call function argv: x, y) z stack env fds = do
 exec (Load identifier: x, y) z stack env fds = case getEnv env identifier of
     Nothing -> return (Left $ "LOAD " ++ identifier ++ ": not in env")
     Just (_, a) -> exec (x, y) z (stack ++ [a]) env fds
+exec (Ind: x, y) z stack env fds = case popStackN 2 stack of
+    Just ([List a, Integer b], stack') -> if fromIntegral b > length a
+        then return (Left $ "IND: index out of bound: " ++ show b)
+        else exec (x, y) z (stack' ++ [a !! fromIntegral b]) env fds
+    Just ([_, _], _) -> return (Left "IND: expected List, Int")
+    _ -> return (Left "IND: empty stack")
 exec (Store identifier: x, y) z stack env fds = case popStackN 1 stack of
     Just ([a], stack') -> exec (x, y) z stack' (setEnv env (identifier, a)) fds
     _ -> return (Left "STORE: empty stack")
