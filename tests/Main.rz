@@ -8,11 +8,12 @@ struct foo {
             */
 fn main() -> Int
 {
-    [Char] h = "Hello";
+    String h = "Hello";
 
-    foreach (foo: h) {
-        foo = 'c';
+    for (Int i = 0; h[i]; i++) {
+        h[i] = 'c';
     }
+
     ret 0;
 }
 //endof file

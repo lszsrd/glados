@@ -49,6 +49,8 @@ instance Show Token where
     show (Keyword Float) = "'Float"
     show (Keyword Double) = "'Double'"
     show (Keyword Struct) = "'struct'"
+    show (Keyword String) = "'String'"
+
     show (Keyword Fn) = "'fn'"
     show (Keyword If) = "'if'"
     show (Keyword Else) = "'else'"

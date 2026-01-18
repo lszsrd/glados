@@ -18,6 +18,7 @@ struct foo {
 fn babar(Int: x) -> Int
 {
     Int y = 5;
+    Int y = 5;
     foo f = {{{1, 2}, 'c'},1, 2};
  
     f->b->i->i = 1;

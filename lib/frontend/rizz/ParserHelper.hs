@@ -109,7 +109,7 @@ getTypeDecl (A.ParmVarDecl n) = case n of
 getTypeDecl (A.VarDecl (A.VarDeclStmt n _ _ _)) = Just n
 getTypeDecl (A.RecordDecl (A.RecordDeclExpr n _)) = Just (A.Struct n)
 
-getType :: [A.Decl] -> A.ParmCallDecl -> Maybe A.BuiltinType
+getType :: ([A.Decl], A.Decl) -> A.ParmCallDecl -> Maybe A.BuiltinType
 getType _ (A.ParmCallDeclLiteral (T.BoolLiteral _)) = Just A.Boolean
 getType _ (A.ParmCallDeclLiteral (T.CharLiteral _)) = Just A.Character
 getType _ (A.ParmCallDeclLiteral (T.IntLiteral _)) = Just A.Integer
@@ -117,13 +117,11 @@ getType _ (A.ParmCallDeclLiteral (T.FloatLiteral _)) = Just A.SinglePrecision
 getType fl (A.ParmCallDeclLiteral (T.ListLiteral (a :_))) =
     getType fl (A.ParmCallDeclLiteral a)
 getType fl (A.ParmCallDeclIdent id1) =
-    case doesVarExists (1,1) (fl, A.FunctionDecl "n" []
-        (A.CompoundStmt []) Nothing) id1 of
+    case doesVarExists (1,1) fl id1 of
         Left _ -> Nothing
         Right var -> getTypeDecl var
 getType fl (A.ParmCallDeclExpr (A.CallExprDecl f _)) =
-    case doesVarExists (1,1) (fl, A.FunctionDecl "n" []
-        (A.CompoundStmt []) Nothing) f of
+    case doesVarExists (1,1) fl f of
         Left _ -> Nothing
         Right var -> getTypeDecl var
 getType _ (A.ParmCallDeclList _) = Just (A.Struct "Va te faire foutre aussi")
@@ -192,7 +190,7 @@ createList ((A.ParmVarRecord (A.RecordDeclExpr _ ls)):as)
     Right (first ++ rest)
 createList (A.ParmVarDeclExpr tp n:as) (A.ParmCallDeclList (x:xs)) t fl = do
     rest <- createList as (A.ParmCallDeclList xs) t fl
-    case getType fl x of
+    case getType (fl, A.FunctionDecl "n" [] (A.CompoundStmt []) Nothing) x of
         Just (A.Struct _) -> do
             stparam <- depthStructListCreate fl x (t ++"@" ++ n) tp
             Right (A.ParmVarDeclExpr tp (t ++ "@" ++ n) : stparam ++ rest)
@@ -352,7 +350,8 @@ parseBuiltinType _ ((T.Keyword T.Bool, _) : r) = Right (A.Boolean, r)
 parseBuiltinType _ ((T.Keyword T.Char, _) : r) = Right (A.Character, r)
 parseBuiltinType _ ((T.Keyword T.Int, _) : r) = Right (A.Integer, r)
 parseBuiltinType _ ((T.Keyword T.Float, _) : r) = Right (A.SinglePrecision, r)
-parseBuiltinType _ ((T.Keyword T.String, _) : r) = Right (A.String, r)
+parseBuiltinType _ ((T.Keyword T.String, _) : r) =
+    Right (A.ListType A.Character, r)
 parseBuiltinType a ((T.Identifier i, p) : rest) = do
     _ <-doesVarExists p (a, A.FunctionDecl "" [] (A.CompoundStmt []) Nothing) i
     Right (A.Struct i, rest)
@@ -544,12 +543,12 @@ parseCallExprDecl f tokens = do
 --
 -- This function is used to parse an assignment statement (@`foo = bar`@ or @`foo++`@).
 parseDeclAssignStmtLiteral :: ([A.Decl], A.Decl) -> Parser A.DeclStmt
-parseDeclAssignStmtLiteral f@(fl, _) tokens = do
+parseDeclAssignStmtLiteral f tokens = do
     (id1, rest1) <- parseIdentifier tokens
     var <- doesVarExists (getPos 0 tokens) f id1
     (ap, r2) <- parseAssignOp rest1
     (p, rest3) <- parseOr (parseParmCallDeclBExpr f) (parseParmCallDecl f) r2
-    case getType fl p of
+    case getType f p of
         Nothing -> Right (A.DeclAssignStmtLiteral id1 ap p, rest3)
         Just tp -> do
             _ <- canAssign (getPos 0 tokens) var tp
@@ -605,11 +604,11 @@ parseDeclAssignStmtIDX f var tokens = do
 --
 -- This function is used to parse an operation on an existing variable.
 parseDeclStmt :: ([A.Decl], A.Decl) -> Parser A.DeclStmt
-parseDeclStmt f@(fl, _) tokens@((T.Identifier _, pos) :
+parseDeclStmt f tokens@((T.Identifier _, pos) :
     (T.Punctuator (T.SBracket T.OpenSBracket),_) : _) =
     case parseParmCallDecl f tokens of
         Right (var@(A.ParmCallDeclIdx _ ex), rest) ->
-            case getType fl ex of
+            case getType f ex of
                 Just _ -> parseDeclAssignStmtIDX f (show var) rest
                 _ -> errorAt pos ("could not get type: " ++ show ex)
         _ -> errorAt pos "unexpected result"
