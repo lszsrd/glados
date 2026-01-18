@@ -1,52 +1,9 @@
-/* struct Vec2 {
-    Int: x,
-    Int: y
-}
-
-Int foo = 0; */
-
 fn main() -> Int
 {
-    Int x = rand(5, 100);
-    // Vec2 v = {0, 0};
-    [Char] z = "hello";
+    [Char] a = readln(0);
 
-    /* foreach (foo : z) {
-        print(1, foo);
-    } */
-    // println(1, z[0]);
-    dumpFile("LICENSE.md");
-    println(1, ("factorial(" + x) + (") = " + factorial(x)));
-    ret 0;
-}
-
-fn dumpFile ([Char]: path)
-{
-    println(1, rand('a', 'z'));
-    Int fd = open_r(path);
-    
-    if (isOpen(fd) == False) {
-        exit(1);
+    for (Int i = 0; i < length(a); i++) {
+        println(1, a[i]);
     }
-    while (isEOF(fd) == False) {
-        println(1, readln(fd));
-    }
-    /* seek_e(fd, 0 - tell(fd));
-    while (isEOF(fd) == False) {
-        println(1, readln(fd));
-    } */
-    close(fd);
-    fd = open_r("/dev/urandom");
-    for (Int i = 0; i < 5; i++) {
-        println(1, readln(fd));
-    }
-    close(fd);
-}
-
-fn factorial(Int: x) -> Int
-{
-    if (x == 1) {
-        ret 1;
-    }
-    ret x * factorial(x - 1);
+    ret "OK";
 }

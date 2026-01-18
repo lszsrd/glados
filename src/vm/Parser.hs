@@ -59,6 +59,9 @@ parseInstruction ("CALL": x) = case hParseInstruction "CALL" x 2 of
 parseInstruction ("LOAD": x) = case hParseInstruction "LOAD" x 1 of
     Left e -> Left e
     Right y -> Right $ Load (head y)
+parseInstruction ("IND": x) = case hParseInstruction "IND" x 0 of
+    Left e -> Left e
+    Right _ -> Right Ind
 parseInstruction ("STORE": x) = case hParseInstruction "STORE" x 1 of
     Left e -> Left e
     Right y -> Right $ Store (head y)
