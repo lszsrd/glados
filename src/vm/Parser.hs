@@ -14,32 +14,28 @@ module Parser (
 
 import Text.Read (readMaybe)
 
-import OpCodes (Operand (..), OpCode (..))
+import OpCodes (Operand (..), Instruction (..))
 import Function (Function)
 
 parseFunctions :: [String] -> Either String [Function]
 parseFunctions [] = Right []
 parseFunctions (x: xs) = case words x of
     [] -> parseFunctions xs
-    ("FUNC": y) -> case hParseInstruction "FUNC" y 2 of
-        Left e -> Left e
-        Right (fnName: z: _) -> case readMaybe z :: Maybe Int of
-            Just argc -> hParseFunctions xs fnName argc
-            Nothing -> Left ("FUNC: invalid arguments' count: " ++ z)
-        Right _ -> Left "FUNC: the impossible happened: found a pattern hole"
+    ("FUNC": y: ys) -> hParseFunctions xs y ys
+    ("FUNC": _) -> Left "FUNC: missing function name"
     _ -> Left ("not a function: " ++ x)
 
-hParseFunctions :: [String] -> String -> Int -> Either String [Function]
-hParseFunctions xs fnName argc = case parseInstructions xs of
+hParseFunctions :: [String] -> String -> [String] -> Either String [Function]
+hParseFunctions xs fnName args = case parseInstructions xs of
     Left e -> Left e
     Right (_, []) -> Left ("FUNC: missing ENDFUNC at EOF: " ++ fnName)
     Right (fnBody, z: z') -> if z /= "ENDFUNC"
         then Left ("FUNC: missing ENDFUNC: " ++ fnName)
         else case parseFunctions z' of
             Left e -> Left e
-            Right functions -> Right $ (fnName, argc, fnBody): functions
+            Right functions -> Right $ (fnName, args, fnBody): functions
 
-parseInstructions :: [String] -> Either String ([OpCode], [String])
+parseInstructions :: [String] -> Either String ([Instruction], [String])
 parseInstructions [] = Right ([], [])
 parseInstructions instructions@("ENDFUNC": _) = Right ([], instructions)
 parseInstructions (x: xs) = case parseInstruction (words x) of
@@ -48,15 +44,15 @@ parseInstructions (x: xs) = case parseInstruction (words x) of
         Left e -> Left e
         Right (opcodes, instructions) -> Right (opcode: opcodes, instructions)
 
-parseInstruction :: [String] -> Either String OpCode
+parseInstruction :: [String] -> Either String Instruction
 parseInstruction [] = Right Nop
-parseInstruction (('#': _): _) = Right Nop
+parseInstruction ((';': _): _) = Right Nop
 parseInstruction ("NOP": x) = case hParseInstruction "NOP" x 0 of
     Left e -> Left e
     Right _ -> Right Nop
 parseInstruction ("CALL": x) = case hParseInstruction "CALL" x 2 of
     Left e -> Left e
-    Right (y: z: _) -> case readMaybe z :: Maybe Integer of
+    Right (y: z: _) -> case readMaybe z :: Maybe Int of
         Nothing -> Left ("CALL: invalid operand: " ++ z)
         Just operand -> Right $ Call y operand
     Right _ -> Left "CALL: the impossible happened: found a pattern hole"
@@ -70,28 +66,28 @@ parseInstruction ("PUSH_BOOL": x) = case hParseInstruction "PUSH_BOOL" x 1 of
     Left e -> Left e
     Right y -> case readMaybe (head y) :: Maybe Bool of
         Nothing -> Left ("PUSH_BOOL: invalid operand: " ++ unwords y)
-        Just operand -> Right $ PushBool (Bool operand)
+        Just operand -> Right $ Push (Bool operand)
 parseInstruction ("PUSH_BOOL": x) = case hParseInstruction "PUSH_BOOL" x 1 of
     Left e -> Left e
     Right y -> case readMaybe (head y) :: Maybe Bool of
         Nothing -> Left ("PUSH_BOOL: invalid operand: " ++ unwords y)
-        Just operand -> Right $ PushBool (Bool operand)
-parseInstruction ["PUSH_CHAR", "'", "'"] = Right $ PushBool (Char ' ')
+        Just operand -> Right $ Push (Bool operand)
+parseInstruction ["PUSH_CHAR", "'", "'"] = Right $ Push (Char ' ')
 parseInstruction ("PUSH_CHAR": x) = case hParseInstruction "PUSH_CHAR" x 1 of
     Left e -> Left (e ++ ": " ++ show x)
     Right y -> case readMaybe (head y) :: Maybe Char of
         Nothing -> Left ("PUSH_BOOL: invalid operand: " ++ unwords y)
-        Just operand -> Right $ PushBool (Char operand)
+        Just operand -> Right $ Push (Char operand)
 parseInstruction ("PUSH_INT": x) = case hParseInstruction "PUSH_INT" x 1 of
     Left e -> Left e
     Right y -> case readMaybe (head y) :: Maybe Integer of
         Nothing -> Left ("PUSH_INT: invalid operand: " ++ unwords y)
-        Just operand -> Right $ PushInt (Integer operand)
+        Just operand -> Right $ Push (Integer operand)
 parseInstruction ("PUSH_FLOAT": x) = case hParseInstruction "PUSH_FLOAT" x 1 of
     Left e -> Left e
     Right y -> case readMaybe (head y) :: Maybe Float of
         Nothing -> Left ("PUSH_FLOAT: invalid operand: " ++ unwords y)
-        Just operand -> Right $ PushFloat (Float operand)
+        Just operand -> Right $ Push (Float operand)
 parseInstruction ("PUSH_LIST": x) = case hParseInstruction "PUSH_LIST" x 1 of
     Left e -> Left e
     Right y -> case readMaybe (head y) :: Maybe Int of
@@ -124,7 +120,7 @@ parseInstruction ("SUB": x) = case hParseInstruction "SUB" x 0 of
     Right _ -> Right Sub
 parseInstruction ("DIV": x) = case hParseInstruction "DIV" x 0 of
     Left e -> Left e
-    Right _ -> Right Mod
+    Right _ -> Right Div
 parseInstruction ("MOD": x) = case hParseInstruction "MOD" x 0 of
     Left e -> Left e
     Right _ -> Right Mod

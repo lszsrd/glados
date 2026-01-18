@@ -6,8 +6,7 @@
 -}
 
 module Utils (
-    OpCode
-    , Stack
+    Stack
     , Env
     , Fds
 
@@ -16,13 +15,12 @@ module Utils (
     , stringToList
     , getEnv
     , pushEnv
-    , jumpTo
     , getFd
 ) where
 
 import System.IO (Handle)
 
-import OpCodes (Operand (..), OpCode (..))
+import OpCodes (Operand (..), Instruction (..))
 import Stack (Stack)
 import Env (Env)
 import Fds (Fds)
@@ -55,12 +53,6 @@ pushEnv [] x = [x]
 pushEnv env (x, y)
     | x `notElem` map fst env = env ++ [(x, y)]
     | otherwise = map (\(x', y') -> if x' == x then (x', y) else (x', y')) env
-
-jumpTo :: String -> [OpCode] -> Maybe [OpCode]
-jumpTo _ [] = Nothing
-jumpTo x (Label y: z)
-    | x == y = Just z
-jumpTo x (_: ys) = jumpTo x ys
 
 getFd :: Integer -> Fds -> Either String Handle
 getFd x [] = Left $ "invalid fd " ++ show x

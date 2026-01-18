@@ -1,0 +1,59 @@
+[Char] __open_error = "Could not open file ";
+
+fn __openr([Char]: path) -> Int
+{
+    Int fd = open_r(path);
+
+    if (isOpen(fd) == False) {
+        exit(__open_error + path);
+    }
+    ret fd;
+}
+
+fn __openw([Char]: path) -> Int
+{
+    Int fd = open_w(path);
+
+    if (isOpen(fd) == False) {
+        exit(__open_error + path);
+    }
+    ret fd;
+}
+
+fn __opena([Char]: path) -> Int
+{
+    Int fd = open_a(path);
+
+    if (isOpen(fd) == False) {
+        exit(__open_error + path);
+    }
+    ret fd;
+}
+
+fn __openrw([Char]: path) -> Int
+{
+    Int fd = open_w(path);
+
+    if (isOpen(fd) == False) {
+        exit(__open_error + path);
+    }
+    ret fd;
+}
+
+fn open([Char]: path, [Char]: mode) -> Int
+{
+    if (mode == "r") {
+        ret __openr(path);
+    }
+    if (mode == "w") {
+        ret __openw(path);
+    }
+    if (mode == "a") {
+        ret __opena(path);
+    }
+    if (mode == "rw") {
+        ret __openrw(path);
+    }
+    exit("Unknown mode for file opening: " + mode);
+    ret -1;
+}
