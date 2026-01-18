@@ -7,43 +7,150 @@
 
 module Interpreter (
     call
+    , open
+    , builtin
     , exec
 ) where
 
-{- import System.IO (openFile, IOMode (..), hSetBinaryMode, hFileSize, hIsOpen, hIsEOF, hClose, hPutStr, hPrint, hFlush, hGetChar, hGetLine, hTell, hSeek, SeekMode (AbsoluteSeek, RelativeSeek, SeekFromEnd))
+import System.IO    (
+    IOMode (ReadMode, WriteMode, AppendMode, ReadWriteMode),
+    SeekMode (AbsoluteSeek, RelativeSeek, SeekFromEnd),
+    hTell,
+    hFileSize,
+    hIsEOF,
+    hIsOpen,
+    hClose,
+
+    hPutStr,
+    hPrint,
+    hGetChar,
+    hGetLine
+                    )
+
+import Foreign (FunPtr)
+import Foreign.C (CInt (..))
+
 import System.Random
 
-import Data.Char (digitToInt)
-
-import Foreign (fromBool, FunPtr)
-import Foreign.C (CInt (..)) -}
-
 import OpCodes (Operand (..), Instruction (..), div, mod, showList')
-import Function (Function, fetch, jumpTo)
-import Stack (Stack, popStackN)
-import Env (Env, setEnv, getEnv, purgeEnv)
-import Fds (Fds)
-import Debug.Trace (trace)
---import Utils
--- import Debug.Trace (trace)
+import Data (Function, Stack, Env, Fds, fetch, jumpTo, popStackN, setEnv, getEnv, purgeEnv)
+import Builtins (getFd, gOpen, gSeek)
 
-{- foreign import ccall "stdlib.h &exit"
+foreign import ccall "stdlib.h &exit"
   p_exit:: FunPtr (CInt -> IO ())
 
 foreign import ccall "dynamic"
-  mkFun :: FunPtr (CInt -> IO ()) -> (CInt -> IO ()) -}
+  run_exit:: FunPtr (CInt -> IO ()) -> (CInt -> IO ())
 
-call :: String -> [Function] -> Env -> Fds -> IO (Either String (Maybe Operand))
-call function x env fds = case fetch function x of
+
+
+{- stringToList :: String -> Operand
+stringToList [] = List []
+stringToList (x: xs) = case stringToList xs of
+    List y -> List $ Char x: y
+    y -> y
+
+ -}
+
+
+call :: String -> [Function] -> Stack -> Env -> Fds -> IO (Either String (Maybe Operand))
+call function x _ env fds = case fetch function x of
     Just (_, y, z) -> exec (z, z) x [] (purgeEnv env y) fds
-    _ -> return (Left $ "CALL: call to undeclared function " ++ function) -- handle builtin here
+    _ -> return (Left $ "CALL: call to undeclared function " ++ function)
+
+open :: ([Instruction], [Instruction]) -> [Function] -> Stack -> Env -> Fds -> IOMode -> IO (Either String (Maybe Operand))
+open x y stack env fds mode = do
+    z <- gOpen stack mode
+    case z of
+        Left e -> return (Left e)
+        Right z' -> exec x y (stack ++ [Integer fd]) env (fds ++ [(fd, z')])
+        where fd = 1 + maximum (map fst fds)
+
+seek :: ([Instruction], [Instruction]) -> [Function] -> Stack -> Env -> Fds -> SeekMode -> IO (Either String (Maybe Operand))
+seek x y stack env fds mode = do
+    z <- gSeek stack fds mode
+    case z of
+        Just e -> return (Left e)
+        _ -> exec x y stack env fds
+
+builtin :: String -> ([Instruction], [Instruction]) -> [Function] -> Stack -> Env -> Fds -> IO (Either String (Maybe Operand))
+builtin "exit" _ _ stack _ _ = case popStackN 1 stack of
+    Just ([x], _) -> return (Right $ Just x)
+    _ -> return (Left "exit: not enough operands")
+builtin "cexit" _ _ stack _ _ = case popStackN 1 stack of
+    Just ([Char x], _) -> do
+        _ <- run_exit p_exit $ fromIntegral (fromEnum x)
+        return $ Left []
+    Just ([x], _) -> return $ Left ("cexit: expected Char, got " ++ show x)
+    _ -> return (Left "cexit: not enough operands")
+builtin "open_r" x y stack env fds = open x y stack env fds ReadMode
+builtin "open_w" x y stack env fds = open x y stack env fds WriteMode
+builtin "open_a" x y stack env fds = open x y stack env fds AppendMode
+builtin "open_rw" x y stack env fds = open x y stack env fds ReadWriteMode
+builtin "isEOF" x y stack env fds = case popStackN 1 stack of
+    Just ([Integer a], b) -> case getFd a fds of
+        Left e -> return (Left $ "isEOF: " ++ e)
+        Right handle -> do
+            z <- hIsEOF handle
+            exec x y (b ++ [Bool z] ) env fds
+    Just ([z], _) -> return (Left $ "isEOF: expected Int, got " ++ show z)
+    _ -> return (Left "isEOF: not enough operands")
+builtin "seek_a" x y stack env fds = seek x y  stack env fds AbsoluteSeek
+builtin "seek_r" x y stack env fds = seek x y stack env fds RelativeSeek
+builtin "seek_e" x y stack env fds = seek x y stack env fds SeekFromEnd
+builtin "tell" x y stack env fds = case popStackN 1 stack of
+    Just ([Integer a], b) -> case getFd a fds of
+        Left e -> return (Left $ "tell: " ++ e)
+        Right handle -> do
+            z <- hTell handle
+            exec x y (b ++ [Integer z] ) env fds
+    Just ([z], _) -> return (Left $ "tell: expected Int, got " ++ show z)
+    _ -> return (Left "tell: not enough operands")
+builtin "getFileSize" x y stack env fds = case popStackN 1 stack of
+    Just ([Integer a], b) -> case getFd a fds of
+        Left e -> return (Left $ "getFileSize: " ++ e)
+        Right handle -> do
+            z <- hFileSize handle
+            exec x y (b ++ [Integer z] ) env fds
+    Just ([z], _) -> return (Left $ "getFileSize: expected Int, got " ++ show z)
+    _ -> return (Left "getFileSize: not enough operands")
+builtin "isOpen" x y stack env fds = case popStackN 1 stack of
+    Just ([Integer a], b) -> case getFd a fds of
+        Left e -> return (Left $ "isOpen: " ++ e)
+        Right handle -> do
+            z <- hIsOpen handle
+            exec x y (b ++ [Bool z] ) env fds
+    Just ([z], _) -> return (Left $ "isOpen: expected Int, got " ++ show z)
+    _ -> return (Left "isOpen: not enough operands")
+builtin "close" x y stack env fds = case popStackN 1 stack of
+    Just ([Integer a], b) -> case getFd a fds of
+        Left e -> return (Left $ "close: " ++ e)
+        Right handle -> case hClose handle of
+            _ -> case dropWhile (\(c, _) -> c /= a) fds of
+                (_: zs) -> exec x y b env (z ++ zs)
+                _ -> exec x y b env fds
+                where z = takeWhile (\(c, _) -> c /= a) fds
+    Just ([z], _) -> return $ Left ("close: expected Int, got " ++ show z)
+    _ -> return (Left "close: not enough operands")
+
+builtin "rand" x y stack env fds = do
+    g <- newStdGen
+    case popStackN 2 stack of
+        Just ([Bool a, Bool b], z)
+            -> exec x y (z ++ [Bool $ head (randomRs (a, b) g)]) env fds
+        Just ([Char a, Char b], z)
+            -> exec x y (z ++ [Char$ head (randomRs (a, b) g)]) env fds
+        Just ([Integer a, Integer b], z)
+            -> exec x y (z ++ [Integer $ head (randomRs (a, b) g)]) env fds
+        _ -> return (Left "rand: expected Int, Int")
+builtin x _ _ _ _ _ = return (Left $ "CALL: call to undeclared function " ++ x)
 
 exec :: ([Instruction], [Instruction]) -> [Function] -> Stack -> Env -> Fds -> IO (Either String (Maybe Operand))
 exec (Nop: x, y) z stack env fds = exec (x, y) z stack env fds
 exec (Call function argc: x, y) z stack env fds = do
-    operand <- call function z env fds
+    operand <- call function z stack env fds
     case operand of
-        Left e -> return (Left e)
+        Left _ -> builtin function (x, y) z stack env fds
         Right Nothing -> exec (x, y) z stack' env fds
         Right (Just a) -> exec (x, y) z (stack' ++ [a]) env fds
         where stack' = take (length stack - argc) stack
@@ -163,76 +270,7 @@ exec (Ret: _, _) _ [] _ _ = return (Right Nothing)
 exec (Ret: _, _) _ stack _ _ = return (Right $ Just (last stack))
 exec ([], _) _ _ _ _ = return (Right Nothing)
 
-{- open :: [Function] -> [OpCode] -> [OpCode] -> Stack -> Env -> Fds -> IOMode -> IO (Either String (Maybe Operand))
-open symtab bOps ops stack env fds mode = case unsnoc stack of
-    Nothing -> return $ Left "open: not enough operands"
-    Just (x, List y) -> do
-        z <- openFile (showList' y) mode
-        _ <- hSetBinaryMode z True
-        exec symtab bOps ops (x ++ [Integer fd]) env (fds ++ [(fd, z)])
-            where fd = 1 + maximum (map fst fds)
-    Just (_, x) -> return $ Left ("open: expected [Char], got " ++ show x)
-
-seek :: [Function] -> [OpCode] -> [OpCode] -> Stack -> Env -> Fds -> SeekMode -> IO (Either String (Maybe Operand))
-seek symtab bOps ops stack env fds mode = case pop2 stack of
-    Left e -> return $ Left ("seek_a: " ++ e)
-    Right (Integer x, Integer y, z) -> case getFd x fds of
-        Left e -> return $ Left ("tell: " ++ e)
-        Right handle -> do
-            _ <- hSeek handle mode y
-            exec symtab bOps ops z env fds
-    Right (_, _, _) -> return $ Left "seek: expected Fd, Int"
-
--- run a function's body (all its instructions)
-exec :: [Function] -> [OpCode] -> [OpCode] -> Stack -> Env -> Fds -> IO (Either String (Maybe Operand))
-exec symtab bOps (Nop: ops) stack env fds = exec symtab bOps ops stack env fds
-exec _ _ (Call "exit" _: _) stack _ _ = case unsnoc stack of
-    Nothing -> return $ Left "exit: not enough operands"
-    Just (_, y) -> return $ Right (Just y)
-exec _ _ (Call "cexit" _: _) stack _ _ = case unsnoc stack of
-    Nothing -> return $ Left "cexit: not enough operands"
-    Just (_, Integer y) -> do
-        _ <- mkFun p_exit $ fromIntegral y
-        return $ Left []
-    Just (_, x) -> return $ Left ("cexit: expected Int, got " ++ show x)
-exec x y (Call "open_r" _: ys) z z' fds = open x y ys z z' fds ReadMode
-exec x y (Call "open_w" _: ys) z z' fds = open x y ys z z' fds WriteMode
-exec x y (Call "open_a" _: ys) z z' fds = open x y ys z z' fds AppendMode
-exec x y (Call "open_rw" _: ys) z z' fds = open x y ys z z' fds ReadWriteMode
-exec symtab bOps (Call "getFileSize" _: ops) stack env fds = case unsnoc stack of
-    Nothing -> return $ Left "isOpen: not enough operands"
-    Just (x, Integer y) -> case getFd y fds of
-        Left _ -> exec symtab bOps ops (x ++ [Integer (-1)] ) env fds
-        Right handle -> do
-            z <- hFileSize handle
-            exec symtab bOps ops (x ++ [Integer z] ) env fds
-    Just (_, x) -> return $ Left ("read: expected fd, got " ++ show x)
-exec symtab bOps (Call "isOpen" _: ops) stack env fds = case unsnoc stack of
-    Nothing -> return $ Left "isOpen: not enough operands"
-    Just (x, Integer y) -> case getFd y fds of
-        Left _ -> exec symtab bOps ops (x ++ [Bool False] ) env fds
-        Right handle -> do
-            z <- hIsOpen handle
-            exec symtab bOps ops (x ++ [Bool z] ) env fds
-    Just (_, x) -> return $ Left ("read: expected fd, got " ++ show x)
-exec symtab bOps (Call "close" _: ops) stack env fds = case unsnoc stack of
-    Nothing -> return $ Left "close: not enough operands"
-    Just (x, Integer y) -> case getFd y fds of
-        Left e -> return $ Left ("close: " ++ e)
-        Right handle -> case hClose handle of
-            _ -> case dropWhile (\(a, _) -> a /= y) fds of
-                (_: zs) -> exec symtab bOps ops x env (z ++ zs)
-                _ -> exec symtab bOps ops x env z
-                where z = takeWhile (\(a, _) -> a /= y) fds
-    Just (_, x) -> return $ Left ("close: expected fd, got " ++ show x)
-exec symtab bOps (Call "isEOF" _: ops) stack env fds = case unsnoc stack of
-    Nothing -> return $ Left "isEOF: not enough operands"
-    Just (x, Integer y) -> case getFd y fds of
-        Left e -> return $ Left ("isEOF: " ++ e)
-        Right handle -> do
-            z <- hIsEOF handle
-            exec symtab bOps ops (x ++ [Bool z] ) env fds
-    Just (_, x) -> return $ Left ("read: expected fd, got " ++ show x)
+{- 
 exec symtab bOps (Call "print" _: ops) stack env fds = case pop2 stack of
     Left e -> return $ Left ("print: " ++ e)
     Right (Integer x, y, z) -> case getFd x fds of
@@ -263,26 +301,4 @@ exec symtab bOps (Call "readln" _: ops) stack env fds = case unsnoc stack of
             z <- hGetLine handle
             exec symtab bOps ops (x ++ [stringToList z]) env fds
     Just (_, x) -> return $ Left ("readln: expected fd, got " ++ show x)
-exec symtab bOps (Call "tell" _: ops) stack env fds = case unsnoc stack of
-    Nothing -> return $ Left "tell: not enough operands"
-    Just (x, Integer y) -> case getFd y fds of
-        Left e -> return $ Left ("tell: " ++ e)
-        Right handle -> do
-            z <- hTell handle
-            exec symtab bOps ops (x ++ [Integer z]) env fds
-    Just (_, x) -> return $ Left ("tell: expected fd, got " ++ show x)
-exec x y (Call "seek_a" _: ys) z z' fds = seek x y ys z z' fds AbsoluteSeek
-exec x y (Call "seek_r" _: ys) z z' fds = seek x y ys z z' fds RelativeSeek
-exec x y (Call "seek_e" _: ys) z z' fds = seek x y ys z z' fds SeekFromEnd
-exec s b (Call "rand" _: ops) stack env fds = do
-    g <- newStdGen
-    case pop2 stack of
-        Right (Bool x, Bool y, z)
-            -> exec s b ops (z ++ [Bool $ head (randomRs (x, y) g)]) env fds
-        Right (Char x, Char y, z)
-            -> exec s b ops (z ++ [Char $ head (randomRs (x, y) g)]) env fds
-        Right (Integer x, Integer y, z)
-            -> exec s b ops (z ++ [Integer $ head (randomRs (x, y) g)]) env fds
-        _ -> return $ Left "rand: expected Int, Int"
-exec symtab bOps (Label _: ops) stack env fds
-    = exec symtab bOps ops stack env fds -}
+-}

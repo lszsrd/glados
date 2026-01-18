@@ -15,7 +15,7 @@ module Parser (
 import Text.Read (readMaybe)
 
 import OpCodes (Operand (..), Instruction (..))
-import Function (Function)
+import Data (Function)
 
 parseFunctions :: [String] -> Either String [Function]
 parseFunctions [] = Right []

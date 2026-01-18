@@ -97,7 +97,9 @@ compileFunctionWithEnv :: Env -> Decl -> String
 compileFunctionWithEnv env (FunctionDecl name params
     (CompoundStmt stmts) _mret) =
     let env' = env { eNextId = eNextId env } -- start with same counter
-        header = "FUNC " ++ name ++ " " ++ show (length params) ++ "\n"
+        header = "FUNC " ++ name ++ (z' ++ unwords z) ++ "\n"
+            where z = map (\(ParmVarDeclExpr _ ident) -> ident) params
+                  z' = if null z then "" else " "
         body = concatMap (\s -> compileStmt env' s) stmts
         footer = "ENDFUNC\n"
     in header ++ body ++ footer
@@ -165,9 +167,9 @@ compileStmt env (IfStmt cond (CompoundStmt thenStmts) mElse) =
 compileStmt env (WhileStmt cond (CompoundStmt body)) =
     let nid = eNextId env
         startLbl = mkLabel "while_start" nid
-        endLbl   = mkLabel "while_end" (nid + 1)
-        contLbl  = mkLabel "while_continue" (nid + 2)
-        env' = env { eNextId = nid + 3 }
+        endLbl   = mkLabel "while_end" nid
+        contLbl  = mkLabel "while_continue" nid
+        env' = env { eNextId = nid + 1 }
         ctx  = LoopCtx startLbl contLbl endLbl
         entry = "LABEL " ++ startLbl ++ "\n"
     in entry
@@ -179,9 +181,9 @@ compileStmt env (WhileStmt cond (CompoundStmt body)) =
 compileStmt env (ForStmt mInit mCond mStep (CompoundStmt body)) =
     let nid = eNextId env
         startLbl = mkLabel "for_start" nid
-        contLbl  = mkLabel "for_continue" (nid + 1)
-        endLbl   = mkLabel "for_end" (nid + 2)
-        env' = env { eNextId = nid + 3 }
+        contLbl  = mkLabel "for_continue" nid
+        endLbl   = mkLabel "for_end" nid
+        env' = env { eNextId = nid + 1 }
         ctx = LoopCtx startLbl contLbl endLbl
         initCode = compileForInit env' mInit
         condCode = compileForCond env' mCond
@@ -253,7 +255,8 @@ compileForInit env (Just vds) = compileVarDecl env vds
 compileForCond :: Env -> Maybe BinaryOpExpr -> String
 compileForCond _ Nothing = ""
 compileForCond env (Just cond) = compileBinaryOpExpr env cond
-    ++ "JMP_IF_FALSE for_end\n"
+    ++ "JMP_IF_FALSE " ++ mkLabel "for_end" nid ++ "\n"
+    where nid = 1 - eNextId env
 
 compileForStep :: Env -> Maybe DeclStmt -> String
 compileForStep _ Nothing = ""

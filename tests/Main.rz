@@ -12,5 +12,9 @@ fn main() -> Int
     Int b = 3;
     Int c = 4;
 
-    ret foo(c);
+    for (Int i = 0; i < 3; i++) {
+        a += foo(a, c);
+    }
+
+    ret a;
 }

@@ -30,7 +30,6 @@ instance Show Operand where
     show (Struct x) = show x
 
 instance Num Operand where
-    -- booleans
     Bool True - Bool False = Bool True
     Bool True - Bool True = Bool False
     Bool _ - Bool _ = Bool False
@@ -40,21 +39,16 @@ instance Num Operand where
     Bool x - Integer y = Integer (toInteger (fromEnum x) - y)
     Float x - Bool y = Float (x - fromIntegral (fromEnum y))
     Bool x - Float y = Float (fromIntegral (fromEnum x) - y)
-
     Char x - Char y = Integer (toInteger (fromEnum x - fromEnum y))
     Integer x - Char y = Integer (toInteger x - toInteger (fromEnum y))
     Char x - Integer y = Integer (toInteger (fromEnum x) - toInteger y)
     Char x - Float y = Float (fromIntegral (fromEnum x) - y)
     Float x - Char y = Float (x - fromIntegral (fromEnum y))
-
     Integer x - Integer y = Integer (x - y)
     Float x - Integer y = Float (x - fromIntegral y)
     Integer x - Float y = Float (fromIntegral x - y)
-
     Float x - Float y = Float (x - y)
-
     _ - _ = Integer 0
-
     Bool x * Bool y = Bool (toEnum (fromEnum x * fromEnum y))
     Char x * Bool y = Integer (toInteger (fromEnum x * fromEnum y))
     Bool x * Char y = Integer (toInteger (fromEnum x * fromEnum y))
@@ -62,21 +56,16 @@ instance Num Operand where
     Bool x * Integer y = Integer (toInteger (fromEnum x) * y)
     Float x * Bool y = Float (x * fromIntegral (fromEnum y))
     Bool x * Float y = Float (fromIntegral (fromEnum x) * y)
-
     Char x * Char y = Integer (toInteger (fromEnum x * fromEnum y))
     Integer x * Char y = Integer (toInteger x * toInteger (fromEnum y))
     Char x * Integer y = Integer (toInteger (fromEnum x) * toInteger y)
     Char x * Float y = Float (fromIntegral (fromEnum x) * y)
     Float x * Char y = Float (x * fromIntegral (fromEnum y))
-
     Integer x * Integer y = Integer (x * y)
     Float x * Integer y = Float (x * fromIntegral y)
     Integer x * Float y = Float (fromIntegral x * y)
-
     Float x * Float y = Float (x * y)
-
     _ * _ = Integer 0
-
     Bool True + Bool True = Bool True
     Bool _ + Bool _ = Bool False
     Char x + Bool y = Integer (toInteger (fromEnum x + fromEnum y))
@@ -85,29 +74,18 @@ instance Num Operand where
     Bool x + Integer y = Integer (toInteger (fromEnum x) + y)
     Float x + Bool y = Float (x + fromIntegral (fromEnum y))
     Bool x + Float y = Float (fromIntegral (fromEnum x) + y)
-
-    -- characters
     Char x + Char y = Integer (toInteger (fromEnum x + fromEnum y))
     Integer x + Char y = Integer (toInteger x + toInteger (fromEnum y))
     Char x + Integer y = Integer (toInteger (fromEnum x) + toInteger y)
     Char x + Float y = Float (fromIntegral (fromEnum x) + y)
     Float x + Char y = Float (x + fromIntegral (fromEnum y))
-
-    -- integers
     Integer x + Integer y = Integer (x + y)
     Float x + Integer y = Float (x + fromIntegral y)
     Integer x + Float y = Float (fromIntegral x + y)
-
-    -- floats
     Float x + Float y = Float (x + y)
-
-    -- lists
     List x + List y = List (x ++ y)
-
     _ + _ = Integer 0
-
     abs x = if x < 0 then x * (-1) else x
-
     signum x
         | x < 0 = -1
         | x > 0 = 1
@@ -124,23 +102,17 @@ instance Eq Operand where
     Float x == Bool y = x == fromIntegral (fromEnum y)
     Bool True == Float x = x /= 0
     Bool x == Float y = fromIntegral (fromEnum x) == y
-
     Char x == Char y = fromEnum x == fromEnum y
     Integer x == Char y = toInteger x == toInteger (fromEnum y)
     Char x == Integer y = toInteger (fromEnum x) == toInteger y
     Char x == Float y = fromIntegral (fromEnum x) == y
     Float x == Char y = x == fromIntegral (fromEnum y)
-
     Integer x == Integer y = x == y
     Float x == Integer y = x == fromIntegral y
     Integer x == Float y = fromIntegral x == y
-
     Float x == Float y = x == y
-
     List x == List y = x == y
-
     Struct x == Struct y = x == y
-
     _ == _ = False
 
 instance Ord Operand where
@@ -151,21 +123,16 @@ instance Ord Operand where
     Bool x <= Integer y = toInteger (fromEnum x) <= y
     Float x <= Bool y = x <= fromIntegral (fromEnum y)
     Bool x <= Float y = fromIntegral (fromEnum x) <= y
-
     Char x <= Char y = fromEnum x <= fromEnum y
     Integer x <= Char y = toInteger x <= toInteger (fromEnum y)
     Char x <= Integer y = toInteger (fromEnum x) <= toInteger y
     Char x <= Float y = fromIntegral (fromEnum x) <= y
     Float x <= Char y = x <= fromIntegral (fromEnum y)
-
     Integer x <= Integer y = x <= y
     Float x <= Integer y = x <= fromIntegral y
     Integer x <= Float y = fromIntegral x <= y
-
     Float x <= Float y = x <= y
-
     _ <= _ = False
-
     Bool x >= Bool y = x >= y
     Char x >= Bool y = fromEnum x >= fromEnum y
     Bool x >= Char y = fromEnum x >= fromEnum y
@@ -173,21 +140,16 @@ instance Ord Operand where
     Bool x >= Integer y = toInteger (fromEnum x) >= y
     Float x >= Bool y = x >= fromIntegral (fromEnum y)
     Bool x >= Float y = fromIntegral (fromEnum x) >= y
-
     Char x >= Char y = fromEnum x >= fromEnum y
     Integer x >= Char y = toInteger x >= toInteger (fromEnum y)
     Char x >= Integer y = toInteger (fromEnum x) >= toInteger y
     Char x >= Float y = fromIntegral (fromEnum x) >= y
     Float x >= Char y = x >= fromIntegral (fromEnum y)
-
     Integer x >= Integer y = x >= y
     Float x >= Integer y = x >= fromIntegral y
     Integer x >= Float y = fromIntegral x >= y
-
     Float x >= Float y = x >= y
-
     _ >= _ = False
-
     Bool x < Bool y = x < y
     Char x < Bool y = fromEnum x < fromEnum y
     Bool x < Char y = fromEnum x < fromEnum y
@@ -195,19 +157,15 @@ instance Ord Operand where
     Bool x < Integer y = toInteger (fromEnum x) < y
     Float x < Bool y = x < fromIntegral (fromEnum y)
     Bool x < Float y = fromIntegral (fromEnum x) < y
-
     Char x < Char y = fromEnum x < fromEnum y
     Integer x < Char y = toInteger x < toInteger (fromEnum y)
     Char x < Integer y = toInteger (fromEnum x) < toInteger y
     Char x < Float y = fromIntegral (fromEnum x) < y
     Float x < Char y = x < fromIntegral (fromEnum y)
-
     Integer x < Integer y = x < y
     Float x < Integer y = x < fromIntegral y
     Integer x < Float y = fromIntegral x < y
-
     Float x < Float y = x < y
-
     _ < _ = False
 
 data Operand
