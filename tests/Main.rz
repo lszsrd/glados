@@ -1,16 +1,19 @@
-
+struct foo {
+    Int: a,
+    Int: b,
+    Char: c
+}
 
 /* comment block
             */
 fn main() -> Int
 {
-    Int x = 42;
-    [Int] a = [1,2,4];
+    [Int] h = [1, 2, 56];
 
-    if (x == 42) {
-        ret 2 * 4 + 3;
-    } else {
-        ret -1 / 1.5;
+    for (Int i = 0; h[i]; i++) {
+        h[i] = 0;
     }
+
+    ret 0;
 }
 //endof file
