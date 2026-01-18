@@ -42,6 +42,7 @@ module ParserHelper (
 import qualified Ast as A
 import qualified Tokens as T
 import Data.List
+import Debug.Trace (trace)
 
 type SingleToken = (T.Token, (Int, Int))
 type Parser a = [SingleToken] -> Either String (a, [SingleToken])
@@ -82,15 +83,19 @@ parseMaybe :: Parser a -> Parser (Maybe a)
 parseMaybe f tokens = case f tokens of 
     Right (e, rest) -> Right (Just e, rest)
     Left e -> case findString "Undefined" e of
+        Nothing -> case findString "exists" e of
+            Just _ -> Left e
+            Nothing -> Right (Nothing, tokens)
         Just _ -> Left e
-        Nothing -> Right (Nothing, tokens)
 
 parseOr :: Parser a -> Parser a -> Parser a
 parseOr p1 p2 tokens = case p1 tokens of
     Right a -> Right a
     Left e -> case findString "Undefined" e of
+        Nothing -> case findString "exists" e of
+            Just _ -> Left e
+            Nothing -> p2 tokens 
         Just _ -> Left e
-        Nothing -> p2 tokens
 
 getIden :: A.Decl -> T.Identifier
 getIden (A.FunctionDecl n _ _ _) = n
