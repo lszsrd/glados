@@ -1,0 +1,68 @@
+FUNC babar 1
+PUSH_CHAR 'c'
+PUSH_CHAR 'c'
+PUSH_LIST 2
+STORE y
+
+STORE f
+LOAD y
+CALL feur 1
+STORE q
+LABEL for_start
+LOAD y
+CALL feur 1
+LOAD y
+LT
+JMP_IF_FALSE for_end
+PUSH_INT 0
+JMP_IF_FALSE endif
+PUSH_INT 0
+RET
+LABEL endif
+PUSH_INT 4
+PUSH_INT 2
+GT
+PUSH_INT 0
+EQ
+JMP_IF_FALSE endif
+PUSH_INT 1
+RET
+LABEL endif
+PUSH_BOOL True
+JMP_IF_FALSE endif
+PUSH_INT 12
+RET
+LABEL endif
+LOAD y
+PUSH_INT 1
+ADD
+STORE y
+JMP for_start
+LABEL for_end
+LOAD y
+CALL feur 1
+STORE y
+LOAD y
+RET
+ENDFUNC
+FUNC baz 0
+PUSH_INT 1
+PUSH_INT 2
+PUSH_INT 56
+PUSH_LIST 3
+STORE s
+
+STORE ll
+PUSH_INT 1
+STORE foo2do
+LOAD ll
+PUSH_INT 0
+EQ
+JMP_IF_FALSE endif
+NOP
+LABEL endif
+PUSH_INT -5
+STORE ll@i
+PUSH_INT 4
+STORE ParmCallDeclIdx (ParmCallDeclIdent "s") (ParmCallDeclLiteral (IntLiteral 1))
+ENDFUNC

@@ -47,30 +47,6 @@ parseCompoundStmt b f tokens = do
     Right (A.CompoundStmt stmts, rest3)
 
 -- | Takes an @'([A.Decl], A.Decl)'@ and a @'[SingleToken]'@ as parameter and
--- returns a __Either__ @'String'@ @'A.Stmt'@.
---
--- On success, this function returns a @'A.Stmt'@.
---
--- On failure, this function returns a pretty formatted message error.
---
--- This function is used to parse a Ternary statement.
-parseTernaryOperation :: ([A.Decl], A.Decl) -> Parser A.Stmt
-parseTernaryOperation f ((T.Punctuator (T.RBracket T.OpenRBracket), _) : r)
-    = do
-    (binaryOpExpr, rest2) <- parseBinaryOpExpr f r
-    (_, rest3) <- H.expectToken
-        (T.Punctuator (T.RBracket T.CloseRBracket)) "Expected ')'" rest2
-    (_, rest4) <- H.expectToken (T.Punctuator T.QMark) "Expected '?'" rest3
-    (compoundStmt1, rest5) <- parseCompoundStmt False f rest4
-    (_, rest6) <- H.expectToken (T.Punctuator T.Colon) "Expected ':'" rest5
-    (compoundStmt2, rest7) <- parseCompoundStmt False f rest6
-    Right (A.IfStmt binaryOpExpr compoundStmt1 (Just compoundStmt2), rest7)
-parseTernaryOperation _ [] = H.errorAt (1, 1)
-    "Expected TernaryExpr, got End Of Stream"
-parseTernaryOperation _ ((a, pos):_) = H.errorAt pos
-    ("Expected Ternary, got " ++ show a)
-
--- | Takes an @'([A.Decl], A.Decl)'@ and a @'[SingleToken]'@ as parameter and
 -- returns a __Either__ @'String'@ @'[A.Stmt]'@.
 --
 -- On success, this function returns a @'[A.Stmt]'@.
@@ -105,6 +81,7 @@ parseBuiltinTypes f tokens@((tok, pos) : _) = case tok of
     T.Keyword T.Char    -> parseDeclVarExpr f tokens
     T.Keyword T.Int     -> parseDeclVarExpr f tokens
     T.Keyword T.Float   -> parseDeclVarExpr f tokens
+    T.Keyword T.String  -> parseDeclVarExpr f tokens
     T.Punctuator (T.SBracket T.OpenSBracket) -> parseDeclVarExpr f tokens
     T.Punctuator (T.RBracket T.OpenRBracket) -> parseTernaryOperation f tokens
     _ -> H.errorAt pos "Unexpected token in stmt"
@@ -141,12 +118,10 @@ parseKeywords _ _  [] = H.errorAt (1, 1) "Unexpected end of input in statement"
 -- This function is used to parse a statement.
 parseStmt :: Bool -> ([A.Decl], A.Decl) -> Parser A.Stmt
 parseStmt b f tokens@((tok, _) : xs) = case tok of
-    T.Identifier id1 ->
+    T.Identifier _ ->
         case xs of
             ((T.Punctuator (T.RBracket T.OpenRBracket), _) : _) ->
                 parseCallExpr f tokens
-            ((T.Punctuator T.Arrow, _) : (T.Identifier id2, pos): rest3) ->
-                parseDeclStmtExpr f ((T.Identifier (id1 ++ "@" ++ id2), pos) : rest3)
             ((T.Identifier _, _) : (T.Punctuator (T.AssignOp _), _) : _) ->
                 parseDeclVarExpr f tokens
             _ -> parseDeclStmtExpr f tokens
@@ -331,6 +306,24 @@ parseFor f@(fl, _) tokens = do
     (bdy, rest3)    <- parseCompoundStmt True (fl, newF) bdyNRest
     Right (A.ForStmt vDecl binOp decl bdy, rest3)
 
+-- | Takes a @'(Int, Int)'@, two @'Identifier'@ and a @'([A.Decl], A.Decl)'@ as parameter and
+-- returns a __Either__ @'String'@ @'([A.Decl], A.Decl)'@.
+--
+-- On success, this function returns a @'([A.Decl], A.Decl)'@, the env of the for.
+--
+-- On failure, this function returns a pretty formatted message error.
+--
+-- This function is an helper to add a variable defined only in the foreach body.
+addForEachParm :: (Int, Int) -> T.Identifier -> T.Identifier ->
+    ([A.Decl], A.Decl) -> Either String ([A.Decl], A.Decl)
+addForEachParm pos nm lst f@(fl, A.FunctionDecl n p bdy ret) = do
+    var <- H.doesVarExists pos f lst
+    case H.getTypeDecl var of
+        Just (A.ListType tp) -> Right (fl, A.FunctionDecl n 
+            (A.ParmVarDeclExpr tp nm: p) bdy ret)
+        _ -> H.errorAt pos "Foreach var assignation could not happen"
+addForEachParm p _ _ _ = H.errorAt p "ForEach var definition seems wrong"
+
 -- | Takes a @'[SingleToken]'@ as parameter and
 -- returns a __Either__ @'String'@ @'A.Stmt'@.
 --
@@ -362,7 +355,9 @@ parseForeach f tokens = do
     (iterator, rest2) <- H.parseIdentifier rest1
     (_, rest3) <- H.expectToken (T.Punctuator (T.RBracket T.CloseRBracket))
         "Expected ')'" rest2
-    (body, rest4) <- parseCompoundStmt False f rest3
+
+    newP <- addForEachParm (H.getPos 0 rest1) container iterator f
+    (body, rest4) <- parseCompoundStmt False newP rest3
     Right (A.ForeachStmt container iterator body, rest4)
 
 -- | Takes an @'([A.Decl], A.Decl)'@ and a @'[SingleToken]'@ as parameter and
@@ -383,3 +378,27 @@ parseWhile f tokens = do
         (T.Punctuator (T.RBracket T.CloseRBracket)) "Expected ')'" rest2
     (body, rest3) <- parseCompoundStmt True f bdyNrest
     Right (A.WhileStmt cond body, rest3)
+
+-- | Takes an @'([A.Decl], A.Decl)'@ and a @'[SingleToken]'@ as parameter and
+-- returns a __Either__ @'String'@ @'A.Stmt'@.
+--
+-- On success, this function returns a @'A.Stmt'@.
+--
+-- On failure, this function returns a pretty formatted message error.
+--
+-- This function is used to parse a Ternary statement and format him to a if.
+parseTernaryOperation :: ([A.Decl], A.Decl) -> Parser A.Stmt
+parseTernaryOperation f ((T.Punctuator (T.RBracket T.OpenRBracket), _) : r)
+    = do
+    (binaryOpExpr, rest2) <- parseBinaryOpExpr f r
+    (_, rest3) <- H.expectToken
+        (T.Punctuator (T.RBracket T.CloseRBracket)) "Expected ')'" rest2
+    (_, rest4) <- H.expectToken (T.Punctuator T.QMark) "Expected '?'" rest3
+    (compoundStmt1, rest5) <- parseCompoundStmt False f rest4
+    (_, rest6) <- H.expectToken (T.Punctuator T.Colon) "Expected ':'" rest5
+    (compoundStmt2, rest7) <- parseCompoundStmt False f rest6
+    Right (A.IfStmt binaryOpExpr compoundStmt1 (Just compoundStmt2), rest7)
+parseTernaryOperation _ [] = H.errorAt (1, 1)
+    "Expected TernaryExpr, got End Of Stream"
+parseTernaryOperation _ ((a, pos):_) = H.errorAt pos
+    ("Expected Ternary, got " ++ show a)
