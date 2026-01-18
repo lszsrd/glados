@@ -59,7 +59,7 @@ parseStmtList _ _ tokens@((T.Punctuator (T.CBracket T.CloseCBracket), _) : _)
     = Right ([], tokens)
 parseStmtList b f@(fl, A.FunctionDecl n pvdelist bdy r) tokens = do
     (stmt, r1) <- parseStmt b f tokens
-    newParms <- H.addIfVarExpr (H.getPos 0 tokens) stmt fl pvdelist
+    newParms <- H.addIfVarExpr (H.getPos 0 tokens) stmt f pvdelist
     (stmts, rest2) <- parseStmtList b (fl, A.FunctionDecl n newParms bdy r) r1
     Right (stmt : stmts, rest2)
 parseStmtList _ _ [] = H.errorAt (1, 1)
@@ -250,13 +250,13 @@ parseForBody p tokens = do
 --
 -- This function is an helper to parse the rest of the for statement.
 parseTemp :: ([A.Decl], A.Decl) -> Parser (Maybe A.VarDeclStmt, A.Decl)
-parseTemp f@(fl, fun@(A.FunctionDecl n p bdy ret)) tokens = do
+parseTemp f@(_, fun@(A.FunctionDecl n p bdy ret)) tokens = do
     (decl, rest) <- H.parseMaybe (H.parseVarDeclStmt f) tokens
     (_, rest1) <- H.expectToken (T.Punctuator T.Semicolon) "Expected ';'" rest
     case decl of
         Nothing -> Right ((Nothing, fun), rest1)
         Just st -> do
-            newP <- H.addIfVarExpr (H.getPos 0 tokens) (A.DeclVarExpr st) fl p
+            newP <- H.addIfVarExpr (H.getPos 0 tokens) (A.DeclVarExpr st) f p
             Right ((decl, A.FunctionDecl n newP bdy ret), rest1)
 parseTemp _ e = H.errorAt (1, 1) ("Expected Expression, got " ++ show (head e))
 
