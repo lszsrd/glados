@@ -21,13 +21,11 @@ module Data (
 
 import System.IO (Handle)
 
-import Data.List (find)
-
 import OpCodes (Operand (..), Instruction (..))
 
 type Function = (String, [String], [Instruction])
 type Stack = [Operand]
-type Env = [(String, Operand)]
+type Env = [(String, Operand, Bool)]
 type Fds = [(Integer, Handle)]
 
 fetch :: String -> [Function] -> Maybe Function
@@ -49,15 +47,18 @@ popStackN x stack = if x > y
     where y = length stack
 
 getEnv :: Env -> String -> Maybe (String, Operand)
-getEnv x y = find (\(a, _) -> a == y) x
+getEnv x y = case filter (\(a, _, _) -> a == y) x of
+    [(a, b, _)] -> Just (a, b)
+    _ -> Nothing
 
 setEnv :: Env -> (String, Operand) -> Env
 setEnv x (y, z) = case getEnv x y of
-    Nothing -> x ++ [(y, z)]
-    _ -> map (\(a, b) -> if a == y then (y, z) else (a, b)) x
+    Nothing -> x ++ [(y, z, False)]
+    _ -> map (\(a, b, _) -> if a == y then (y, z, False) else (a, b, False)) x
 
 purgeEnv :: Env -> [String] -> Env
 purgeEnv [] _ = []
-purgeEnv ((x, y): xs) z = if x `elem` z
-    then (x, y): purgeEnv xs z
+purgeEnv ((x, y, True): xs) z = (x, y, True): purgeEnv xs z
+purgeEnv ((x, y, _): xs) z = if x `elem` z
+    then (x, y, False): purgeEnv xs z
     else purgeEnv xs z

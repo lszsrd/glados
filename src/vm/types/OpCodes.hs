@@ -27,7 +27,7 @@ instance Show Operand where
     show (Integer x) = show x
     show (Float x) = show x
     show (List x) = showList' x
-    show (Struct x) = show x
+    show (Struct x y z) = x ++ ": " ++ show (zip y z)
 
 instance Num Operand where
     Bool True - Bool False = Bool True
@@ -90,6 +90,7 @@ instance Num Operand where
         | x < 0 = -1
         | x > 0 = 1
         | otherwise = 0
+    fromInteger n = let a = fromInteger n in Integer a
 
 instance Eq Operand where
     Bool x == Bool y = x == y
@@ -112,7 +113,7 @@ instance Eq Operand where
     Integer x == Float y = fromIntegral x == y
     Float x == Float y = x == y
     List x == List y = x == y
-    Struct x == Struct y = x == y
+    Struct x _ y == Struct x' _ y' = x == x' && y == y'
     _ == _ = False
 
 instance Ord Operand where
@@ -174,7 +175,7 @@ data Operand
     | Integer Integer
     | Float Float
     | List [Operand]
-    | Struct [Operand]
+    | Struct Identifier [Identifier] [Operand]
 
 data Instruction
     = Nop

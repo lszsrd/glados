@@ -37,7 +37,7 @@ run x = case parseFunctions $ lines x of
             case y of
                 Left e -> hPutStrLn stderr e >> exitFailure
                 Right Nothing -> return ()
-                Right (Just z) -> putStrLn $ "### exit code " ++ show z
+                Right (Just z) -> putStrLn $ "## exit code " ++ show z ++ " ##"
 
 main :: IO ()
 main = do
