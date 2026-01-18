@@ -180,6 +180,7 @@ data Instruction
     = Nop
     | Call Identifier Int
     | Load Identifier
+    | Ind
     | Store Identifier
     | Push Operand
     | PushList Int
