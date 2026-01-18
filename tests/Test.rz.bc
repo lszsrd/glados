@@ -1,17 +1,17 @@
 FUNC babar 1
-PUSH_CHAR 'c'
-PUSH_CHAR 'c'
-PUSH_LIST 2
+PUSH_INT 5
 STORE y
 
 STORE f
+PUSH_INT 1
+STORE f@b@i@i
 LOAD y
 CALL feur 1
 STORE q
 LABEL for_start
 LOAD y
 CALL feur 1
-LOAD y
+PUSH_INT 1
 LT
 JMP_IF_FALSE for_end
 PUSH_INT 0

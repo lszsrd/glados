@@ -14,6 +14,7 @@ import Test.HUnit
 import qualified TestsLexer
 import qualified Control.Monad
 import qualified TestsParser
+import qualified TestsAst
 
 runModuleTests :: String -> String -> Test -> IO ()
 runModuleTests name path tests = do
@@ -27,3 +28,4 @@ main :: IO ()
 main = do
     runModuleTests "Lexer" "frontend/rizz" TestsLexer.tests
     runModuleTests "Parser" "frontend/rizz" TestsParser.tests
+    runModuleTests "Rizz-AST" "frontend/rizz/types" TestsAst.tests
