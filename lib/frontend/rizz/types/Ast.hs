@@ -135,7 +135,7 @@ data Decl
     --
     -- Note that a variable that initializes itself is a __semantic violation__!
     | RecordDecl RecordDeclExpr
-    -- ^ Structure declaration, expressed in rizz code like @\`struct Foo {Int: x; Int y; Bool: alive;}\`@.
+    -- ^ Structure declaration, expressed in rizz code like @\`struct Foo {Int: x, Int y, Bool: alive}\`@.
     --
     -- A @'RecordDecl'@ rizz grammar in-code is as follow, in the given order:
     --

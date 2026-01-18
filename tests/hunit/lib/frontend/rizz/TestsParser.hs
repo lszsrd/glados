@@ -29,7 +29,7 @@ tests = TestList                        [
 testsParser = TestList                  [
     testParser1, testParser2, testParser3,
     testParser4, testParser5, testParser6,
-    testParser7
+    testParser7, testParser8, testParser9
                                         ]
 
 testParser1 = TestCase (assertEqual "parser []" (Right []) (parser []))
@@ -49,13 +49,18 @@ testParser6 = TestCase (assertEqual "parser \"(in func) while (0) {}\""
 testParser7 = TestCase (assertEqual "parser \"(in func) for (;;) {}\""
     (Right [A.FunctionDecl "f" [A.ParmVarDeclExpr A.Integer "a"] (A.CompoundStmt [A.ForStmt Nothing Nothing Nothing (A.CompoundStmt [])]) Nothing])
     (runParse "fn f(Int: a)  { for (;;) {} }"))
--- testParser8 = TestCase (assertEqual "parser \"(in func) foreach (foo : b) {}\""
---     (Right [A.FunctionDecl "f" [A.ParmVarDeclExpr A.Integer "a"] (A.CompoundStmt []) Nothing])
---     (runParse "fn f(Int: a) { foreach (:) {} }"))
+testParser8 = TestCase (assertEqual "parser \"(in func) foreach (foo : b) {}\""
+    (Right [A.FunctionDecl "f" [A.ParmVarDeclExpr A.Integer "a"] (A.CompoundStmt [A.DeclVarExpr (A.VarDeclStmt (A.ListType A.Character) "h" T.Equal (A.ParmCallDeclLiteral (T.ListLiteral [T.CharLiteral 'h',T.CharLiteral 'e',T.CharLiteral 'l',T.CharLiteral 'l',T.CharLiteral 'o']))),A.ForeachStmt "le" "h" (A.CompoundStmt [])]) Nothing])
+    (runParse "fn f(Int: a) { [Char] h = \"hello\"; foreach (le : h ) {} }"))
+testParser9 = TestCase (assertEqual "parser \"(in func) Int a = (True == False) ? {0} : {1} )\""
+    (Right [A.FunctionDecl "f" [] (A.CompoundStmt [A.DeclVarExpr (A.VarDeclStmt A.Integer "a" T.Equal (A.ParmCallDeclLiteral (T.IntLiteral 0))),A.IfStmt (A.BinaryOpExpr (A.BinaryOpParm (A.ParmCallDeclLiteral (T.BoolLiteral True))) T.Eq (A.BinaryOpParm (A.ParmCallDeclLiteral (T.BoolLiteral False)))) (A.CompoundStmt [A.DeclStmt (A.DeclAssignStmtLiteral "a" T.Equal (A.ParmCallDeclLiteral (T.IntLiteral 1)))]) (Just (A.CompoundStmt [A.DeclStmt (A.DeclAssignStmtLiteral "a" T.Equal (A.ParmCallDeclLiteral (T.IntLiteral 5)))]))]) Nothing])
+    (runParse "fn f() { Int a = 0; (True == False) ? {a = 1;} : {a = 5;} }"))
 
 
 testPreciselyIf = TestList              [
-    testIf1, testIf2, testIf3, testIf4
+    testIf1, testIf2, testIf3,
+    testIf4, testIf5, testIf6,
+    testIf7, testIf8 
                                         ]
 
 testIf1 = TestCase (assertEqual "parser \"(in func) if (foo(y)) {}\""
@@ -65,15 +70,27 @@ testIf2 = TestCase (assertEqual "parser \"(in func) if (0) {}\""
     (Right [A.FunctionDecl "f" [A.ParmVarDeclExpr A.Integer "a"] (A.CompoundStmt [A.IfStmt (A.BinaryOpConst (A.ParmCallDeclLiteral (T.IntLiteral 0))) (A.CompoundStmt []) Nothing]) Nothing])
     (runParse "fn f(Int: a) { if (0) {} }"))
 testIf3 = TestCase (assertEqual "parser \"(in func) if ((4 > 2) == 1) {}\""
-    (Right [A.FunctionDecl "f" [A.ParmVarDeclExpr A.Integer "a"] (A.CompoundStmt [A.IfStmt (A.BinaryOpExpr (A.BinaryOpParmBOp (A.BinaryOpExpr (A.BinaryOpParm (A.ParmCallDeclLiteral (T.IntLiteral 4))) T.Gt (A.BinaryOpParm (A.ParmCallDeclLiteral (T.IntLiteral 2))))) T.Eq (A.BinaryOpParm (A.ParmCallDeclLiteral (T.IntLiteral 1)))) (A.CompoundStmt []) Nothing]) Nothing])
-    (runParse "fn f(Int: a) { if ((4 > 2) == 1) {} }"))
+    (Right [A.FunctionDecl "f" [A.ParmVarDeclExpr A.SinglePrecision "a"] (A.CompoundStmt [A.IfStmt (A.BinaryOpExpr (A.BinaryOpParmBOp (A.BinaryOpExpr (A.BinaryOpParm (A.ParmCallDeclLiteral (T.IntLiteral 4))) T.Gt (A.BinaryOpParm (A.ParmCallDeclLiteral (T.IntLiteral 2))))) T.Eq (A.BinaryOpParm (A.ParmCallDeclLiteral (T.IntLiteral 1)))) (A.CompoundStmt []) Nothing]) Nothing])
+    (runParse "fn f(Float: a) { if ((4 > 2) == 1) {} }"))
 testIf4 = TestCase (assertEqual "parser \"(in func) if (foo(y) == 0) {}\""
     (Right [A.FunctionDecl "f" [A.ParmVarDeclExpr A.Integer "a"] (A.CompoundStmt [A.DeclVarExpr (A.VarDeclStmt A.Integer "y" T.Equal (A.ParmCallDeclLiteral (T.IntLiteral 0))),A.IfStmt (A.BinaryOpExpr (A.BinaryOpParm (A.ParmCallDeclExpr (A.CallExprDecl "foo" [A.ParmCallDeclIdent "y"]))) T.Eq (A.BinaryOpParm (A.ParmCallDeclLiteral (T.IntLiteral 0)))) (A.CompoundStmt []) Nothing]) Nothing])
     (runParse "fn f(Int: a) { Int y = 0; if (foo(y) == 0) {} }"))
-
+testIf5 = TestCase (assertEqual "parser \"(in func) if (False) { foo(10); } else { foo(20); }\""
+    (Right [A.FunctionDecl "f" [A.ParmVarDeclExpr A.Boolean "a"] (A.CompoundStmt [A.DeclVarExpr (A.VarDeclStmt A.Integer "y" T.Equal (A.ParmCallDeclLiteral (T.IntLiteral 0))),A.IfStmt (A.BinaryOpConst (A.ParmCallDeclLiteral (T.BoolLiteral False))) (A.CompoundStmt [A.CallExpr (A.CallExprDecl "foo" [A.ParmCallDeclLiteral (T.IntLiteral 10)])]) (Just (A.CompoundStmt [A.CallExpr (A.CallExprDecl "foo" [A.ParmCallDeclLiteral (T.IntLiteral 20)])]))]) Nothing])
+    (runParse "fn f(Bool: a) { Int y = 0; if (False) { foo(10); } else { foo(20); }}"))
+testIf6 = TestCase (assertEqual "parser \"(in func) if 4\""
+    (Left "1:30 Expected '(', got 4")
+    (runParse "fn f(Int: a) { Int y = 0; if 4 }"))
+testIf7 = TestCase (assertEqual "parser \"(in func) if(4\""
+    (Left "1:35 Expected ')', got '}'")
+    (runParse "fn f(Int: a) { Float y = 0; if (4 }"))
+testIf8 = TestCase (assertEqual "parser \"(in func) if (True) { continue; }\""
+    (Left "1:40 break or continue outside loop scope.")
+    (runParse "fn f(Int: a) { Bool y = False; if (y) {continue;}}"))
 
 testPreciselyFor = TestList             [
-    testFor1, testFor2, testFor3
+    testFor1, testFor2, testFor3,
+    testFor4, testFor5, testFor6
                                         ]
 
 testFor1 = TestCase (assertEqual "parser \"(in func) for (Int a = 10;;) {}\""
@@ -85,3 +102,12 @@ testFor2 = TestCase (assertEqual "parser \"(in func) for (Int a = 10; a < 12; a+
 testFor3 = TestCase (assertEqual "parser \"(in func) for (; a == 0; a--) {}\""
     (Right [A.FunctionDecl "f" [A.ParmVarDeclExpr A.Integer "a"] (A.CompoundStmt [A.ForStmt Nothing (Just (A.BinaryOpExpr (A.BinaryOpParm (A.ParmCallDeclIdent "a")) T.Eq (A.BinaryOpParm (A.ParmCallDeclLiteral (T.IntLiteral 0))))) (Just (A.DeclAssignStmtUnary (A.UnaryOperatorExpr "a" T.IdentDecrement))) (A.CompoundStmt [])]) Nothing])
     (runParse "fn f(Int: a) { for (; a == 0; a--) {} }"))
+testFor4 = TestCase (assertEqual "parser \"(in func) for (; feur == 0; a-- {}\""
+    (Left "1:35 Expected ')', got '{'")
+    (runParse "fn f(Int: a) { for (; a == 0; a-- {} }"))
+testFor5 = TestCase (assertEqual "parser \"(in func) for (; a == 0; a--) {continue; break;}\""
+    (Right [A.FunctionDecl "f" [A.ParmVarDeclExpr A.Integer "a"] (A.CompoundStmt [A.ForStmt Nothing (Just (A.BinaryOpExpr (A.BinaryOpParm (A.ParmCallDeclIdent "a")) T.Eq (A.BinaryOpParm (A.ParmCallDeclLiteral (T.IntLiteral 0))))) (Just (A.DeclAssignStmtUnary (A.UnaryOperatorExpr "a" T.IdentDecrement))) (A.CompoundStmt [A.LoopControlStmt T.Continue,A.LoopControlStmt T.Break])]) Nothing])
+    (runParse "fn f(Int: a) { for (; a == 0; a--) {continue; break;} }"))
+testFor6 = TestCase (assertEqual "parser \"(in func) for (Int a = 1; a == 0; a--) {}\""
+    (Left "1:24 variable already exists \"a\"")
+    (runParse "fn f(Int: a) { for (Int a = 0; a == 0; a--) {} }"))

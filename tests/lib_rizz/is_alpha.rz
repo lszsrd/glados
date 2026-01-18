@@ -1,0 +1,17 @@
+fn is_alpha(Char: c) -> Bool
+{
+    if (c < 'A' && c > 'z') {
+        ret False;
+    }
+    ret True;
+}
+
+fn main() -> Int
+{
+    if (is_alpha('C')) {
+        ret 0;
+    } else {
+        ret 1;
+    }
+    ret 0;
+}

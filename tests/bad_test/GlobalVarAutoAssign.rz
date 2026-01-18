@@ -1,0 +1,6 @@
+Int a = a;
+
+fn main() -> Int
+{
+    ret a;
+}

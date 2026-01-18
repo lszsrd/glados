@@ -1,5 +1,5 @@
 fn main() -> Int
 {
-    a = 0;
+    1 + 2;
     ret 0;
 }

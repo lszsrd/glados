@@ -1,0 +1,14 @@
+fn strncmp([Char]: s1, [Char]: s2, Int: n) -> Int
+{
+    for (Int i = 0; s1[i] && s2[i] && i < n; i++) {
+        if (s1[i] < s2[i]) {
+            ret -1;
+        }
+        if (s1[i] > s2[i]) {
+            ret 1;
+        }
+    }
+    ret 0;
+}
+
+fn main() -> Int { ret 0; }

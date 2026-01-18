@@ -1,0 +1,11 @@
+fn main() -> Int
+{
+    [Int] tab = [1, 2, 3];
+
+    foreach (tab : tab) {
+        if (t == 4) {
+            ret 1;
+        }
+    }
+    ret 0;
+}

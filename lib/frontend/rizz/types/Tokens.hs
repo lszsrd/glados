@@ -46,7 +46,7 @@ instance Show Token where
     show (Keyword Bool) = "'Bool'"
     show (Keyword Char) = "'Char'"
     show (Keyword Int) = "'Int'"
-    show (Keyword Float) = "'Float"
+    show (Keyword Float) = "'Float'"
     show (Keyword Double) = "'Double'"
     show (Keyword Struct) = "'struct'"
     show (Keyword String) = "'String'"

@@ -101,6 +101,7 @@ test-suite unit_tests
     other-modules:
         TestsLexer
         TestsParser
+        TestsAst
     build-depends:      base, HUnit, frontend-rizz, frontend-lisp, backend-lisp, backend-rizz
     mixins:
         frontend-lisp (Tokens as Lisp.Tokens, Ast as Lisp.Ast, Lexer as Lisp.Lexer, Parser as Lisp.Parser)

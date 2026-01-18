@@ -1,4 +1,6 @@
+Int a;
+
 fn main() -> Int
 {
-
+    ret a;
 }
