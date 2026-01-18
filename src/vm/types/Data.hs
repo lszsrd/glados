@@ -25,8 +25,6 @@ import Data.List (find)
 
 import OpCodes (Operand (..), Instruction (..))
 
-import Debug.Trace
-
 type Function = (String, [String], [Instruction])
 type Stack = [Operand]
 type Env = [(String, Operand)]

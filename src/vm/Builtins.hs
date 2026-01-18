@@ -9,17 +9,11 @@ module Builtins (
     getFd
     , gOpen
     , gSeek
+    , gRead
+    , gWrite
 ) where
 
-import System.IO    (
-    Handle,
-    IOMode,
-    SeekMode,
-    openFile,
-    hSetBinaryMode,
-    hFlush,
-    hSeek,
-                    )
+import System.IO (Handle, IOMode, SeekMode, openFile, hSetBinaryMode, hFlush, hSeek)
 
 import OpCodes (Operand (..), showList')
 import Data (Stack, Fds, popStackN)
@@ -41,8 +35,29 @@ gOpen stack mode = case popStackN 1 stack of
 
 gSeek :: Stack -> Fds -> SeekMode -> IO (Maybe String)
 gSeek stack fds mode = case popStackN 2 stack of
-    Just ([Integer x, Integer y], z) -> case getFd x fds of
+    Just ([Integer x, Integer y], _) -> case getFd x fds of
         Left e -> return (Just $ "seek: " ++ e)
         Right handle -> hSeek handle mode y >> return (Nothing)
     Just (x, _) -> return (Just $ "seek: expected Int, got " ++ show x)
     _ -> return (Just "seek: not enough operands")
+
+gRead :: Stack -> Fds -> (Handle -> IO (a)) -> IO (Either String (a, Stack))
+gRead stack fds callback = case popStackN 1 stack of
+    Just ([Integer x], stack') -> case getFd x fds of
+        Left e -> return (Left $ "read: " ++ e)
+        Right handle -> do
+            z <- callback handle
+            return (Right (z, stack'))
+    Just ([x], _) -> return (Left $ "read: expected Int, got " ++ show x)
+    _ -> return (Left "read: not enough operands")
+
+gWrite :: Stack -> Fds -> (Handle -> String -> IO ()) -> IO (Either String Stack)
+gWrite stack fds callback = case popStackN 2 stack of
+    Just ([Integer x, y], stack') -> case getFd x fds of
+        Left e -> return (Left $ "write: " ++ e)
+        Right handle -> do
+            _ <- callback handle (show y)
+            _ <- hFlush handle
+            return (Right stack')
+    Just ([x], _) -> return (Left $ "write: expected Int, got " ++ show x)
+    _ -> return (Left "write: not enough operands")
