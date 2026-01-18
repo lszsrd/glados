@@ -1,0 +1,17 @@
+fn is_num(Char: c) -> Bool
+{
+    if (c < '0' && c > '9') {
+        ret False;
+    }
+    ret True;
+}
+
+fn main() -> Int
+{
+    if (is_num('2')) {
+        ret 1;
+    } else {
+        ret 0;
+    }
+    ret 0;
+}

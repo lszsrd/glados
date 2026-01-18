@@ -1,0 +1,9 @@
+fn function() -> Int
+{
+    ret 0;
+}
+
+fn main() -> Int
+{
+    ret function();
+}

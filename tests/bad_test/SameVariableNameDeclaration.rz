@@ -1,0 +1,7 @@
+fn main() -> Int
+{
+    Int a = 0;
+    Char a = 'c';
+
+    ret a;
+}

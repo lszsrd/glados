@@ -1,5 +1,7 @@
+Int a = 0;
+Int a = 0;
+
 fn main() -> Int
 {
-    a = 0;
     ret 0;
 }
