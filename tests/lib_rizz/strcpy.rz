@@ -1,0 +1,12 @@
+fn strcpy([Char]: dest, [Char]: src) -> [Char]
+{
+    Int i = 0;
+
+    foreach (s : src) {
+        dest[i] = s;
+        i++;
+    }
+    ret dest;
+}
+
+fn main() -> Int { ret 0; }

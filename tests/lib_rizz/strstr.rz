@@ -1,0 +1,21 @@
+fn strstr([Char]: haystack, [Char]: needle) -> Bool
+{
+    Int i = 0;
+    Int len = 0;
+
+    foreach (n : needle) {
+        len++;
+    }
+    foreach (h : haystack) {
+        while (i < len && h == needle[i]) {
+            i++;
+        }
+        if (len == i) {
+            ret True;
+        }
+        i = 0;
+    }
+    ret False;
+}
+
+fn main() -> Int { ret 0; }
