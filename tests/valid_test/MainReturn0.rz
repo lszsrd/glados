@@ -1,0 +1,5 @@
+// Main function
+fn main() -> Int
+{
+    ret 0;
+}
