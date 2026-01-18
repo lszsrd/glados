@@ -15,25 +15,38 @@ module Parser (
 import Text.Read (readMaybe)
 
 import OpCodes (Operand (..), Instruction (..))
-import Data (Function)
+import Data (Function, Struct)
 
-parseFunctions :: [String] -> Either String [Function]
-parseFunctions [] = Right []
+-- takes all files a a list of lines
+parseFunctions :: [String] -> Either String ([Function], [Struct])
+parseFunctions [] = Right ([], [])
 parseFunctions (x: xs) = case words x of
     [] -> parseFunctions xs
+    ("STRUCT": y: ys: ys') -> case readMaybe ys :: Maybe Int of
+        Nothing -> Left $ "STRUCT: invalid fields count " ++ show y
+        Just z -> if z /= length ys' then Left "STRUCT: invalid fields count"
+            else hParseStruct xs y ys'
+    ("STRUCT": _) -> Left "STRUCT: missing structure name"
     ("FUNC": y: ys) -> hParseFunctions xs y ys
     ("FUNC": _) -> Left "FUNC: missing function name"
-    _ -> Left ("not a function: " ++ x)
+    _ -> Left ("parse error: not a function nor a structure: " ++ x)
 
-hParseFunctions :: [String] -> String -> [String] -> Either String [Function]
-hParseFunctions xs fnName args = case parseInstructions xs of
+-- takes the current line as broken via words, the function's name and args
+hParseFunctions :: [String] -> String -> [String] -> Either String ([Function], [Struct])
+hParseFunctions x y z = case parseInstructions x of
     Left e -> Left e
-    Right (_, []) -> Left ("FUNC: missing ENDFUNC at EOF: " ++ fnName)
-    Right (fnBody, z: z') -> if z /= "ENDFUNC"
-        then Left ("FUNC: missing ENDFUNC: " ++ fnName)
-        else case parseFunctions z' of
+    Right (_, []) -> Left ("FUNC: missing ENDFUNC at EOF: " ++ y)
+    Right (a, b: c) -> if b /= "ENDFUNC"
+        then Left ("FUNC: missing ENDFUNC: " ++ y)
+        else case parseFunctions c of
             Left e -> Left e
-            Right functions -> Right $ (fnName, args, fnBody): functions
+            Right (functions, structs) -> Right ((y, z, a): functions, structs)
+
+-- takes the current line as broken via words, the struct's name and fields
+hParseStruct :: [String] -> String -> [String] -> Either String ([Function], [Struct])
+hParseStruct x y z = case parseFunctions x of
+    Left e -> Left e
+    Right (functions, structs) -> Right (functions, (y, z): structs)
 
 parseInstructions :: [String] -> Either String ([Instruction], [String])
 parseInstructions [] = Right ([], [])
@@ -96,6 +109,13 @@ parseInstruction ("PUSH_LIST": x) = case hParseInstruction "PUSH_LIST" x 1 of
     Right y -> case readMaybe (head y) :: Maybe Int of
         Nothing -> Left ("PUSH_FLOAT: invalid operand: " ++ unwords y)
         Just operand -> Right $ PushList operand
+parseInstruction ("BUILD_STRUCT": x)
+    = case hParseInstruction "BUILD_STRUCT" x 2 of
+        Left e -> Left e
+        Right [a, b] -> case readMaybe b :: Maybe Int of
+            Just z -> Right $ PushStruct a z
+            _ -> Left ("BUILD_STRUCT: invalid operand: " ++ show b)
+        _ -> Left ("BUILD_STRUCT: invalid operands: " ++ unwords x)
 parseInstruction ("POP": x) = case hParseInstruction "POP" x 0 of
     Left e -> Left e
     Right _ -> Right Pop

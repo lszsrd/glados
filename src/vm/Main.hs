@@ -20,6 +20,7 @@ import Interpreter (call)
 fst3 :: (a, b, c) -> a
 fst3 (x, _, _) = x
 
+-- also check that no structs share the same name
 searchFunctionMD :: [[String]] -> String -> Maybe String
 searchFunctionMD [x@(_: xs), ys] y = case dropWhile (/= y) x of
     [] -> searchFunctionMD [xs, ys] y
@@ -30,14 +31,14 @@ searchFunctionMD _ _ = Nothing
 run :: String -> IO ()
 run x = case parseFunctions $ lines x of
     Left e -> hPutStrLn stderr e >> exitFailure
-    Right ys -> case searchFunctionMD (replicate 2 (fst3 $ unzip3 ys)) [] of
+    Right (y, z) -> case searchFunctionMD (replicate 2 (fst3 $ unzip3 y)) [] of
         Just e -> hPutStrLn stderr e >> exitFailure
         Nothing -> do
-            y <- call "main" ys [] [] [(0, stdin), (1, stdout), (2, stderr)]
-            case y of
+            a <- call "main" (y, z) [] [] [(0, stdin), (1, stdout), (2, stderr)]
+            case a of
                 Left e -> hPutStrLn stderr e >> exitFailure
                 Right Nothing -> return ()
-                Right (Just z) -> putStrLn $ "## exit code " ++ show z ++ " ##"
+                Right (Just b) -> putStrLn $ "## exit code " ++ show b ++ " ##"
 
 main :: IO ()
 main = do

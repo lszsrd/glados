@@ -7,11 +7,13 @@
 
 module Data (
     Function
+    , Struct
     , Stack
     , Env
     , Fds
 
     , fetch
+    , getStructBP
     , jumpTo
     , popStackN
     , getEnv
@@ -24,6 +26,7 @@ import System.IO (Handle)
 import OpCodes (Operand (..), Instruction (..))
 
 type Function = (String, [String], [Instruction])
+type Struct = (String, [String])
 type Stack = [Operand]
 type Env = [(String, Operand, Bool)]
 type Fds = [(Integer, Handle)]
@@ -33,6 +36,11 @@ fetch _ [] = Nothing
 fetch x (y@(y', _, _): ys) = if x == y'
     then Just y
     else fetch x ys
+
+getStructBP :: [Struct] -> String -> Maybe Struct
+getStructBP x y = case filter (\(a, _) -> a == y) x of
+    [(a, b)] -> Just (a, b)
+    _ -> Nothing
 
 jumpTo :: String -> [Instruction] -> Maybe [Instruction]
 jumpTo _ [] = Nothing

@@ -21,10 +21,10 @@ import Foreign (FunPtr)
 import System.Random
 
 import OpCodes (Operand (..), Instruction (..), div, mod)
-import Data (Function, Stack, Env, Fds, fetch, jumpTo, popStackN, setEnv, getEnv, purgeEnv)
+import Data (Function, Struct, Stack, Env, Fds, fetch, getStructBP, jumpTo, popStackN, setEnv, getEnv, purgeEnv)
 import Builtins (getFd, gOpen, gSeek, gRead, gWrite)
 
--- TODO: struct, foreach (issues with bytecode) and global variables
+-- TODO: structs and global variables
 
 foreign import ccall "stdlib.h &exit"
   p_exit :: FunPtr (CInt -> IO ())
@@ -32,12 +32,12 @@ foreign import ccall "stdlib.h &exit"
 foreign import ccall "dynamic"
   run_exit :: FunPtr (CInt -> IO ()) -> (CInt -> IO ())
 
-call :: String -> [Function] -> Stack -> Env -> Fds -> IO (Either String (Maybe Operand))
-call function x _ env fds = case fetch function x of
+call :: String -> ([Function], [Struct]) -> Stack -> Env -> Fds -> IO (Either String (Maybe Operand))
+call function x _ env fds = case fetch function (fst x) of
     Just (_, y, z) -> exec (z, z) x [] (purgeEnv env y) fds
     _ -> return (Left $ "CALL: call to undeclared function " ++ function)
 
-open :: ([Instruction], [Instruction]) -> [Function] -> Stack -> Env -> Fds -> IOMode -> IO (Either String (Maybe Operand))
+open :: ([Instruction], [Instruction]) -> ([Function], [Struct]) -> Stack -> Env -> Fds -> IOMode -> IO (Either String (Maybe Operand))
 open x y stack env fds mode = do
     z <- gOpen stack mode
     case z of
@@ -45,7 +45,7 @@ open x y stack env fds mode = do
         Right z' -> exec x y (stack ++ [Integer fd]) env (fds ++ [(fd, z')])
         where fd = 1 + maximum (map fst fds)
 
-seek :: ([Instruction], [Instruction]) -> [Function] -> Stack -> Env -> Fds -> SeekMode -> IO (Either String (Maybe Operand))
+seek :: ([Instruction], [Instruction]) -> ([Function], [Struct]) -> Stack -> Env -> Fds -> SeekMode -> IO (Either String (Maybe Operand))
 seek x y stack env fds mode = do
     z <- gSeek stack fds mode
     case z of
@@ -58,7 +58,7 @@ stringToList (x: xs) = case stringToList xs of
     List y -> List $ Char x: y
     y -> y
 
-exec :: ([Instruction], [Instruction]) -> [Function] -> Stack -> Env -> Fds -> IO (Either String (Maybe Operand))
+exec :: ([Instruction], [Instruction]) -> ([Function], [Struct]) -> Stack -> Env -> Fds -> IO (Either String (Maybe Operand))
 exec (Nop: x, y) z stack env fds = exec (x, y) z stack env fds
 exec (Call "exit" _: _, _) _ stack _ _ = case popStackN 1 stack of
     Just ([x], _) -> return (Right $ Just x)
@@ -167,9 +167,15 @@ exec (Call function argv: x, y) z stack env fds = do
         Left e -> return (Left e)
         Right (Just a) -> exec (x, y) z (stack ++ [a]) env fds
         Right Nothing -> exec (x, y) z stack env fds
-exec (Load identifier: x, y) z stack env fds = case getEnv env identifier of
-    Nothing -> return (Left $ "LOAD " ++ identifier ++ ": not in env")
-    Just (_, a) -> exec (x, y) z (stack ++ [a]) env fds
+exec (Load ident: x, y) z stack env fds = case break (== '@') ident of
+    (_, []) -> case getEnv env ident of
+        Nothing -> return (Left $ "LOAD " ++ ident ++ ": not in env")
+        Just (_, a) -> exec (x, y) z (stack ++ [a]) env fds
+    (a, _: b) -> case getEnv env a of -- handle struct's field being a struct
+        Just (_, Struct c d e) -> case filter (\(f, _) -> f == b) (zip d e) of
+            [] -> return (Left $ "LOAD " ++ c ++ ": no field " ++ b)
+            (_, operand): _ -> exec (x, y) z (stack ++ [operand]) env fds
+        _ -> return (Left $ "LOAD " ++ ident ++ ": not in env")
 exec (Ind: x, y) z stack env fds = case popStackN 2 stack of
     Just ([List a, Integer b], stack') -> if fromIntegral b > length a
         then return (Left $ "IND: index out of bound: " ++ show b)
@@ -184,6 +190,13 @@ exec (PushList a: x, y) z stack env fds = if length stack < a
     then return (Left "PUSH_LIST: not enough operands on stack")
     else exec (x, y) z (take c stack ++ [List $ drop c stack]) env fds
     where c = length stack - a
+exec (PushStruct _ x: _, _) _ _ _ _
+    | x <= 0 = return (Left "BUILD_STRUCT: invalid struct size")
+exec (PushStruct a b: x, y) (z, z') stack env fds = case popStackN b stack of
+    Just (c, stack') -> case getStructBP z' a of
+        Nothing -> return (Left $ "BUILD_STRUCT: undefined struct " ++ a)
+        Just (_, d) -> exec (x, y) (z, z') (stack' ++ [Struct a d c]) env fds
+    _ -> return (Left "BUILD_STRUCT: not enough operands on stack")
 exec (Pop: x, y) z [] env fds = exec (x, y) z [] env fds
 exec (Pop: x, y) z stack env fds = exec (x, y) z (init stack) env fds
 exec (Jump a: _, y) z stack env fds = case jumpTo a y of

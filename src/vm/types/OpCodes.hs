@@ -185,6 +185,7 @@ data Instruction
     | Store Identifier
     | Push Operand
     | PushList Int
+    | PushStruct Identifier Int
     | Pop
     | Jump Label
     | JumpFalse Label
