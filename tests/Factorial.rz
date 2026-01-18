@@ -1,6 +1,14 @@
+/* struct Vec2 {
+    Int: x,
+    Int: y
+}
+
+Int foo = 0; */
+
 fn main() -> Int
 {
     Int x = rand(5, 100);
+    // Vec2 v = {0, 0};
     [Char] z = "hello";
 
     /* foreach (foo : z) {

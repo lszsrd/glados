@@ -24,11 +24,13 @@ import OpCodes (Operand (..), Instruction (..), div, mod)
 import Data (Function, Stack, Env, Fds, fetch, jumpTo, popStackN, setEnv, getEnv, purgeEnv)
 import Builtins (getFd, gOpen, gSeek, gRead, gWrite)
 
+-- TODO: struct, foreach (issues with bytecode), namespaces and global variables
+
 foreign import ccall "stdlib.h &exit"
-  p_exit:: FunPtr (CInt -> IO ())
+  p_exit :: FunPtr (CInt -> IO ())
 
 foreign import ccall "dynamic"
-  run_exit:: FunPtr (CInt -> IO ()) -> (CInt -> IO ())
+  run_exit :: FunPtr (CInt -> IO ()) -> (CInt -> IO ())
 
 call :: String -> [Function] -> Stack -> Env -> Fds -> IO (Either String (Maybe Operand))
 call function x _ env fds = case fetch function x of
@@ -67,10 +69,14 @@ exec (Call "cexit" _: _, _) _ stack _ _ = case popStackN 1 stack of
         return $ Left []
     Just ([x], _) -> return $ Left ("cexit: expected Char, got " ++ show x)
     _ -> return (Left "cexit: not enough operands")
-exec (Call "open_r" _: x, y) z stack env fds = open (x, y) z stack env fds ReadMode
-exec (Call "open_w" _: x, y) z stack env fds = open (x, y) z stack env fds WriteMode
-exec (Call "open_a" _: x, y) z stack env fds = open (x, y) z stack env fds AppendMode
-exec (Call "open_rw" _: x, y) z stack env fds = open (x, y) z stack env fds ReadWriteMode
+exec (Call "open_r" _: x, y) z stack env fds
+    = open (x, y) z stack env fds ReadMode
+exec (Call "open_w" _: x, y) z stack env fds
+    = open (x, y) z stack env fds WriteMode
+exec (Call "open_a" _: x, y) z stack env fds
+    = open (x, y) z stack env fds AppendMode
+exec (Call "open_rw" _: x, y) z stack env fds
+    = open (x, y) z stack env fds ReadWriteMode
 exec (Call "isEOF" _: x, y) z stack env fds = case popStackN 1 stack of
     Just ([Integer a], b) -> case getFd a fds of
         Left e -> return (Left $ "isEOF: " ++ e)
@@ -79,9 +85,12 @@ exec (Call "isEOF" _: x, y) z stack env fds = case popStackN 1 stack of
             exec (x, y) z (b ++ [Bool z']) env fds
     Just ([z'], _) -> return (Left $ "isEOF: expected Int, got " ++ show z')
     _ -> return (Left "isEOF: not enough operands")
-exec (Call "seek_a" _: x, y) z stack env fds = seek (x, y) z stack env fds AbsoluteSeek
-exec (Call "seek_r" _: x, y) z stack env fds = seek (x, y) z stack env fds RelativeSeek
-exec (Call "seek_e" _: x, y) z stack env fds = seek (x, y) z stack env fds SeekFromEnd
+exec (Call "seek_a" _: x, y) z stack env fds
+    = seek (x, y) z stack env fds AbsoluteSeek
+exec (Call "seek_r" _: x, y) z stack env fds
+    = seek (x, y) z stack env fds RelativeSeek
+exec (Call "seek_e" _: x, y) z stack env fds
+    = seek (x, y) z stack env fds SeekFromEnd
 exec (Call "tell" _: x, y) z stack env fds = case popStackN 1 stack of
     Just ([Integer a], b) -> case getFd a fds of
         Left e -> return (Left $ "tell: " ++ e)
@@ -96,7 +105,8 @@ exec (Call "getFileSize" _: x, y) z stack env fds = case popStackN 1 stack of
         Right handle -> do
             z' <- hFileSize handle
             exec (x, y) z (b ++ [Integer z']) env fds
-    Just ([z'], _) -> return (Left $ "getFileSize: expected Int, got " ++ show z')
+    Just ([z'], _)
+        -> return (Left $ "getFileSize: expected Int, got " ++ show z')
     _ -> return (Left "getFileSize: not enough operands")
 exec (Call "isOpen" _: x, y) z stack env fds = case popStackN 1 stack of
     Just ([Integer a], b) -> case getFd a fds of
@@ -143,9 +153,14 @@ exec (Call "rand" _: x, y) z stack env fds = do
             -> exec (x, y) z (z' ++ [Bool $ head (randomRs (a, b) g)]) env fds
         Just ([Char a, Char b], z')
             -> exec (x, y) z (z' ++ [Char $ head (randomRs (a, b) g)]) env fds
-        Just ([Integer a, Integer b], z')
-            -> exec (x, y) z (z' ++ [Integer $ head (randomRs (a, b) g)]) env fds
+        Just ([Integer a, Integer b], z') -> exec
+            (x, y) z (z' ++ [Integer $ head (randomRs (a, b) g)]) env fds
         _ -> return (Left "rand: expected Int, Int")
+exec (Call "length" _: x, y) z stack env fds = case popStackN 1 stack of
+    Just ([List a], b)
+        -> exec (x, y) z (b ++ [Integer $ fromIntegral (length a)]) env fds
+    Just ([z'], _) -> return (Left $ "length: expected List, got " ++ show z')
+    _ -> return (Left "length: not enough operands")
 exec (Call function argv: x, y) z stack env fds = do
     operand <- call function z stack env fds
     case operand of
@@ -186,6 +201,7 @@ exec (Label _: x, y) z stack env fds = exec (x, y) z stack env fds
 exec (Add: x, y) z stack env fds = case popStackN 2 stack of
     Just ([Struct _, _], _) -> return (Left "ADD: non numeric values")
     Just ([_, Struct _], _) -> return (Left "ADD: non numeric values")
+    Just ([List a, List b], c) -> exec (x, y) z (c ++ [List (a ++ b)]) env fds
     Just ([List a, b], c) -> exec (x, y) z (c ++ [List (a ++ [b])]) env fds
     Just ([a, List b], c) -> exec (x, y) z (c ++ [List (a: b)]) env fds
     Just ([a, b], stack') -> exec (x, y) z (stack' ++ [a + b]) env fds
