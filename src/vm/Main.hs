@@ -33,11 +33,11 @@ run x = case parseFunctions $ lines x of
     Right ys -> case searchFunctionMD (replicate 2 (fst3 $ unzip3 ys)) [] of
         Just e -> hPutStrLn stderr e >> exitFailure
         Nothing -> do
-            y <- call "main" ys ys [] [(0, stdin), (1, stdout), (2, stderr)]
+            y <- call "main" ys [] [] [(0, stdin), (1, stdout), (2, stderr)]
             case y of
                 Left e -> hPutStrLn stderr e >> exitFailure
                 Right Nothing -> return ()
-                Right (Just z) -> putStrLn $ "### exit code " ++ show z
+                Right (Just z) -> putStrLn $ "## exit code " ++ show z ++ " ##"
 
 main :: IO ()
 main = do

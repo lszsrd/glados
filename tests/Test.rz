@@ -36,7 +36,7 @@ fn babar(Int: x) -> Int
     ret y;
 }
  
-fn baz()
+fn main()
 {
     [Int] s = [1, 2, 56];
     bar2 ll = {1, 50};
