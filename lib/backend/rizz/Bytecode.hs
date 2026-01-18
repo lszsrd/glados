@@ -10,36 +10,20 @@ Module      : Bytecode
 Description : AST to Bytecode
 Copyright   : EPITECH, 2025
 License     : All rights reserved
-
-This module is responsible for compiling an AST into a textual bytecode representation for a virtual machine
-
-It handles:
-  * Function declarations
-  * Function calls with named parameters
-  * Binary expressions
-  * Control structures (if, while, for)
-  * Literals and arithmetic/logical operations
-  * Lists and Struct/Record declarations & instantiation
-  * Loop controls (break / continue)
 -}
 
 module Bytecode (
     compileDecl
-    ) where
+) where
 
 import Ast
 import Tokens
 import Data.Map (Map)
 import qualified Data.Map as Map
-import Data.Char (ord)
 
--- | Function environment: maps function name -> parameter names (in order)
 type FuncEnv   = Map Identifier [Identifier]
--- | Struct environment: maps struct name -> field names (in order)
 type StructEnv = Map Identifier [Identifier]
 
--- | Global compilation environment: both function and struct maps,
---   plus a simple counter to generate unique labels.
 data Env = Env
     { eFuncs   :: FuncEnv
     , eStructs :: StructEnv
@@ -49,7 +33,6 @@ data Env = Env
 emptyEnv :: Env
 emptyEnv = Env Map.empty Map.empty 0
 
--- | Build function environment from top-level declarations
 buildFuncEnv :: [Decl] -> FuncEnv
 buildFuncEnv = foldr collect Map.empty
   where
@@ -57,10 +40,8 @@ buildFuncEnv = foldr collect Map.empty
         Map.insert name (map parmName params) acc
     collect _ acc = acc
 
-    parmName :: ParmVarDeclExpr -> Identifier
     parmName (ParmVarDeclExpr _ ident) = ident
 
--- | Build struct environment from top-level declarations (RecordDecl)
 buildStructEnv :: [Decl] -> StructEnv
 buildStructEnv = foldr collect Map.empty
   where
@@ -68,10 +49,8 @@ buildStructEnv = foldr collect Map.empty
         Map.insert name (map parmName fields) acc
     collect _ acc = acc
 
-    parmName :: ParmVarDeclExpr -> Identifier
     parmName (ParmVarDeclExpr _ ident) = ident
 
--- | Top-level compile entry: build envs and compile each decl
 compileDecl :: [Decl] -> String
 compileDecl decls =
     let fenv = buildFuncEnv decls
@@ -79,74 +58,62 @@ compileDecl decls =
         env  = Env fenv senv 0
     in concatMap (compileDeclWithEnv env) decls
 
--- | Compile a single declaration using the environment
 compileDeclWithEnv :: Env -> Decl -> String
 compileDeclWithEnv env d@(FunctionDecl _ _ _ _) =
     compileFunctionWithEnv env d
--- Emit a STRUCT descriptor for RecordDecl (informational)
-compileDeclWithEnv env (RecordDecl (RecordDeclExpr name fields)) =
+
+compileDeclWithEnv _ (RecordDecl (RecordDeclExpr name fields)) =
     "STRUCT " ++ name ++ " " ++ show (length fields) ++ " "
         ++ unwords (map (\(ParmVarDeclExpr _ ident) -> ident) fields) ++ "\n"
+
 compileDeclWithEnv env (VarDecl vds) =
-    -- top-level var declaration (if present in your AST)
     compileTopVarDecl env vds
+
 compileDeclWithEnv _ _ = ""
 
--- | Compile a function declaration (wrap / dispatch)
 compileFunctionWithEnv :: Env -> Decl -> String
-compileFunctionWithEnv env (FunctionDecl name params
-    (CompoundStmt stmts) _mret) =
-    let env' = env { eNextId = eNextId env } -- start with same counter
-        header = "FUNC " ++ name ++ " " ++ show (length params) ++ "\n"
-        body = concatMap (\s -> compileStmt env' s) stmts
-        footer = "ENDFUNC\n"
-    in header ++ body ++ footer
+compileFunctionWithEnv env (FunctionDecl name params (CompoundStmt stmts) _) =
+    let header = "FUNC " ++ name ++ " " ++ show (length params) ++ "\n"
+        body = concatMap (compileStmt env) stmts
+    in header ++ body ++ "ENDFUNC\n"
+
 compileFunctionWithEnv _ _ = ""
 
--- | Helper to compile a top-level VarDecl if present
 compileTopVarDecl :: Env -> VarDeclStmt -> String
-compileTopVarDecl env vds@(VarDeclStmt typ ident _ rhs) =
-    compileVarDecl env vds
+compileTopVarDecl env vds = compileVarDecl env vds
 
+data LoopCtx = LoopCtx
+    { lblStart    :: String
+    , lblContinue :: String
+    , lblEnd      :: String
+    }
 
--- Loop context used to generate per-loop labels (continue / break)
-data LoopCtx = LoopCtx { lblStart :: String, lblContinue :: String, lblEnd :: String }
-
--- compileStmt: compile statement to bytecode, using the (global) Env.
--- Some statements need to thread / create a LoopCtx for break/continue.
 compileStmt :: Env -> Stmt -> String
 
--- Typed variable declaration (possibly struct or list)
-compileStmt env (DeclVarExpr vds) = compileVarDecl env vds
+compileStmt env (DeclVarExpr vds) =
+    compileVarDecl env vds
 
--- Assignment without type
 compileStmt env (DeclStmt (DeclAssignStmtLiteral ident _ rhs)) =
     compileParmCall env rhs ++ "STORE " ++ ident ++ "\n"
 
--- Unary assignment (x++ / x--)
 compileStmt _ (DeclStmt (DeclAssignStmtUnary (UnaryOperatorExpr ident op))) =
     case op of
-        IdentIncrement -> "LOAD " ++ ident ++ "\nPUSH_INT 1\nADD\nSTORE " 
-            ++ ident ++ "\n"
-        IdentDecrement -> "LOAD " ++ ident ++ "\nPUSH_INT 1\nSUB\nSTORE "
-            ++ ident ++ "\n"
-        _              -> "NOP\n"
+        IdentIncrement ->
+            "LOAD " ++ ident ++ "\nPUSH_INT 1\nADD\nSTORE " ++ ident ++ "\n"
+        IdentDecrement ->
+            "LOAD " ++ ident ++ "\nPUSH_INT 1\nSUB\nSTORE " ++ ident ++ "\n"
+        _ -> "NOP\n"
 
--- Function call as statement
 compileStmt env (CallExpr (CallExprDecl fname args)) =
     compileCallWithNamedParams env fname args
 
--- Binary expression used as statement
 compileStmt env (BinaryOperator expr) =
     compileBinaryOpExpr env expr ++ "POP\n"
 
--- Return statement (maybe void)
-compileStmt env (RetStmt mexpr) =
-    case mexpr of
-        Nothing   -> "RET\n"
-        Just expr -> compileBinaryOpExpr env expr ++ "RET\n"
+compileStmt env (RetStmt Nothing) = "RET\n"
+compileStmt env (RetStmt (Just expr)) =
+    compileBinaryOpExpr env expr ++ "RET\n"
 
--- If / else
 compileStmt env (IfStmt cond (CompoundStmt thenStmts) mElse) =
     let nid = eNextId env
         elseLbl = mkLabel "else" nid
@@ -156,12 +123,14 @@ compileStmt env (IfStmt cond (CompoundStmt thenStmts) mElse) =
         thenCode = concatMap (compileStmt env') thenStmts
         elseCode = maybe "" (\(CompoundStmt es) ->
             concatMap (compileStmt env') es) mElse
-    in condCode
-       ++ "JMP_IF_FALSE " ++ elseLbl ++ "\n" ++ thenCode ++ "JMP " ++ endLbl
-       ++ "\n" ++ "LABEL " ++ elseLbl ++ "\n" ++ elseCode
-       ++ "LABEL " ++ endLbl ++ "\n"
+    in condCode ++
+       "JMP_IF_FALSE " ++ elseLbl ++ "\n" ++
+       thenCode ++
+       "JMP " ++ endLbl ++ "\n" ++
+       "LABEL " ++ elseLbl ++ "\n" ++
+       elseCode ++
+       "LABEL " ++ endLbl ++ "\n"
 
--- While loop with unique labels and loop ctx
 compileStmt env (WhileStmt cond (CompoundStmt body)) =
     let nid = eNextId env
         startLbl = mkLabel "while_start" nid
@@ -169,13 +138,14 @@ compileStmt env (WhileStmt cond (CompoundStmt body)) =
         contLbl  = mkLabel "while_continue" (nid + 2)
         env' = env { eNextId = nid + 3 }
         ctx  = LoopCtx startLbl contLbl endLbl
-        entry = "LABEL " ++ startLbl ++ "\n"
-    in entry
-       ++ compileBinaryOpExpr env' cond ++ "JMP_IF_FALSE " ++ endLbl ++ "\n"
-       ++ concatMap (compileStmtWithLoop env' ctx) body ++ "LABEL " ++ contLbl
-       ++ "\n" ++ "JMP " ++ startLbl ++ "\n" ++ "LABEL " ++ endLbl ++ "\n"
+    in "LABEL " ++ startLbl ++ "\n" ++
+       compileBinaryOpExpr env' cond ++
+       "JMP_IF_FALSE " ++ endLbl ++ "\n" ++
+       concatMap (compileStmtWithLoop env' ctx) body ++
+       "LABEL " ++ contLbl ++ "\n" ++
+       "JMP " ++ startLbl ++ "\n" ++
+       "LABEL " ++ endLbl ++ "\n"
 
--- For loop: init; LABEL start; cond; body; continue label; step; jump start; end
 compileStmt env (ForStmt mInit mCond mStep (CompoundStmt body)) =
     let nid = eNextId env
         startLbl = mkLabel "for_start" nid
@@ -183,77 +153,55 @@ compileStmt env (ForStmt mInit mCond mStep (CompoundStmt body)) =
         endLbl   = mkLabel "for_end" (nid + 2)
         env' = env { eNextId = nid + 3 }
         ctx = LoopCtx startLbl contLbl endLbl
-        initCode = compileForInit env' mInit
-        condCode = compileForCond env' mCond
-        stepCode = compileForStep env' mStep
-    in initCode
-       ++ "LABEL " ++ startLbl ++ "\n"
-       ++ condCode
-       ++ concatMap (compileStmtWithLoop env' ctx) body
-       ++ "LABEL " ++ contLbl ++ "\n"
-       ++ stepCode
-       ++ "JMP " ++ startLbl ++ "\n"
-       ++ "LABEL " ++ endLbl ++ "\n"
+    in compileForInit env' mInit ++
+       "LABEL " ++ startLbl ++ "\n" ++
+       compileForCond env' mCond ++
+       concatMap (compileStmtWithLoop env' ctx) body ++
+       "LABEL " ++ contLbl ++ "\n" ++
+       compileForStep env' mStep ++
+       "JMP " ++ startLbl ++ "\n" ++
+       "LABEL " ++ endLbl ++ "\n"
 
--- Foreach not implemented / fallback
 compileStmt env (ForeachStmt _ _ (CompoundStmt body)) =
     concatMap (compileStmt env) body
 
--- Call used as expression already handled above; fallback:
 compileStmt _ _ = "NOP\n"
 
--- compileStmtWithLoop: variant that knows current loop context for break/continue
 compileStmtWithLoop :: Env -> LoopCtx -> Stmt -> String
-compileStmtWithLoop env ctx (LoopControlStmt kw) =
-    case kw of
-        -- adjust names if your Keyword constructors differ
-        Continue -> "JMP " ++ lblContinueLabel ctx ++ "\n"
-        Break    -> "JMP " ++ lblEndLabel ctx ++ "\n"
-        _        -> "NOP\n"
-  where
-    lblContinueLabel = lblContinue
-    lblEndLabel = lblEnd
+compileStmtWithLoop _ ctx (LoopControlStmt Continue) =
+    "JMP " ++ lblContinue ctx ++ "\n"
 
-compileStmtWithLoop env ctx st = compileStmt env st
+compileStmtWithLoop _ ctx (LoopControlStmt Break) =
+    "JMP " ++ lblEnd ctx ++ "\n"
 
--- helpers to access LoopCtx fields (names)
-lblContinueLabel :: LoopCtx -> String
-lblContinueLabel = lblContinue
+compileStmtWithLoop env _ stmt =
+    compileStmt env stmt
 
-lblEndLabel :: LoopCtx -> String
-lblEndLabel = lblEnd
-
-
--- compileVarDecl: handle typed var declarations including Struct and List
 compileVarDecl :: Env -> VarDeclStmt -> String
 compileVarDecl env (VarDeclStmt typ ident _ rhs) =
     case (typ, rhs) of
-        -- Struct initialization: VarDeclStmt (Struct "S") name = [ elems... ]
         (Ast.Struct sname, ParmCallDeclList elems) ->
             concatMap (compileParmCall env) elems ++
             "BUILD_STRUCT " ++ sname ++ " " ++ show (length elems) ++ "\n" ++
             "STORE " ++ ident ++ "\n"
 
-        -- List initialization: push elements then PUSH_LIST n
         (ListType _, ParmCallDeclList elems) ->
             concatMap (compileParmCall env) elems ++
             "PUSH_LIST " ++ show (length elems) ++ "\n" ++
             "STORE " ++ ident ++ "\n"
 
-        -- Normal typed var with expression RHS
         _ ->
             compileParmCall env rhs ++
             "STORE " ++ ident ++ "\n"
 
--- compileForInit / cond / step
 compileForInit :: Env -> Maybe VarDeclStmt -> String
 compileForInit _ Nothing = ""
 compileForInit env (Just vds) = compileVarDecl env vds
 
 compileForCond :: Env -> Maybe BinaryOpExpr -> String
 compileForCond _ Nothing = ""
-compileForCond env (Just cond) = compileBinaryOpExpr env cond
-    ++ "JMP_IF_FALSE for_end\n"
+compileForCond env (Just cond) =
+    compileBinaryOpExpr env cond ++ "JMP_IF_FALSE for_end\n"
 
 compileForStep :: Env -> Maybe DeclStmt -> String
 compileForStep _ Nothing = ""
@@ -262,9 +210,9 @@ compileForStep env (Just ds) = compileDeclStmt env ds
 compileDeclStmt :: Env -> DeclStmt -> String
 compileDeclStmt env (DeclAssignStmtLiteral ident _ rhs) =
     compileParmCall env rhs ++ "STORE " ++ ident ++ "\n"
+
 compileDeclStmt env (DeclAssignStmtUnary u) =
     compileStmt env (DeclStmt (DeclAssignStmtUnary u))
-
 
 compileBinaryOpExpr :: Env -> BinaryOpExpr -> String
 compileBinaryOpExpr env (BinaryOpConst p) = compileParmCall env p
@@ -274,67 +222,68 @@ compileBinaryOpExpr env (BinaryOpExpr l op r) =
     opToInstr op ++ "\n"
 
 compileBinaryOpParm :: Env -> BinaryOpParm -> String
-compileBinaryOpParm env (BinaryOpParm p)   = compileParmCall env p
+compileBinaryOpParm env (BinaryOpParm p) = compileParmCall env p
 compileBinaryOpParm env (BinaryOpParmBOp b) = compileBinaryOpExpr env b
 
--- compileParmCall: updated to support indexing ParmCallDeclIdx
 compileParmCall :: Env -> ParmCallDecl -> String
-compileParmCall _   (ParmCallDeclLiteral lit) = compileLiteral lit
-compileParmCall _   (ParmCallDeclIdent ident) = "LOAD " ++ ident ++ "\n"
+
+compileParmCall _ (ParmCallDeclLiteral lit) =
+    compileLiteral lit
+
+compileParmCall _ (ParmCallDeclIdent ident) =
+    "LOAD " ++ ident ++ "\n"
+
 compileParmCall env (ParmCallDeclExpr (CallExprDecl fname args)) =
     compileCallWithNamedParams env fname args
+
 compileParmCall env (ParmCallDeclList elems) =
-    concatMap (compileParmCall env) elems ++ "PUSH_LIST "
-        ++ show (length elems) ++ "\n"
+    concatMap (compileParmCall env) elems ++
+    "PUSH_LIST " ++ show (length elems) ++ "\n"
+
 compileParmCall env (ParmCallBExpr l op r) =
     compileBinaryOpParm env l ++
     compileBinaryOpParm env r ++
     opToInstr op ++ "\n"
 
---   - compile base (LOAD z)
---   - if index is a literal integer, emit: IND <name> <index>\n
---   - otherwise compile index (push index) then emit: IND <name>\n
 compileParmCall env (ParmCallDeclIdx base idx) =
-   case base of
-       ParmCallDeclIdent name ->
-           let idxCode = case idx of
-                   ParmCallDeclLiteral (IntLiteral i) ->
-                       "IND " ++ name ++ " " ++ show i ++ "\n"
-                   _ ->
-                       compileParmCall env idx ++
-                       "IND " ++ name ++ "\n"
-           in idxCode
-       _ ->
-           let baseCode = compileParmCall env base
-           in case idx of
-               ParmCallDeclLiteral (IntLiteral i) ->
-                   baseCode ++ "IND TMP " ++ show i ++ "\n"
-               _ ->
-                   baseCode ++ compileParmCall env idx ++ "IND TMP\n"
+    case base of
+        ParmCallDeclIdent name ->
+            case idx of
+                ParmCallDeclLiteral (IntLiteral i) ->
+                    "IND " ++ name ++ " " ++ show i ++ "\n"
+                _ ->
+                    compileParmCall env idx ++
+                    "IND " ++ name ++ "\n"
+        _ ->
+            compileParmCall env base ++
+            compileParmCall env idx ++
+            "IND\n"
 
--- compileCallWithNamedParams: pushes args, then either STORE into param names (reversed),
--- then CALL <fname> <arity>.
+compileParmCall _ _ = ""
+
 compileCallWithNamedParams :: Env -> Identifier -> [ParmCallDecl] -> String
 compileCallWithNamedParams env fname args =
     let argsCode = concatMap (compileParmCall env) args
         fenv = eFuncs env
     in case Map.lookup fname fenv of
-        Nothing -> argsCode ++ "CALL " ++ fname ++ " " ++ show (length args)
-            ++ "\n"
-        Just params ->
-            let storeCode = concatMap (\p -> "STORE " ++ p++ "\n") (reverse params)
-            in argsCode ++ storeCode ++ "CALL " ++ fname ++ " " ++ show (length args) ++ "\n"
+        Nothing ->
+            argsCode ++ "CALL " ++ fname ++ " " ++ show (length args) ++ "\n"
 
+        Just params ->
+            let storeCode =
+                    concatMap (\p -> "STORE " ++ p ++ "\n") (reverse params)
+            in argsCode ++ storeCode ++
+               "CALL " ++ fname ++ " " ++ show (length args) ++ "\n"
 
 compileLiteral :: Literal -> String
-compileLiteral (CharLiteral c)   = "PUSH_CHAR " ++ show c ++ "\n"
-compileLiteral (IntLiteral i)    = "PUSH_INT " ++ show i ++ "\n"
-compileLiteral (BoolLiteral b)   = "PUSH_BOOL "
-    ++ (if b then "True\n" else "False\n")
-compileLiteral (FloatLiteral f)  = "PUSH_FLOAT " ++ show f ++ "\n"
-compileLiteral (ListLiteral elems) =
-    concatMap compileLiteral elems ++ "PUSH_LIST "
-    ++ show (length elems) ++ "\n"
+compileLiteral (CharLiteral c)  = "PUSH_CHAR " ++ show c ++ "\n"
+compileLiteral (IntLiteral i)   = "PUSH_INT " ++ show i ++ "\n"
+compileLiteral (BoolLiteral b)  =
+    "PUSH_BOOL " ++ if b then "True\n" else "False\n"
+compileLiteral (FloatLiteral f) = "PUSH_FLOAT " ++ show f ++ "\n"
+compileLiteral (ListLiteral e)  =
+    concatMap compileLiteral e ++
+    "PUSH_LIST " ++ show (length e) ++ "\n"
 compileLiteral _ = "PUSH_UNKNOWN\n"
 
 opToInstr :: BinaryOp -> String
@@ -352,7 +301,6 @@ opToInstr NEq = "NEQ"
 opToInstr And = "AND"
 opToInstr Or  = "OR"
 opToInstr _   = "NOP"
-
 
 mkLabel :: String -> Int -> String
 mkLabel base i = base ++ "_" ++ show i
