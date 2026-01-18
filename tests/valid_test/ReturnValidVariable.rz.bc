@@ -1,0 +1,6 @@
+FUNC main 0
+PUSH_INT 0
+STORE a
+LOAD a
+RET
+ENDFUNC

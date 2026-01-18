@@ -1,0 +1,9 @@
+fn main() -> Int
+{
+    Int a = 1;
+
+    while (>) {
+        ret 1;
+    }
+    ret 0;
+}

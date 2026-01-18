@@ -1,0 +1,16 @@
+fn my_strlen([Char]: str) -> Int
+{
+    Int i = 0;
+
+    for (Int i = 0; str[i]; i++) {
+    }
+    ret i;
+}
+
+fn main() -> Int
+{
+    [Char] str = "test1test2test3";
+    Int i = my_strlen(str);
+
+    ret i;
+}

@@ -1,0 +1,25 @@
+FUNC main 0
+PUSH_CHAR 't'
+PUSH_CHAR 'e'
+PUSH_CHAR 's'
+PUSH_CHAR 't'
+PUSH_LIST 4
+STORE str
+PUSH_INT 0
+STORE i
+LABEL for_start
+LOAD i
+PUSH_INT 4
+LT
+JMP_IF_FALSE for_end
+PUSH_CHAR 'c'
+STORE ParmCallDeclIdx (ParmCallDeclIdent "str") (ParmCallDeclIdent "i")
+LOAD i
+PUSH_INT 1
+ADD
+STORE i
+JMP for_start
+LABEL for_end
+PUSH_INT 0
+RET
+ENDFUNC

@@ -1,0 +1,37 @@
+fn my_strlen([Char]: s) -> Int
+{
+    Int i = 0;
+
+    foreach (c : s) {
+        i++;
+    }
+    ret i;
+}
+
+fn my_strcmp([Char]: s1, [Char]: s2) -> Int
+{
+    Int i = 0;
+
+    foreach (c : s1) {
+        if (c < s2[i]) {
+            ret -1;
+        }
+        if (c > s2[i]) {
+            ret 1;
+        }
+        i++;
+    }
+    ret 0;
+}
+
+fn main() -> Int
+{
+    [Char] s1 = "test1test2test3";
+    [Char] s2 = "test1test2test4";
+    Int cmp = my_strcmp(s1, s2);
+
+    if (cmp == 0) {
+        ret 0;
+    }
+    ret 1;
+}
