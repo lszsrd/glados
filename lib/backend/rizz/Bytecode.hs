@@ -31,7 +31,6 @@ import Ast
 import Tokens
 import Data.Map (Map)
 import qualified Data.Map as Map
-import Data.Char (ord)
 import Data.List (isInfixOf, isPrefixOf, tails)
 
 -- | Function environment: maps function name -> parameter names (in order)
@@ -42,13 +41,10 @@ type StructEnv = Map Identifier [Identifier]
 -- | Global compilation environment: both function and struct maps,
 --   plus a simple counter to generate unique labels.
 data Env = Env
-    { eFuncs   :: FuncEnv
-    , eStructs :: StructEnv
-    , eNextId  :: Int
+    { eFuncs  :: FuncEnv
+    , eNextId :: Int
     }
 
-emptyEnv :: Env
-emptyEnv = Env Map.empty Map.empty 0
 
 -- | Build function environment from top-level declarations
 buildFuncEnv :: [Decl] -> FuncEnv
@@ -77,7 +73,7 @@ compileDecl :: [Decl] -> String
 compileDecl decls =
     let fenv = buildFuncEnv decls
         senv = buildStructEnv decls
-        env  = Env fenv senv 0
+        env  = Env fenv 0
     in concatMap (compileDeclWithEnv env) decls
 
 -- | Compile a single declaration using the environment
@@ -98,13 +94,13 @@ compileDeclWithEnv _ _ = ""
 -- | Compile a function declaration (wrap / dispatch)
 --   We keep header: FUNC <name> <param1> <param2> ...
 compileFunctionWithEnv :: Env -> Decl -> String
-compileFunctionWithEnv env (FunctionDecl name params (CompoundStmt stmts) _mret) =
+compileFunctionWithEnv env (FunctionDecl name params
+    (CompoundStmt stmts) _mret) =
     let env' = env { eNextId = eNextId env }
         paramNames = map (\(ParmVarDeclExpr _ ident) -> ident) params
         header =
             "FUNC " ++ name ++
-            (if null paramNames then "" else " " ++ unwords paramNames)
-            ++ "\n"
+            (if null paramNames then "" else " " ++ unwords paramNames) ++ "\n"
         body = concatMap (\s -> compileStmt env' s) stmts
         footer = "ENDFUNC\n"
     in header ++ body ++ footer
@@ -226,7 +222,6 @@ compileStmt _ (DeclStmt (DeclAssignStmtUnary (UnaryOperatorExpr ident op))) =
             ++ ident ++ "\n"
         IdentDecrement -> "LOAD " ++ ident ++ "\nPUSH_INT 1\nSUB\nSTORE "
             ++ ident ++ "\n"
-        _              -> "NOP\n"
 
 -- Function call used as statement
 compileStmt env (CallExpr (CallExprDecl fname args)) =
@@ -250,7 +245,8 @@ compileStmt env (IfStmt cond (CompoundStmt body) mElse) =
         env' = env { eNextId = nid + 2 }
         condCode = compileBinaryOpExpr env' cond
         thenCode = concatMap (compileStmt env') body
-        elseCode = maybe "" (\(CompoundStmt b) -> concatMap (compileStmt env') b) mElse
+        elseCode = maybe "" (\(CompoundStmt b) ->
+            concatMap (compileStmt env') b) mElse
     in condCode ++
        "JMP_IF_FALSE " ++ elseLbl ++ "\n" ++
        thenCode ++
@@ -376,9 +372,11 @@ compileParmCall _   (ParmCallDeclIdent ident) = "LOAD " ++ ident ++ "\n"
 compileParmCall env (ParmCallDeclExpr (CallExprDecl fname args)) =
     compileCallWithNamedParams env fname args
 compileParmCall env (ParmCallDeclList elems) =
-    concatMap (compileParmCall env) elems ++ "PUSH_LIST " ++ show (length elems) ++ "\n"
+    concatMap (compileParmCall env) elems ++ "PUSH_LIST "
+        ++ show (length elems) ++ "\n"
 compileParmCall env (ParmCallBExpr l op r) =
-    compileBinaryOpParm env l ++ compileBinaryOpParm env r ++ opToInstr op ++ "\n"
+    compileBinaryOpParm env l ++ compileBinaryOpParm env r
+        ++ opToInstr op ++ "\n"
 
 -- Indexing: compile base then index then IND instruction.
 compileParmCall env (ParmCallDeclIdx base idx) =
@@ -389,20 +387,23 @@ compileCallWithNamedParams :: Env -> Identifier -> [ParmCallDecl] -> String
 compileCallWithNamedParams env fname args =
     let argsCode = concatMap (compileParmCall env) args
     in case Map.lookup fname (eFuncs env) of
-        Nothing -> argsCode ++ "CALL " ++ fname ++ " " ++ show (length args) ++ "\n"
+        Nothing -> argsCode ++ "CALL " ++ fname ++ " "
+            ++ show (length args) ++ "\n"
         Just params ->
             let storeCode = concatMap (\p -> "STORE " ++ p ++ "\n") (reverse params)
-            in argsCode ++ storeCode ++ "CALL " ++ fname ++ " " ++ show (length args) ++ "\n"
+            in argsCode ++ storeCode ++ "CALL " ++ fname ++ " "
+                ++ show (length args) ++ "\n"
 
 -- | Literals
 compileLiteral :: Literal -> String
 compileLiteral (CharLiteral c)   = "PUSH_CHAR " ++ show c ++ "\n"
 compileLiteral (IntLiteral i)    = "PUSH_INT " ++ show i ++ "\n"
-compileLiteral (BoolLiteral b)   = "PUSH_BOOL " ++ (if b then "True\n" else "False\n")
+compileLiteral (BoolLiteral b)   = "PUSH_BOOL "
+    ++ (if b then "True\n" else "False\n")
 compileLiteral (FloatLiteral f)  = "PUSH_FLOAT " ++ show f ++ "\n"
 compileLiteral (ListLiteral elems) =
-    concatMap compileLiteral elems ++ "PUSH_LIST " ++ show (length elems) ++ "\n"
-compileLiteral _ = "PUSH_UNKNOWN\n"
+    concatMap compileLiteral elems ++ "PUSH_LIST "
+        ++ show (length elems) ++ "\n"
 
 -- | Operators
 opToInstr :: BinaryOp -> String
@@ -419,7 +420,6 @@ opToInstr GEq = "GE"
 opToInstr NEq = "NEQ"
 opToInstr And = "AND"
 opToInstr Or  = "OR"
-opToInstr _   = "NOP"
 
 opAssignToInstr :: AssignOp -> String
 opAssignToInstr AddEqual = "ADD"
