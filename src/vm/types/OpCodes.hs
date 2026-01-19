@@ -185,6 +185,7 @@ data Instruction
     | Store Identifier
     | Push Operand
     | PushList Int
+    | PushStruct Identifier Int
     | Pop
     | Jump Label
     | JumpFalse Label
@@ -227,12 +228,18 @@ div (Float x) (Float y) = Right (x / y)
 div _ _ = Left "DIV: non-numeric operands"
 
 mod :: Operand -> Operand -> Either String Integer
-mod (Char x) (Char y) = Right (fromIntegral (fromEnum x) `Prelude.mod` fromIntegral (fromEnum y))
-mod (Char x) (Integer y) = Right (fromIntegral (fromEnum x) `Prelude.mod` fromIntegral y)
-mod (Integer y) (Char x) = Right (fromIntegral (fromEnum x) `Prelude.mod` fromIntegral y)
-mod (Char x) (Float y) = Right (fromIntegral (fromEnum x) `Prelude.mod` round y)
-mod (Float y) (Char x) = Right (fromIntegral (fromEnum x) `Prelude.mod` round y)
-mod (Integer x) (Integer y) = Right (fromIntegral x `Prelude.mod` fromIntegral y)
+mod (Char x) (Char y) = Right (fromIntegral (fromEnum x)
+    `Prelude.mod` fromIntegral (fromEnum y))
+mod (Char x) (Integer y) = Right (fromIntegral (fromEnum x)
+    `Prelude.mod` fromIntegral y)
+mod (Integer y) (Char x) = Right (fromIntegral (fromEnum x)
+    `Prelude.mod` fromIntegral y)
+mod (Char x) (Float y) = Right (fromIntegral (fromEnum x)
+    `Prelude.mod` round y)
+mod (Float y) (Char x) = Right (fromIntegral (fromEnum x)
+    `Prelude.mod` round y)
+mod (Integer x) (Integer y) = Right (fromIntegral x
+    `Prelude.mod` fromIntegral y)
 mod (Integer x) (Float y) = Right (fromIntegral x `Prelude.mod` round y)
 mod (Float x) (Integer y) = Right (round x `Prelude.mod` y)
 mod (Float x) (Float y) = Right (round x `Prelude.mod` round y)

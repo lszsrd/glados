@@ -42,7 +42,6 @@ module ParserHelper (
 import qualified Ast as A
 import qualified Tokens as T
 import Data.List
-import Debug.Trace (trace)
 
 type SingleToken = (T.Token, (Int, Int))
 type Parser a = [SingleToken] -> Either String (a, [SingleToken])
@@ -130,8 +129,8 @@ getType fl (A.ParmCallDeclExpr (A.CallExprDecl f _)) =
         Left _ -> Nothing
         Right var -> getTypeDecl var
 getType _ (A.ParmCallDeclList _) = Just (A.Struct "Va te faire foutre aussi")
-getType _ (A.ParmCallBExpr _ _ a) = Nothing
-getType _ (A.ParmCallDeclIdx _ a) = Nothing
+getType _ (A.ParmCallBExpr {}) = Nothing
+getType fl (A.ParmCallDeclIdx id1 _) = getType fl id1
 getType _ (A.ParmCallDeclLiteral (T.ListLiteral [])) = Nothing
 
 -- | Takes two @'Parser'@ @'a'@ and a list as parameters and
@@ -173,18 +172,17 @@ doesVarExists pos (fl, A.FunctionDecl n
         else doesVarExists pos (fl, A.FunctionDecl n xs bdy ret) id2
 doesVarExists p _ _ = errorAt p "var detection Error"
 
-depthStructListCreate :: [A.Decl] -> A.ParmCallDecl -> T.Identifier
+depthStructListCreate :: ([A.Decl], A.Decl) -> A.ParmCallDecl -> T.Identifier
     -> A.BuiltinType -> Either String [A.ParmVarDeclExpr]
 depthStructListCreate fl x t (A.Struct n) = do
-    var <- doesVarExists (1,1)
-        (fl, A.FunctionDecl " " [] (A.CompoundStmt []) Nothing) n
+    var <- doesVarExists (1,1) fl n
     case var of
         (A.RecordDecl (A.RecordDeclExpr _ parm)) -> createList parm x t fl
         e -> errorAt (1,1) ("? " ++ show e)
 depthStructListCreate _ _ _ _ = errorAt (1,1) "This shi is useless"
 
 createList :: [A.ParmVarDeclExpr] -> A.ParmCallDecl -> T.Identifier
-    -> [A.Decl] -> Either String [A.ParmVarDeclExpr]
+    -> ([A.Decl], A.Decl) -> Either String [A.ParmVarDeclExpr]
 createList [] (A.ParmCallDeclList []) _ _ = Right []
 createList [] (A.ParmCallDeclList (_:_)) _ _ = Left "    Wrong number of Param"
 createList (_:_) (A.ParmCallDeclList []) _ _ = Left "    Wrong number of Param"
@@ -195,22 +193,21 @@ createList ((A.ParmVarRecord (A.RecordDeclExpr _ ls)):as)
     Right (first ++ rest)
 createList (A.ParmVarDeclExpr tp n:as) (A.ParmCallDeclList (x:xs)) t fl = do
     rest <- createList as (A.ParmCallDeclList xs) t fl
-    case getType (fl, A.FunctionDecl "n" [] (A.CompoundStmt []) Nothing) x of
+    case getType fl x of
         Just (A.Struct _) -> do
             stparam <- depthStructListCreate fl x (t ++"@" ++ n) tp
             Right (A.ParmVarDeclExpr tp (t ++ "@" ++ n) : stparam ++ rest)
         Just typ -> if typ == tp
             then Right (A.ParmVarDeclExpr tp (t ++ "@" ++ n) : rest)
-            else Left ("    Wrong variable type :" ++ show x)
-        _ -> Left ("    Wrong variable type :" ++ show x)
+            else Left ("    Wrong variable type: " ++ show x)
+        _ -> Left ("    Wrong variable type: " ++ show x)
 createList a _ _ _ = Right a
 
-addIfList :: A.BuiltinType -> T.Identifier -> A.ParmCallDecl -> [A.Decl]
-    -> Either String [A.ParmVarDeclExpr]
+addIfList :: A.BuiltinType -> T.Identifier -> A.ParmCallDecl ->
+    ([A.Decl], A.Decl) -> Either String [A.ParmVarDeclExpr]
 addIfList _ _ (A.ParmCallDeclList []) _ = Right []
 addIfList (A.Struct tp) t l@(A.ParmCallDeclList _) fl = do
-    var <- doesVarExists (1, 1) (fl, A.FunctionDecl "n" []
-        (A.CompoundStmt []) Nothing) tp
+    var <- doesVarExists (1, 1) fl tp
     case var of
         A.RecordDecl (A.RecordDeclExpr _ list) -> createList list l t fl 
         _ -> Right []
@@ -224,8 +221,8 @@ addIfList _ _ _ _ = Right []
 -- On failure, this function returns a pretty formatted message error.
 --
 -- This function is used to add a variable to the defined variables.
-addIfVarExpr :: (Int, Int) -> A.Stmt -> [A.Decl] -> [A.ParmVarDeclExpr]
-    -> Either String [A.ParmVarDeclExpr]
+addIfVarExpr :: (Int, Int) -> A.Stmt -> ([A.Decl], A.Decl) ->
+    [A.ParmVarDeclExpr] -> Either String [A.ParmVarDeclExpr]
 addIfVarExpr pos (A.DeclVarExpr (A.VarDeclStmt t iden _ pcallDecl)) fl [] =
     case addIfList t iden pcallDecl fl of
         Left e -> errorAt pos (drop 4 e)

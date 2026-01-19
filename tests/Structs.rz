@@ -1,0 +1,20 @@
+struct Baz {
+    Char: x
+}
+
+struct Bar {
+    Int: x,
+    Baz: y
+}
+
+struct Foo {
+    Bar: x,
+    Int: y
+}
+
+fn main() -> Int
+{
+    Foo x = { {42, {'8'} }, 21 };
+
+    ret x;
+}
