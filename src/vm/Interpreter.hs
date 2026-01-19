@@ -187,8 +187,15 @@ exec (Ind: x, y) z stack env fds = case popStackN 2 stack of
         else exec (x, y) z (stack' ++ [a !! fromIntegral b]) env fds
     Just ([_, _], _) -> return (Left "IND: expected List, Int")
     _ -> return (Left "IND: empty stack")
-exec (Store identifier: x, y) z stack env fds = case popStackN 1 stack of
-    Just ([a], stack') -> exec (x, y) z stack' (setEnv env (identifier, a)) fds
+exec (Store ident: x, y) z stack env fds = case popStackN 1 stack of
+    Just ([a], stack') -> case break (== '@') ident of
+        (_, []) -> exec (x, y) z stack' (setEnv env (ident, a)) fds
+        (b, _: c) -> case getEnv env b of
+            Just (_, Struct e f g)
+                -> exec (x, y) z stack' (setEnv env (b, Struct e f' g')) fds
+                where (f', g') = unzip $ map (\(k, v)
+                          -> if k == c then (k, a) else (k, v)) $ zip f g
+            _ -> return (Left $ "STORE: malformed struct " ++ ident)
     _ -> return (Left "STORE: empty stack")
 exec (Push a: x, y) z stack env fds = exec (x, y) z (stack ++ [a]) env fds
 exec (PushList a: x, y) z stack env fds = if length stack < a
