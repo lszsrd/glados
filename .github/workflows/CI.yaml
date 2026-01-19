@@ -79,5 +79,7 @@ jobs:
 
       - name: Running functional tests
         run: |
+          ./tests/compiler_test.sh
+          ./tests/vm_test.sh
           exit 0
         timeout-minutes: 2

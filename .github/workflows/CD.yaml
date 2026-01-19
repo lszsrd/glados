@@ -6,9 +6,6 @@ on:
     workflows: ["CI"]
     branches:
       - main
-    types: 
-      - completed
-
 env:
   TARGET: glados
 
