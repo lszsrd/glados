@@ -1,6 +1,0 @@
-FUNC main 0
-
-STORE x
-LOAD x
-RET
-ENDFUNC

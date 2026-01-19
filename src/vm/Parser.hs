@@ -6,40 +6,91 @@
 -}
 
 module Parser (
-    parseFunctions
-    , hParseFunctions
+    parser
+    , searchMultiDefFun
+    , searchMultiDefStruct
+    , hParser
+    , parseGlobNamespace
+    , parseFunction
     , parseInstructions
     , hParseInstruction
 ) where
 
+import Data.List
+
 import Text.Read (readMaybe)
 
-import OpCodes (Operand (..), OpCode (..))
-import Function (Function)
+import OpCodes (Operand (..), Instruction (..))
+import Data (Function, Struct)
 
-parseFunctions :: [String] -> Either String [Function]
-parseFunctions [] = Right []
-parseFunctions (x: xs) = case words x of
-    [] -> parseFunctions xs
-    ("FUNC": y) -> case hParseInstruction "FUNC" y 2 of
-        Left e -> Left e
-        Right (fnName: z: _) -> case readMaybe z :: Maybe Int of
-            Just argc -> hParseFunctions xs fnName argc
-            Nothing -> Left ("FUNC: invalid arguments' count: " ++ z)
-        Right _ -> Left "FUNC: the impossible happened: found a pattern hole"
-    _ -> Left ("not a function: " ++ x)
-
-hParseFunctions :: [String] -> String -> Int -> Either String [Function]
-hParseFunctions xs fnName argc = case parseInstructions xs of
+parser :: [String] -> Either String ([Function], [Struct])
+parser x = case hParser x of
     Left e -> Left e
-    Right (_, []) -> Left ("FUNC: missing ENDFUNC at EOF: " ++ fnName)
-    Right (fnBody, z: z') -> if z /= "ENDFUNC"
-        then Left ("FUNC: missing ENDFUNC: " ++ fnName)
-        else case parseFunctions z' of
-            Left e -> Left e
-            Right functions -> Right $ (fnName, argc, fnBody): functions
+    Right (a, b) -> case searchMultiDefFun a of
+        Nothing -> case searchMultiDefStruct b of
+            Nothing -> case break (\(z, _, _) -> z == "@init") a of
+                (_, []) -> Right (a ++ [("@init", [], insts)], b)
+                (c, (d, e, f): g) -> Right (c ++ (d, e, f ++ insts): g, b)
+                where insts = [Call "@fini" 0, Ret]
+            Just z -> Left ("Multiple definition of structure " ++ show z)
+        Just z -> Left ("Multiple definition of function " ++ show z)
 
-parseInstructions :: [String] -> Either String ([OpCode], [String])
+searchMultiDefFun :: [Function] -> Maybe String
+searchMultiDefFun x = case map (\(a, _, _) -> a) x of
+    y -> case nub y of
+        z -> if length z /= length y
+            then Just (head $ deleteFirstsBy (==) y z)
+            else Nothing
+
+searchMultiDefStruct :: [Struct] -> Maybe String
+searchMultiDefStruct x = case map fst x of
+    y -> case nub y of
+        z -> if length z /= length y
+            then Just (head $ deleteFirstsBy (==) y z)
+            else Nothing
+
+-- takes all files a a list of lines
+hParser :: [String] -> Either String ([Function], [Struct])
+hParser [] = Right ([], [])
+hParser x'@(x: xs) = case words x of
+    ("STRUCT": y: ys: ys') -> case readMaybe ys :: Maybe Int of
+        Nothing -> Left $ "STRUCT: invalid fields count " ++ show y
+        Just z -> if z /= length ys'
+            then Left "STRUCT: invalid fields count"
+            else parseStruct xs y ys'
+    ("STRUCT": _) -> Left "STRUCT: missing structure name"
+    ("FUNC": y: ys) -> parseFunction xs y ys
+    ("FUNC": _) -> Left "FUNC: missing function name"
+    _ -> parseGlobNamespace x'
+
+parseGlobNamespace :: [String] -> Either String ([Function], [Struct])
+parseGlobNamespace  [] = Right ([], [])
+parseGlobNamespace  (x: xs) = case parseInstruction (words x) of
+    Left e -> Left e
+    Right y -> case hParser xs of
+        Left e -> Left e
+        Right (a, b) -> case break (\(z, _, _) -> z == "@init") a of
+            (_, []) -> Right (a ++ [("@init", [], [y])], b)
+            (c, (d, e, f): g) -> Right (c ++ (d, e, y: f): g, b)
+
+-- takes the current line as broken via words, the function's name and args
+parseFunction :: [String] -> String -> [String] -> Either String ([Function], [Struct])
+parseFunction x y z = case parseInstructions x of
+    Left e -> Left e
+    Right (_, []) -> Left ("FUNC: missing ENDFUNC at EOF: " ++ y)
+    Right (a, b: c) -> if b /= "ENDFUNC"
+        then Left ("FUNC: missing ENDFUNC: " ++ y)
+        else case hParser c of
+            Left e -> Left e
+            Right (functions, structs) -> Right ((y, z, a): functions, structs)
+
+-- takes the current line as broken via words, the struct's name and fields
+parseStruct :: [String] -> String -> [String] -> Either String ([Function], [Struct])
+parseStruct x y z = case hParser x of
+    Left e -> Left e
+    Right (functions, structs) -> Right (functions, (y, z): structs)
+
+parseInstructions :: [String] -> Either String ([Instruction], [String])
 parseInstructions [] = Right ([], [])
 parseInstructions instructions@("ENDFUNC": _) = Right ([], instructions)
 parseInstructions (x: xs) = case parseInstruction (words x) of
@@ -48,21 +99,24 @@ parseInstructions (x: xs) = case parseInstruction (words x) of
         Left e -> Left e
         Right (opcodes, instructions) -> Right (opcode: opcodes, instructions)
 
-parseInstruction :: [String] -> Either String OpCode
+parseInstruction :: [String] -> Either String Instruction
 parseInstruction [] = Right Nop
-parseInstruction (('#': _): _) = Right Nop
+parseInstruction ((';': _): _) = Right Nop
 parseInstruction ("NOP": x) = case hParseInstruction "NOP" x 0 of
     Left e -> Left e
     Right _ -> Right Nop
 parseInstruction ("CALL": x) = case hParseInstruction "CALL" x 2 of
     Left e -> Left e
-    Right (y: z: _) -> case readMaybe z :: Maybe Integer of
+    Right (y: z: _) -> case readMaybe z :: Maybe Int of
         Nothing -> Left ("CALL: invalid operand: " ++ z)
         Just operand -> Right $ Call y operand
     Right _ -> Left "CALL: the impossible happened: found a pattern hole"
 parseInstruction ("LOAD": x) = case hParseInstruction "LOAD" x 1 of
     Left e -> Left e
     Right y -> Right $ Load (head y)
+parseInstruction ("IND": x) = case hParseInstruction "IND" x 0 of
+    Left e -> Left e
+    Right _ -> Right Ind
 parseInstruction ("STORE": x) = case hParseInstruction "STORE" x 1 of
     Left e -> Left e
     Right y -> Right $ Store (head y)
@@ -70,41 +124,48 @@ parseInstruction ("PUSH_BOOL": x) = case hParseInstruction "PUSH_BOOL" x 1 of
     Left e -> Left e
     Right y -> case readMaybe (head y) :: Maybe Bool of
         Nothing -> Left ("PUSH_BOOL: invalid operand: " ++ unwords y)
-        Just operand -> Right $ PushBool (Bool operand)
+        Just operand -> Right $ Push (Bool operand)
 parseInstruction ("PUSH_BOOL": x) = case hParseInstruction "PUSH_BOOL" x 1 of
     Left e -> Left e
     Right y -> case readMaybe (head y) :: Maybe Bool of
         Nothing -> Left ("PUSH_BOOL: invalid operand: " ++ unwords y)
-        Just operand -> Right $ PushBool (Bool operand)
-parseInstruction ["PUSH_CHAR", "'", "'"] = Right $ PushBool (Char ' ')
+        Just operand -> Right $ Push (Bool operand)
+parseInstruction ["PUSH_CHAR", "'", "'"] = Right $ Push (Char ' ')
 parseInstruction ("PUSH_CHAR": x) = case hParseInstruction "PUSH_CHAR" x 1 of
     Left e -> Left (e ++ ": " ++ show x)
     Right y -> case readMaybe (head y) :: Maybe Char of
         Nothing -> Left ("PUSH_BOOL: invalid operand: " ++ unwords y)
-        Just operand -> Right $ PushBool (Char operand)
+        Just operand -> Right $ Push (Char operand)
 parseInstruction ("PUSH_INT": x) = case hParseInstruction "PUSH_INT" x 1 of
     Left e -> Left e
     Right y -> case readMaybe (head y) :: Maybe Integer of
         Nothing -> Left ("PUSH_INT: invalid operand: " ++ unwords y)
-        Just operand -> Right $ PushInt (Integer operand)
+        Just operand -> Right $ Push (Integer operand)
 parseInstruction ("PUSH_FLOAT": x) = case hParseInstruction "PUSH_FLOAT" x 1 of
     Left e -> Left e
     Right y -> case readMaybe (head y) :: Maybe Float of
         Nothing -> Left ("PUSH_FLOAT: invalid operand: " ++ unwords y)
-        Just operand -> Right $ PushFloat (Float operand)
+        Just operand -> Right $ Push (Float operand)
 parseInstruction ("PUSH_LIST": x) = case hParseInstruction "PUSH_LIST" x 1 of
     Left e -> Left e
     Right y -> case readMaybe (head y) :: Maybe Int of
         Nothing -> Left ("PUSH_FLOAT: invalid operand: " ++ unwords y)
         Just operand -> Right $ PushList operand
+parseInstruction ("BUILD_STRUCT": x)
+    = case hParseInstruction "BUILD_STRUCT" x 2 of
+        Left e -> Left e
+        Right [a, b] -> case readMaybe b :: Maybe Int of
+            Just z -> Right $ PushStruct a z
+            _ -> Left ("BUILD_STRUCT: invalid operand: " ++ show b)
+        _ -> Left ("BUILD_STRUCT: invalid operands: " ++ unwords x)
 parseInstruction ("POP": x) = case hParseInstruction "POP" x 0 of
     Left e -> Left e
     Right _ -> Right Pop
 parseInstruction ("JMP": x) = case hParseInstruction "JMP" x 1 of
     Left e -> Left e
     Right y -> Right $ Jump (head y)
-parseInstruction ("JMP_IF_FALSE": x) =
-    case hParseInstruction "JMP_IF_FALSE" x 1 of
+parseInstruction ("JMP_IF_FALSE": x)
+    = case hParseInstruction "JMP_IF_FALSE" x 1 of
         Left e -> Left e
         Right y -> Right $ JumpFalse (head y)
 parseInstruction ("JMP_IF_TRUE": x) = case hParseInstruction "JMP_IF_TRUE" x 1 of
@@ -124,7 +185,7 @@ parseInstruction ("SUB": x) = case hParseInstruction "SUB" x 0 of
     Right _ -> Right Sub
 parseInstruction ("DIV": x) = case hParseInstruction "DIV" x 0 of
     Left e -> Left e
-    Right _ -> Right Mod
+    Right _ -> Right Div
 parseInstruction ("MOD": x) = case hParseInstruction "MOD" x 0 of
     Left e -> Left e
     Right _ -> Right Mod

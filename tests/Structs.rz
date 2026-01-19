@@ -1,5 +1,5 @@
 struct Baz {
-    [Char]: x
+    Char: x
 }
 
 struct Bar {
@@ -14,8 +14,7 @@ struct Foo {
 
 fn main() -> Int
 {
-    Foo x = { { 42, {"84"} }, 21 };
+    Foo x = { {42, {'8'} }, 21 };
 
     ret x;
 }
- 

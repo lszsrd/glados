@@ -1,0 +1,186 @@
+PUSH_CHAR 'C'
+PUSH_CHAR 'o'
+PUSH_CHAR 'u'
+PUSH_CHAR 'l'
+PUSH_CHAR 'd'
+PUSH_CHAR ' '
+PUSH_CHAR 'n'
+PUSH_CHAR 'o'
+PUSH_CHAR 't'
+PUSH_CHAR ' '
+PUSH_CHAR 'o'
+PUSH_CHAR 'p'
+PUSH_CHAR 'e'
+PUSH_CHAR 'n'
+PUSH_CHAR ' '
+PUSH_CHAR 'f'
+PUSH_CHAR 'i'
+PUSH_CHAR 'l'
+PUSH_CHAR 'e'
+PUSH_CHAR ' '
+PUSH_LIST 20
+STORE __open_error
+FUNC __openr path
+LOAD path
+CALL open_r 1
+STORE fd
+LOAD fd
+CALL isOpen 1
+PUSH_BOOL False
+EQ
+JMP_IF_FALSE else_0
+LOAD __open_error
+LOAD path
+ADD
+CALL exit 1
+JMP endif_1
+LABEL else_0
+LABEL endif_1
+LOAD fd
+RET
+ENDFUNC
+FUNC __openw path
+LOAD path
+CALL open_w 1
+STORE fd
+LOAD fd
+CALL isOpen 1
+PUSH_BOOL False
+EQ
+JMP_IF_FALSE else_0
+LOAD __open_error
+LOAD path
+ADD
+CALL exit 1
+JMP endif_1
+LABEL else_0
+LABEL endif_1
+LOAD fd
+RET
+ENDFUNC
+FUNC __opena path
+LOAD path
+CALL open_a 1
+STORE fd
+LOAD fd
+CALL isOpen 1
+PUSH_BOOL False
+EQ
+JMP_IF_FALSE else_0
+LOAD __open_error
+LOAD path
+ADD
+CALL exit 1
+JMP endif_1
+LABEL else_0
+LABEL endif_1
+LOAD fd
+RET
+ENDFUNC
+FUNC __openrw path
+LOAD path
+CALL open_w 1
+STORE fd
+LOAD fd
+CALL isOpen 1
+PUSH_BOOL False
+EQ
+JMP_IF_FALSE else_0
+LOAD __open_error
+LOAD path
+ADD
+CALL exit 1
+JMP endif_1
+LABEL else_0
+LABEL endif_1
+LOAD fd
+RET
+ENDFUNC
+FUNC open path mode
+LOAD mode
+PUSH_CHAR 'r'
+PUSH_LIST 1
+EQ
+JMP_IF_FALSE else_0
+LOAD path
+STORE path
+CALL __openr 1
+RET
+JMP endif_1
+LABEL else_0
+LABEL endif_1
+LOAD mode
+PUSH_CHAR 'w'
+PUSH_LIST 1
+EQ
+JMP_IF_FALSE else_0
+LOAD path
+STORE path
+CALL __openw 1
+RET
+JMP endif_1
+LABEL else_0
+LABEL endif_1
+LOAD mode
+PUSH_CHAR 'a'
+PUSH_LIST 1
+EQ
+JMP_IF_FALSE else_0
+LOAD path
+STORE path
+CALL __opena 1
+RET
+JMP endif_1
+LABEL else_0
+LABEL endif_1
+LOAD mode
+PUSH_CHAR 'r'
+PUSH_CHAR 'w'
+PUSH_LIST 2
+EQ
+JMP_IF_FALSE else_0
+LOAD path
+STORE path
+CALL __openrw 1
+RET
+JMP endif_1
+LABEL else_0
+LABEL endif_1
+PUSH_CHAR 'U'
+PUSH_CHAR 'n'
+PUSH_CHAR 'k'
+PUSH_CHAR 'n'
+PUSH_CHAR 'o'
+PUSH_CHAR 'w'
+PUSH_CHAR 'n'
+PUSH_CHAR ' '
+PUSH_CHAR 'm'
+PUSH_CHAR 'o'
+PUSH_CHAR 'd'
+PUSH_CHAR 'e'
+PUSH_CHAR ' '
+PUSH_CHAR 'f'
+PUSH_CHAR 'o'
+PUSH_CHAR 'r'
+PUSH_CHAR ' '
+PUSH_CHAR 'f'
+PUSH_CHAR 'i'
+PUSH_CHAR 'l'
+PUSH_CHAR 'e'
+PUSH_CHAR ' '
+PUSH_CHAR 'o'
+PUSH_CHAR 'p'
+PUSH_CHAR 'e'
+PUSH_CHAR 'n'
+PUSH_CHAR 'i'
+PUSH_CHAR 'n'
+PUSH_CHAR 'g'
+PUSH_CHAR ':'
+PUSH_CHAR ' '
+PUSH_LIST 31
+LOAD mode
+ADD
+CALL exit 1
+PUSH_INT -1
+RET
+ENDFUNC

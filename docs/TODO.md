@@ -20,6 +20,7 @@
 - You must implement a Compiler capable of translating a program from your language into a form suitable for your VM (the compiler and VM can be two modules inside the same executable, or two binaries).
     [OK] (./glados-compiler and ./glados-vm)
 - Your compiler should be capable of displaying its output in the form of human readable text (dissassembly).
+    [OK]
 - Your compiler should be able to output it's result as a binary format (bytecode).
 - Your VM should be able to load this binary format and run it.
     [OK]
@@ -45,12 +46,14 @@
     * Symbols as data (as in LISP using quote, or as in Erlang/Elixir, or Prolog)
     * Lists
         * with corresponding builtins to manipulate them: cons/car/cdr or (:)/head/tail
+            [OK]
         * syntactic sugar for literals, for example: [1,2,3]
             [OK]
     * Strings (as lists of Char or with a custom set of builtins to use them)
         [OK]
     * Tuples
     * Structures
+        [OK]
     * Arrays
         [OK]
     * HashMaps
