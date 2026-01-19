@@ -37,6 +37,7 @@ library frontend-rizz
         ParserHelper
         ParserStmt
         ParserBinaryExpr
+        ParserBinOp2
     build-depends:      base, format
 
 library backend-lisp
