@@ -299,16 +299,13 @@ foreachStmt env var list body =
         e = mkLabel "foreach_end" (nid + 2)
         env2 = env { eNextId = nid + 3 }
         idx = "_foreach_idx_" ++ show nid
-        initC = "PUSH_INT 0\nSTORE " ++ idx ++ "\n"
-        preBody = "LOAD " ++ list ++ "\nLOAD " ++ idx ++ "\nIND\nSTORE "
-               ++ var ++ "\n"
+        initC = "PUSH_INT 0\nSTORE " ++ idx ++ "\nLABEL " ++ s ++ "\n"
+        chkCon = "LOAD " ++ idx ++ "\nLOAD " ++ list ++ "\nCALL length 1\nLT\n"
+        crtIt = "LOAD " ++ list ++ "\nLOAD " ++ idx ++ "\nIND\nSTORE " ++ var
+        inc = "PUSH_INT 1\nLOAD " ++ idx ++ "\nADD\nSTORE " ++ idx ++ "\n"
         (bodyC, envB) = compileStmtSeq env2 (Just (LoopCtx s c e)) body
-        stepC = "LOAD " ++ idx ++ "\nPUSH_INT 1\nADD\nSTORE " ++ idx ++ "\n"
-        assembled = initC ++ "LABEL " ++ s ++ "\n"
-                 ++ "LOAD " ++ list ++ "\nLOAD " ++ idx ++ "\nIND\n"
-                 ++ "JMP_IF_FALSE " ++ e ++ "\n"
-                 ++ preBody ++ bodyC ++ "LABEL " ++ c ++ "\n"
-                 ++ stepC ++ "JMP " ++ s ++ "\nLABEL " ++ e ++ "\n"
+        assembled = initC ++ chkCon ++ "JMP_IF_FALSE " ++ e ++ "\n" ++ crtIt
+            ++ "\n" ++ bodyC ++ inc ++ "JMP " ++ s ++ "\nLABEL " ++ e ++ "\n"
     in (assembled, envB)
 
 -- | compileVarDecl: handle typed var declarations including Struct and List
