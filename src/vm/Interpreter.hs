@@ -34,8 +34,8 @@ foreign import ccall "dynamic"
 
 call :: String -> ([Function], [Struct]) -> Stack -> Env -> Fds -> IO (Either String (Maybe Operand))
 call "@init" x _ env fds = case fetch "@init" (fst x) of
-    Just (_, _, z) -> exec (z, z) x [] [] fds
-    _ -> call "main" x [] env fds
+    Just (_, _, z) ->  exec (z, z) x [] [] fds
+    _ -> return (Left "CALL: @init error")
 call "@fini" x _ env fds = call "main" x [] env' fds
     where env' = map (\(a, b, _) -> (a, b, True)) env
 call function x _ env fds = case fetch function (fst x) of

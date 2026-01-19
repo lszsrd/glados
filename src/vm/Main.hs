@@ -17,17 +17,6 @@ import ParseArgs (parseArgs, printUsage)
 import Parser (parser)
 import Interpreter (call)
 
-{- fst3 :: (a, b, c) -> a
-fst3 (x, _, _) = x
-
--- also check that no structs share the same name
-searchMD :: [[String]] -> String -> Maybe String
-searchMD [x@(_: xs), ys] y = case dropWhile (/= y) x of
-    [] -> searchMD [xs, ys] y
-    _ -> Just ("multiple definition of function " ++ y)
-searchMD [[], y: xs] _ = searchMD [xs, xs] y
-searchMD _ _ = Nothing -}
-
 run :: String -> IO ()
 run x = case parser $ lines x of
     Left e -> hPutStrLn stderr e >> exitFailure

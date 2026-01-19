@@ -7,12 +7,16 @@
 
 module Parser (
     parser
+    , searchMultiDefFun
+    , searchMultiDefStruct
     , hParser
     , parseGlobNamespace
     , parseFunction
     , parseInstructions
     , hParseInstruction
 ) where
+
+import Data.List
 
 import Text.Read (readMaybe)
 
@@ -22,9 +26,28 @@ import Data (Function, Struct)
 parser :: [String] -> Either String ([Function], [Struct])
 parser x = case hParser x of
     Left e -> Left e
-    Right (a, b) -> case break (\(z, _, _) -> z == "@init") a of
-        (_, []) -> Right (a ++ [("@init", [], [Call "@fini" 0])], b)
-        (c, (d, e, f): g) -> Right (c ++ (d, e, f ++ [Call "@fini" 0]): g, b)
+    Right (a, b) -> case searchMultiDefFun a of
+        Nothing -> case searchMultiDefStruct b of
+            Nothing -> case break (\(z, _, _) -> z == "@init") a of
+                (_, []) -> Right (a ++ [("@init", [], insts)], b)
+                (c, (d, e, f): g) -> Right (c ++ (d, e, f ++ insts): g, b)
+                where insts = [Call "@fini" 0, Ret]
+            Just z -> Left ("Multiple definition of structure " ++ show z)
+        Just z -> Left ("Multiple definition of function " ++ show z)
+
+searchMultiDefFun :: [Function] -> Maybe String
+searchMultiDefFun x = case map (\(a, _, _) -> a) x of
+    y -> case nub y of
+        z -> if length z /= length y
+            then Just (head $ deleteFirstsBy (==) y z)
+            else Nothing
+
+searchMultiDefStruct :: [Struct] -> Maybe String
+searchMultiDefStruct x = case map fst x of
+    y -> case nub y of
+        z -> if length z /= length y
+            then Just (head $ deleteFirstsBy (==) y z)
+            else Nothing
 
 -- takes all files a a list of lines
 hParser :: [String] -> Either String ([Function], [Struct])
