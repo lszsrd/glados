@@ -207,6 +207,13 @@ compileStmt env (DeclStmt (DeclAssignStmtLiteral target _ rhs))
             _ ->
                 "NOP\n"
 
+compileStmt env (DeclStmt (DeclAssignStmtLiteral target op rhs))
+    | op `elem` [AddEqual, SubEqual, MulEqual, DivEqual, ModEqual] =
+        "LOAD " ++ target ++ "\n" ++
+        compileParmCall env rhs ++
+        opAssignToInstr op ++ "\n" ++
+        "STORE " ++ target ++ "\n"
+
 compileStmt env (DeclStmt (DeclAssignStmtLiteral target _ rhs)) =
     compileParmCall env rhs ++
     "STORE " ++ target ++ "\n"
@@ -215,8 +222,10 @@ compileStmt env (DeclStmt (DeclAssignStmtLiteral target _ rhs)) =
 -- Unary assignment (x++ / x--)
 compileStmt _ (DeclStmt (DeclAssignStmtUnary (UnaryOperatorExpr ident op))) =
     case op of
-        IdentIncrement -> "LOAD " ++ ident ++ "\nPUSH_INT 1\nADD\nSTORE " ++ ident ++ "\n"
-        IdentDecrement -> "LOAD " ++ ident ++ "\nPUSH_INT 1\nSUB\nSTORE " ++ ident ++ "\n"
+        IdentIncrement -> "LOAD " ++ ident ++ "\nPUSH_INT 1\nADD\nSTORE "
+            ++ ident ++ "\n"
+        IdentDecrement -> "LOAD " ++ ident ++ "\nPUSH_INT 1\nSUB\nSTORE "
+            ++ ident ++ "\n"
         _              -> "NOP\n"
 
 -- Function call used as statement
@@ -411,6 +420,15 @@ opToInstr NEq = "NEQ"
 opToInstr And = "AND"
 opToInstr Or  = "OR"
 opToInstr _   = "NOP"
+
+opAssignToInstr :: AssignOp -> String
+opAssignToInstr AddEqual = "ADD"
+opAssignToInstr SubEqual = "SUB"
+opAssignToInstr MulEqual = "MUL"
+opAssignToInstr DivEqual = "DIV"
+opAssignToInstr ModEqual = "MOD"
+opAssignToInstr _        = "NOP"
+
 
 -- | Label generator using eNextId values (stringify the numeric id)
 mkLabel :: String -> Int -> String
