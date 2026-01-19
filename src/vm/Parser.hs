@@ -6,8 +6,10 @@
 -}
 
 module Parser (
-    parseFunctions
-    , hParseFunctions
+    parser
+    , hParser
+    , parseGlobNamespace
+    , parseFunction
     , parseInstructions
     , hParseInstruction
 ) where
@@ -17,34 +19,51 @@ import Text.Read (readMaybe)
 import OpCodes (Operand (..), Instruction (..))
 import Data (Function, Struct)
 
+parser :: [String] -> Either String ([Function], [Struct])
+parser x = case hParser x of
+    Left e -> Left e
+    Right (a, b) -> case break (\(z, _, _) -> z == "@init") a of
+        (_, []) -> Right (a ++ [("@init", [], [Call "@fini" 0])], b)
+        (c, (d, e, f): g) -> Right (c ++ (d, e, f ++ [Call "@fini" 0]): g, b)
+
 -- takes all files a a list of lines
-parseFunctions :: [String] -> Either String ([Function], [Struct])
-parseFunctions [] = Right ([], [])
-parseFunctions (x: xs) = case words x of
-    [] -> parseFunctions xs
+hParser :: [String] -> Either String ([Function], [Struct])
+hParser [] = Right ([], [])
+hParser x'@(x: xs) = case words x of
     ("STRUCT": y: ys: ys') -> case readMaybe ys :: Maybe Int of
         Nothing -> Left $ "STRUCT: invalid fields count " ++ show y
-        Just z -> if z /= length ys' then Left "STRUCT: invalid fields count"
-            else hParseStruct xs y ys'
+        Just z -> if z /= length ys'
+            then Left "STRUCT: invalid fields count"
+            else parseStruct xs y ys'
     ("STRUCT": _) -> Left "STRUCT: missing structure name"
-    ("FUNC": y: ys) -> hParseFunctions xs y ys
+    ("FUNC": y: ys) -> parseFunction xs y ys
     ("FUNC": _) -> Left "FUNC: missing function name"
-    _ -> Left ("parse error: not a function nor a structure: " ++ x)
+    _ -> parseGlobNamespace x'
+
+parseGlobNamespace :: [String] -> Either String ([Function], [Struct])
+parseGlobNamespace  [] = Right ([], [])
+parseGlobNamespace  (x: xs) = case parseInstruction (words x) of
+    Left e -> Left e
+    Right y -> case hParser xs of
+        Left e -> Left e
+        Right (a, b) -> case break (\(z, _, _) -> z == "@init") a of
+            (_, []) -> Right (a ++ [("@init", [], [y])], b)
+            (c, (d, e, f): g) -> Right (c ++ (d, e, y: f): g, b)
 
 -- takes the current line as broken via words, the function's name and args
-hParseFunctions :: [String] -> String -> [String] -> Either String ([Function], [Struct])
-hParseFunctions x y z = case parseInstructions x of
+parseFunction :: [String] -> String -> [String] -> Either String ([Function], [Struct])
+parseFunction x y z = case parseInstructions x of
     Left e -> Left e
     Right (_, []) -> Left ("FUNC: missing ENDFUNC at EOF: " ++ y)
     Right (a, b: c) -> if b /= "ENDFUNC"
         then Left ("FUNC: missing ENDFUNC: " ++ y)
-        else case parseFunctions c of
+        else case hParser c of
             Left e -> Left e
             Right (functions, structs) -> Right ((y, z, a): functions, structs)
 
 -- takes the current line as broken via words, the struct's name and fields
-hParseStruct :: [String] -> String -> [String] -> Either String ([Function], [Struct])
-hParseStruct x y z = case parseFunctions x of
+parseStruct :: [String] -> String -> [String] -> Either String ([Function], [Struct])
+parseStruct x y z = case hParser x of
     Left e -> Left e
     Right (functions, structs) -> Right (functions, (y, z): structs)
 
@@ -122,8 +141,8 @@ parseInstruction ("POP": x) = case hParseInstruction "POP" x 0 of
 parseInstruction ("JMP": x) = case hParseInstruction "JMP" x 1 of
     Left e -> Left e
     Right y -> Right $ Jump (head y)
-parseInstruction ("JMP_IF_FALSE": x) =
-    case hParseInstruction "JMP_IF_FALSE" x 1 of
+parseInstruction ("JMP_IF_FALSE": x)
+    = case hParseInstruction "JMP_IF_FALSE" x 1 of
         Left e -> Left e
         Right y -> Right $ JumpFalse (head y)
 parseInstruction ("JMP_IF_TRUE": x) = case hParseInstruction "JMP_IF_TRUE" x 1 of

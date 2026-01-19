@@ -14,31 +14,29 @@ import System.Exit (exitFailure)
 import Data.List (isPrefixOf, group, sort)
 
 import ParseArgs (parseArgs, printUsage)
-import Parser (parseFunctions)
+import Parser (parser)
 import Interpreter (call)
 
-fst3 :: (a, b, c) -> a
+{- fst3 :: (a, b, c) -> a
 fst3 (x, _, _) = x
 
 -- also check that no structs share the same name
-searchFunctionMD :: [[String]] -> String -> Maybe String
-searchFunctionMD [x@(_: xs), ys] y = case dropWhile (/= y) x of
-    [] -> searchFunctionMD [xs, ys] y
+searchMD :: [[String]] -> String -> Maybe String
+searchMD [x@(_: xs), ys] y = case dropWhile (/= y) x of
+    [] -> searchMD [xs, ys] y
     _ -> Just ("multiple definition of function " ++ y)
-searchFunctionMD [[], y: xs] _ = searchFunctionMD [xs, xs] y
-searchFunctionMD _ _ = Nothing
+searchMD [[], y: xs] _ = searchMD [xs, xs] y
+searchMD _ _ = Nothing -}
 
 run :: String -> IO ()
-run x = case parseFunctions $ lines x of
+run x = case parser $ lines x of
     Left e -> hPutStrLn stderr e >> exitFailure
-    Right (y, z) -> case searchFunctionMD (replicate 2 (fst3 $ unzip3 y)) [] of
-        Just e -> hPutStrLn stderr e >> exitFailure
-        Nothing -> do
-            a <- call "main" (y, z) [] [] [(0, stdin), (1, stdout), (2, stderr)]
-            case a of
-                Left e -> hPutStrLn stderr e >> exitFailure
-                Right Nothing -> return ()
-                Right (Just b) -> putStrLn $ "## exit code " ++ show b ++ " ##"
+    Right (a, b) -> do
+        y <- call "@init" (a, b) [] [] [(0, stdin), (1, stdout), (2, stderr)]
+        case y of
+            Left e -> hPutStrLn stderr e >> exitFailure
+            Right Nothing -> return ()
+            Right (Just z) -> putStrLn $ "## exit code " ++ show z ++ " ##"
 
 main :: IO ()
 main = do

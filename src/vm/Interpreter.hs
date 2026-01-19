@@ -33,6 +33,11 @@ foreign import ccall "dynamic"
   run_exit :: FunPtr (CInt -> IO ()) -> (CInt -> IO ())
 
 call :: String -> ([Function], [Struct]) -> Stack -> Env -> Fds -> IO (Either String (Maybe Operand))
+call "@init" x _ env fds = case fetch "@init" (fst x) of
+    Just (_, _, z) -> exec (z, z) x [] [] fds
+    _ -> call "main" x [] env fds
+call "@fini" x _ env fds = call "main" x [] env' fds
+    where env' = map (\(a, b, _) -> (a, b, True)) env
 call function x _ env fds = case fetch function (fst x) of
     Just (_, y, z) -> exec (z, z) x [] (purgeEnv env y) fds
     _ -> return (Left $ "CALL: call to undeclared function " ++ function)

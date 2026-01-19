@@ -1,19 +1,21 @@
-struct foo {
+struct Foo {
     Int: a,
-    Int: b,
-    Char: c
+    Int: b
 }
 
-/* comment block
-            */
+Int i = 9;
+
+fn foo()
+{
+    println(1, "before foo: " + i);
+    i = 10;
+    println(1, "in foo " + i);
+}
+
 fn main() -> Int
 {
-    [Char] i = "Hello";
-
-    for (Int i = 0; h[i]; i++) {
-        h[i] = 'c';
-    }
-
+    println(1, "before main: " + i);
+    foo();
+    println(1, "in main " + i);
     ret 0;
 }
-//endof file
