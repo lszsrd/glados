@@ -1,18 +1,20 @@
-struct foo {
-    Int: a,
-    Int: b,
-    Char: c
+fn foo(Int: bar, Int: baz) -> Int
+{
+    if (baz == 0) {
+        ret 0;
+    }
+    ret bar / baz;
 }
 
-/* comment block
-            */
 fn main() -> Int
 {
-    [Char] h = "Hello";
+    Int a = 2;
+    Int b = 3;
+    Int c = 4;
 
-    foreach (foo: h) {
-        foo = 'c';
+    for (Int i = 0; i < 3; i++) {
+        a += foo(a, c);
     }
-    ret 0;
+
+    ret a;
 }
-//endof file

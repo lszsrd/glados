@@ -86,14 +86,11 @@ executable glados-vm
     ghc-options:        -Wall -O2
     other-modules:
         OpCodes
-        Function
-        Stack
-        Env
-        Fds
-        Utils
+        Data
         ParseArgs
         Parser
         Interpreter
+        Builtins
     build-depends:      base, filepath, format, random
 
 test-suite unit_tests
