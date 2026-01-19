@@ -1,0 +1,17 @@
+fn is_neg(Int: value) -> Bool
+{
+    if (value >= 0) {
+        ret False;
+    }
+    ret True;
+}
+
+fn main() -> Int
+{
+    if (is_neg(12)) {
+        ret 0;
+    } else {
+        ret 1;
+    }
+    ret 0;
+}

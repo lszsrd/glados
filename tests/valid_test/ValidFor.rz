@@ -1,0 +1,9 @@
+fn main() -> Int
+{
+    [Char] str = "test";
+
+    for (Int i = 0; i < 4; i++) {
+        str[i] = 'c';
+    }
+    ret 0;
+}

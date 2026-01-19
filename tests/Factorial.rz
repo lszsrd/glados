@@ -1,9 +1,0 @@
-fn main() -> Int
-{
-    [Char] a = readln(0);
-
-    for (Int i = 0; i < length(a); i++) {
-        println(1, a[i]);
-    }
-    ret "OK";
-}

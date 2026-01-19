@@ -1,0 +1,8 @@
+FUNC function 0
+PUSH_INT 0
+RET
+ENDFUNC
+FUNC main 0
+CALL function 0
+RET
+ENDFUNC

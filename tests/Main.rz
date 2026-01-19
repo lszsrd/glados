@@ -1,0 +1,21 @@
+struct Foo {
+    Int: a,
+    Int: b
+}
+
+Int i = 9;
+
+fn foo()
+{
+    println(1, "before foo: " + i);
+    i = 10;
+    println(1, "in foo " + i);
+}
+
+fn main() -> Int
+{
+    println(1, "before main: " + i);
+    foo();
+    println(1, "in main " + i);
+    ret 0;
+}

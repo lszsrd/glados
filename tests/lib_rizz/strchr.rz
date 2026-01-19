@@ -1,0 +1,11 @@
+fn strchr([Char]: haystack, Char: needle) -> Bool
+{
+    foreach (h : haystack) {
+        if (h == needle) {
+            ret True;
+        }
+    }
+    ret False;
+}
+
+fn main() -> Int { ret 0; }

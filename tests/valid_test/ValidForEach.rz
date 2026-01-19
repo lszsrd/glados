@@ -1,0 +1,9 @@
+fn main() -> Int
+{
+    [Char] str = "test";
+
+    foreach (s : str) {
+        s = 'c';
+    }
+    ret 0;
+}

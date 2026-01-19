@@ -15,16 +15,16 @@ module Interpreter (
 
 import System.IO (IOMode (..), SeekMode (..), hTell, hFileSize, hIsEOF, hIsOpen, hClose, hGetChar, hGetLine, hPutStr, hPutStrLn)
 
-import Foreign (FunPtr)
 import Foreign.C (CInt (..))
+import Foreign (FunPtr)
 
 import System.Random
 
 import OpCodes (Operand (..), Instruction (..), div, mod)
-import Data (Function, Stack, Env, Fds, fetch, jumpTo, popStackN, setEnv, getEnv, purgeEnv)
+import Data (Function, Struct, Stack, Env, Fds, fetch, getStructBP, jumpTo, popStackN, setEnv, getEnv, purgeEnv)
 import Builtins (getFd, gOpen, gSeek, gRead, gWrite)
 
--- TODO: struct, IDX, LOAD struct@field and global variables
+-- TODO: structs and global variables
 
 foreign import ccall "stdlib.h &exit"
   p_exit :: FunPtr (CInt -> IO ())
@@ -32,12 +32,17 @@ foreign import ccall "stdlib.h &exit"
 foreign import ccall "dynamic"
   run_exit :: FunPtr (CInt -> IO ()) -> (CInt -> IO ())
 
-call :: String -> [Function] -> Stack -> Env -> Fds -> IO (Either String (Maybe Operand))
-call function x _ env fds = case fetch function x of
+call :: String -> ([Function], [Struct]) -> Stack -> Env -> Fds -> IO (Either String (Maybe Operand))
+call "@init" x _ env fds = case fetch "@init" (fst x) of
+    Just (_, _, z) ->  exec (z, z) x [] [] fds
+    _ -> return (Left "CALL: @init error")
+call "@fini" x _ env fds = call "main" x [] env' fds
+    where env' = map (\(a, b, _) -> (a, b, True)) env
+call function x _ env fds = case fetch function (fst x) of
     Just (_, y, z) -> exec (z, z) x [] (purgeEnv env y) fds
     _ -> return (Left $ "CALL: call to undeclared function " ++ function)
 
-open :: ([Instruction], [Instruction]) -> [Function] -> Stack -> Env -> Fds -> IOMode -> IO (Either String (Maybe Operand))
+open :: ([Instruction], [Instruction]) -> ([Function], [Struct]) -> Stack -> Env -> Fds -> IOMode -> IO (Either String (Maybe Operand))
 open x y stack env fds mode = do
     z <- gOpen stack mode
     case z of
@@ -45,7 +50,7 @@ open x y stack env fds mode = do
         Right z' -> exec x y (stack ++ [Integer fd]) env (fds ++ [(fd, z')])
         where fd = 1 + maximum (map fst fds)
 
-seek :: ([Instruction], [Instruction]) -> [Function] -> Stack -> Env -> Fds -> SeekMode -> IO (Either String (Maybe Operand))
+seek :: ([Instruction], [Instruction]) -> ([Function], [Struct]) -> Stack -> Env -> Fds -> SeekMode -> IO (Either String (Maybe Operand))
 seek x y stack env fds mode = do
     z <- gSeek stack fds mode
     case z of
@@ -58,7 +63,7 @@ stringToList (x: xs) = case stringToList xs of
     List y -> List $ Char x: y
     y -> y
 
-exec :: ([Instruction], [Instruction]) -> [Function] -> Stack -> Env -> Fds -> IO (Either String (Maybe Operand))
+exec :: ([Instruction], [Instruction]) -> ([Function], [Struct]) -> Stack -> Env -> Fds -> IO (Either String (Maybe Operand))
 exec (Nop: x, y) z stack env fds = exec (x, y) z stack env fds
 exec (Call "exit" _: _, _) _ stack _ _ = case popStackN 1 stack of
     Just ([x], _) -> return (Right $ Just x)
@@ -167,9 +172,15 @@ exec (Call function argv: x, y) z stack env fds = do
         Left e -> return (Left e)
         Right (Just a) -> exec (x, y) z (stack ++ [a]) env fds
         Right Nothing -> exec (x, y) z stack env fds
-exec (Load identifier: x, y) z stack env fds = case getEnv env identifier of
-    Nothing -> return (Left $ "LOAD " ++ identifier ++ ": not in env")
-    Just (_, a) -> exec (x, y) z (stack ++ [a]) env fds
+exec (Load ident: x, y) z stack env fds = case break (== '@') ident of
+    (_, []) -> case getEnv env ident of
+        Nothing -> return (Left $ "LOAD " ++ ident ++ ": not in env")
+        Just (_, a) -> exec (x, y) z (stack ++ [a]) env fds
+    (a, _: b) -> case getEnv env a of -- handle struct's field being a struct
+        Just (_, Struct c d e) -> case filter (\(f, _) -> f == b) (zip d e) of
+            [] -> return (Left $ "LOAD " ++ c ++ ": no field " ++ b)
+            (_, operand): _ -> exec (x, y) z (stack ++ [operand]) env fds
+        _ -> return (Left $ "LOAD " ++ ident ++ ": not in env")
 exec (Ind: x, y) z stack env fds = case popStackN 2 stack of
     Just ([List a, Integer b], stack') -> if fromIntegral b > length a
         then return (Left $ "IND: index out of bound: " ++ show b)
@@ -184,6 +195,13 @@ exec (PushList a: x, y) z stack env fds = if length stack < a
     then return (Left "PUSH_LIST: not enough operands on stack")
     else exec (x, y) z (take c stack ++ [List $ drop c stack]) env fds
     where c = length stack - a
+exec (PushStruct _ x: _, _) _ _ _ _
+    | x <= 0 = return (Left "BUILD_STRUCT: invalid struct size")
+exec (PushStruct a b: x, y) (z, z') stack env fds = case popStackN b stack of
+    Just (c, stack') -> case getStructBP z' a of
+        Nothing -> return (Left $ "BUILD_STRUCT: undefined struct " ++ a)
+        Just (_, d) -> exec (x, y) (z, z') (stack' ++ [Struct a d c]) env fds
+    _ -> return (Left "BUILD_STRUCT: not enough operands on stack")
 exec (Pop: x, y) z [] env fds = exec (x, y) z [] env fds
 exec (Pop: x, y) z stack env fds = exec (x, y) z (init stack) env fds
 exec (Jump a: _, y) z stack env fds = case jumpTo a y of
@@ -205,24 +223,24 @@ exec (JumpTrue a: x, y) z stack env fds = case last stack of
     _ -> return (Left "JMP_IF_FALSE: non-boolean comparison")
 exec (Label _: x, y) z stack env fds = exec (x, y) z stack env fds
 exec (Add: x, y) z stack env fds = case popStackN 2 stack of
-    Just ([Struct _, _], _) -> return (Left "ADD: non numeric values")
-    Just ([_, Struct _], _) -> return (Left "ADD: non numeric values")
+    Just ([Struct {}, _], _) -> return (Left "ADD: non numeric values")
+    Just ([_, Struct {}], _) -> return (Left "ADD: non numeric values")
     Just ([List a, List b], c) -> exec (x, y) z (c ++ [List (a ++ b)]) env fds
     Just ([List a, b], c) -> exec (x, y) z (c ++ [List (a ++ [b])]) env fds
     Just ([a, List b], c) -> exec (x, y) z (c ++ [List (a: b)]) env fds
     Just ([a, b], stack') -> exec (x, y) z (stack' ++ [a + b]) env fds
     _ -> return (Left "ADD: not enough values on stack")
 exec (Sub: x, y) z stack env fds = case popStackN 2 stack of
-    Just ([Struct _, _], _) -> return (Left "SUB: non numeric values")
+    Just ([Struct {}, _], _) -> return (Left "SUB: non numeric values")
     Just ([List _, _], _) -> return (Left "SUB: non numeric values")
-    Just ([_, Struct _], _) -> return (Left "SUB: non numeric values")
+    Just ([_, Struct {}], _) -> return (Left "SUB: non numeric values")
     Just ([_, List _], _) -> return (Left "SUB: non numeric values")
     Just ([a, b], stack') -> exec (x, y) z (stack' ++ [a - b]) env fds
     _ -> return (Left "SUB: not enough values on stack")
 exec (Mul: x, y) z stack env fds = case popStackN 2 stack of
-    Just ([Struct _, _], _) -> return (Left "MUL: non numeric values")
+    Just ([Struct {}, _], _) -> return (Left "MUL: non numeric values")
     Just ([List _, _], _) -> return (Left "MUL: non numeric values")
-    Just ([_, Struct _], _) -> return (Left "MUL: non numeric values")
+    Just ([_, Struct {}], _) -> return (Left "MUL: non numeric values")
     Just ([_, List _], _) -> return (Left "MUL: non numeric values")
     Just ([a, b], stack') -> exec (x, y) z (stack' ++ [a * b]) env fds
     _ -> return (Left "MUL: not enough values on stack")
@@ -241,30 +259,30 @@ exec (Mod: x, y) z stack env fds = case popStackN 2 stack of
             Right op -> exec (x, y) z (c ++ [Integer op]) env fds
     _ -> return (Left "MOD: not enough values on stack")
 exec (Lt: x, y) z stack env fds = case popStackN 2 stack of
-    Just ([Struct _, _], _) -> return (Left "LT: non numeric values")
+    Just ([Struct {}, _], _) -> return (Left "LT: non numeric values")
     Just ([List _, _], _) -> return (Left "LT: non numeric values")
-    Just ([_, Struct _], _) -> return (Left "LT: non numeric values")
+    Just ([_, Struct {}], _) -> return (Left "LT: non numeric values")
     Just ([_, List _], _) -> return (Left "LT: non numeric values")
     Just ([a, b], stack') -> exec (x, y) z (stack' ++ [Bool (a < b)]) env fds
     _ -> return (Left "LT: not enough values on stack")
 exec (Gt: x, y) z stack env fds = case popStackN 2 stack of
-    Just ([Struct _, _], _) -> return (Left "GT: non numeric values")
+    Just ([Struct {}, _], _) -> return (Left "GT: non numeric values")
     Just ([List _, _], _) -> return (Left "GT: non numeric values")
-    Just ([_, Struct _], _) -> return (Left "GT: non numeric values")
+    Just ([_, Struct {}], _) -> return (Left "GT: non numeric values")
     Just ([_, List _], _) -> return (Left "GT: non numeric values")
     Just ([a, b], stack') -> exec (x, y) z (stack' ++ [Bool (a > b)]) env fds
     _ -> return (Left "GT: not enough values on stack")
 exec (LEq: x, y) z stack env fds = case popStackN 2 stack of
-    Just ([Struct _, _], _) -> return (Left "LEQ: non numeric values")
+    Just ([Struct {}, _], _) -> return (Left "LEQ: non numeric values")
     Just ([List _, _], _) -> return (Left "LEQ: non numeric values")
-    Just ([_, Struct _], _) -> return (Left "LEQ: non numeric values")
+    Just ([_, Struct {}], _) -> return (Left "LEQ: non numeric values")
     Just ([_, List _], _) -> return (Left "LEQ: non numeric values")
     Just ([a, b], stack') -> exec (x, y) z (stack' ++ [Bool (a <= b)]) env fds
     _ -> return (Left "LEQ: not enough values on stack")
 exec (GEq: x, y) z stack env fds = case popStackN 2 stack of
-    Just ([Struct _, _], _) -> return (Left "GEQ: non numeric values")
+    Just ([Struct {}, _], _) -> return (Left "GEQ: non numeric values")
     Just ([List _, _], _) -> return (Left "GEQ: non numeric values")
-    Just ([_, Struct _], _) -> return (Left "GEQ: non numeric values")
+    Just ([_, Struct {}], _) -> return (Left "GEQ: non numeric values")
     Just ([_, List _], _) -> return (Left "GEQ: non numeric values")
     Just ([a, b], stack') -> exec (x, y) z (stack' ++ [Bool (a >= b)]) env fds
     _ -> return (Left "GEQ: not enough values on stack")
@@ -275,16 +293,16 @@ exec (NEq: x, y) z stack env fds = case popStackN 2 stack of
     Just ([a, b], stack') -> exec (x, y) z (stack' ++ [Bool (a /= b)]) env fds
     _ -> return (Left "EQ: not enough values on stack")
 exec (And: x, y) z stack env fds = case popStackN 2 stack of
-    Just ([Struct _, _], _) -> return (Left "AND: non numeric values")
+    Just ([Struct {}, _], _) -> return (Left "AND: non numeric values")
     Just ([List _, _], _) -> return (Left "AND: non numeric values")
-    Just ([_, Struct _], _) -> return (Left "AND: non numeric values")
+    Just ([_, Struct {}], _) -> return (Left "AND: non numeric values")
     Just ([_, List _], _) -> return (Left "AND: non numeric values")
     Just ([a, b], c) -> exec (x, y) z (c ++ [Bool (a /= 0 && b /= 0)]) env fds
     _ -> return $ Left "AND: non-boolean comparison"
 exec (Or: x, y) z stack env fds = case popStackN 2 stack of
-    Just ([Struct _, _], _) -> return (Left "OR: non numeric values")
+    Just ([Struct {}, _], _) -> return (Left "OR: non numeric values")
     Just ([List _, _], _) -> return (Left "OR: non numeric values")
-    Just ([_, Struct _], _) -> return (Left "OR: non numeric values")
+    Just ([_, Struct {}], _) -> return (Left "OR: non numeric values")
     Just ([_, List _], _) -> return (Left "OR: non numeric values")
     Just ([a, b], c) -> exec (x, y) z (c ++ [Bool (a /= 0 || b /= 0)]) env fds
     _ -> return $ Left "OR: non-boolean comparison"

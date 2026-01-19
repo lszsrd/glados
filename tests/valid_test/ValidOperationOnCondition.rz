@@ -1,0 +1,10 @@
+fn main() -> Int
+{
+    Int a = 0;
+    Int b = 1;
+
+    if (a + 1 == b) {
+        ret 1;
+    }
+    ret 0;
+}

@@ -1,5 +1,6 @@
 fn main() -> Int
 {
     Unknown i = 0;
+
     ret i;
 }

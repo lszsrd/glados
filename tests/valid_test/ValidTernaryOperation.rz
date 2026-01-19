@@ -1,0 +1,7 @@
+fn main() -> Int
+{
+    Int a = 0;
+
+    (a > 0) ? {ret 1;} : {ret 2;}
+    ret 0;
+}
