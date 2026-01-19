@@ -26,7 +26,6 @@ module ParserHelper (
     parseCallExprDecl,
     parseVarDeclStmt,
     parseDeclStmt,
-    parseBinaryOp,
     parseListLiteral,
     parseListElements,
     errorAt,
@@ -42,6 +41,7 @@ module ParserHelper (
 import qualified Ast as A
 import qualified Tokens as T
 import Data.List
+import qualified ParserBinOp2 as POP
 
 type SingleToken = (T.Token, (Int, Int))
 type Parser a = [SingleToken] -> Either String (a, [SingleToken])
@@ -118,8 +118,9 @@ getType _ (A.ParmCallDeclLiteral (T.BoolLiteral _)) = Just A.Boolean
 getType _ (A.ParmCallDeclLiteral (T.CharLiteral _)) = Just A.Character
 getType _ (A.ParmCallDeclLiteral (T.IntLiteral _)) = Just A.Integer
 getType _ (A.ParmCallDeclLiteral (T.FloatLiteral _)) = Just A.SinglePrecision
-getType fl (A.ParmCallDeclLiteral (T.ListLiteral (a :_))) =
-    getType fl (A.ParmCallDeclLiteral a)
+getType fl (A.ParmCallDeclLiteral (T.ListLiteral (a :_))) = do
+    tvar <- getType fl (A.ParmCallDeclLiteral a)
+    Just (A.ListType tvar)
 getType fl (A.ParmCallDeclIdent id1) =
     case doesVarExists (1,1) fl id1 of
         Left _ -> Nothing
@@ -179,7 +180,8 @@ depthStructListCreate fl x t (A.Struct n) = do
     case var of
         (A.RecordDecl (A.RecordDeclExpr _ parm)) -> createList parm x t fl
         e -> errorAt (1,1) ("? " ++ show e)
-depthStructListCreate _ _ _ _ = errorAt (1,1) "This shi is useless"
+depthStructListCreate _ _ _ _ = errorAt (1,1)
+    "could not assign from Struct to Struct, or smthn like that"
 
 createList :: [A.ParmVarDeclExpr] -> A.ParmCallDecl -> T.Identifier
     -> ([A.Decl], A.Decl) -> Either String [A.ParmVarDeclExpr]
@@ -264,17 +266,6 @@ parseAssignOp ((token, position) : _) =
     errorAt position ("Expected AssignOp, got " ++ show token)
 parseAssignOp [] = errorAt (1, 1) "Expected AssignOp, got "
 
--- | Takes a @'[SingleToken]'@ as parameter and returns a __Either__ @'String'@ @'[T.BinaryOp]'@.
--- On success, this function returns a @'T.BinaryOp'@.
---
--- On failure, this function returns a pretty formatted message error.
---
--- This function is used to parse a binary operator.
-parseBinaryOp :: Parser T.BinaryOp
-parseBinaryOp ((T.Punctuator (T.BinaryOp op), _) : rest) = Right (op, rest)
-parseBinaryOp ((token, position) : _) = 
-    errorAt position ("Expected BinaryOp, got " ++ show token)
-parseBinaryOp [] = errorAt (1, 1) "Expected BinaryOp, got "
 
 -- | Takes a @'[SingleToken]'@ as parameter and
 -- returns a __Either__ @'String'@ @'T.Literal'@.
@@ -491,8 +482,10 @@ parseSingle f tokens = case tokens of
 -- This function is used to parse a BinaryOpExpr in a function (e.g.: 6 - 4, foo(4) * 14 - 67).
 parseParmCallDeclBExpr :: ([A.Decl], A.Decl) -> Parser A.ParmCallDecl
 parseParmCallDeclBExpr f tokens = do
-    (p1, rest) <- parseSingle f tokens
-    case parseBinaryOp rest of
+    (binOpPacked, newt) <- POP.packBinOpExpr tokens
+    let binOpFormatted = POP.formatBinOpExpr binOpPacked
+    (p1, rest) <- parseSingle f (binOpFormatted ++ newt)
+    case POP.parseBinaryOp rest of
         Right (op, rest1) -> do
             (p2, r) <- parseSingle f rest1
             Right (A.ParmCallBExpr (A.BinaryOpParm p1)op(A.BinaryOpParm p2),r)

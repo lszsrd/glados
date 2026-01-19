@@ -23,7 +23,8 @@ runParse s = do
 
 tests = TestList                        [
     testsParser,
-    testPreciselyIf, testPreciselyFor
+    testPreciselyIf, testPreciselyFor,
+    testPreciselyHelper
                                         ]
 
 testsParser = TestList                  [
@@ -111,3 +112,33 @@ testFor5 = TestCase (assertEqual "parser \"(in func) for (; a == 0; a--) {contin
 testFor6 = TestCase (assertEqual "parser \"(in func) for (Int a = 1; a == 0; a--) {}\""
     (Left "1:24 variable already exists \"a\"")
     (runParse "fn f(Int: a) { for (Int a = 0; a == 0; a--) {} }"))
+
+
+testPreciselyHelper = TestList          [
+    testH, testH2, testH3,
+    testH4, testH5, testH6,
+    testH7
+                                        ]
+
+testH = TestCase (assertEqual "parser \"(in func) [[Int]] a = [[1]]; a[0][0] = 1;\""
+    (Right [A.FunctionDecl "f" [] (A.CompoundStmt [A.DeclVarExpr (A.VarDeclStmt (A.ListType (A.ListType A.Integer)) "a" T.Equal (A.ParmCallDeclLiteral (T.ListLiteral [T.ListLiteral [T.IntLiteral 1]]))),A.DeclStmt (A.DeclAssignStmtLiteral "ParmCallDeclIdx (ParmCallDeclIdx (ParmCallDeclIdent \"a\") (ParmCallDeclLiteral (IntLiteral 0))) (ParmCallDeclLiteral (IntLiteral 0))" T.Equal (A.ParmCallDeclLiteral (T.IntLiteral 1)))]) Nothing])
+    (runParse "fn f() {[[Int]] a = [[1]]; a[0][0] = 1;}"))
+
+testH2 = TestCase (assertEqual "parser \"(in func) Int a = 1 + 4 - 5 * foo(4);\""
+    (Right [A.FunctionDecl "f" [] (A.CompoundStmt [A.DeclVarExpr (A.VarDeclStmt A.Integer "a" T.Equal (A.ParmCallBExpr (A.BinaryOpParm (A.ParmCallBExpr (A.BinaryOpParm (A.ParmCallBExpr (A.BinaryOpParm (A.ParmCallDeclLiteral (T.IntLiteral 1))) T.Add (A.BinaryOpParm (A.ParmCallDeclLiteral (T.IntLiteral 4))))) T.Sub (A.BinaryOpParm (A.ParmCallDeclLiteral (T.IntLiteral 5))))) T.Mul (A.BinaryOpParm (A.ParmCallDeclExpr (A.CallExprDecl "foo" [A.ParmCallDeclLiteral (T.IntLiteral 4)])))))]) Nothing])
+    (runParse "fn f() {Int a = ((1 + 4) - 5) * foo(4);}"))
+testH3 = TestCase (assertEqual "parser \"(in func) Int a = 1 / 4 + 5 * foo(4 - 1 / 2);\""
+    (Right [A.FunctionDecl "f" [] (A.CompoundStmt [A.DeclVarExpr (A.VarDeclStmt A.Integer "a" T.Equal (A.ParmCallBExpr (A.BinaryOpParm (A.ParmCallBExpr (A.BinaryOpParm (A.ParmCallDeclLiteral (T.IntLiteral 1))) T.Div (A.BinaryOpParm (A.ParmCallDeclLiteral (T.IntLiteral 4))))) T.Add (A.BinaryOpParm (A.ParmCallBExpr (A.BinaryOpParm (A.ParmCallDeclLiteral (T.IntLiteral 5))) T.Mul (A.BinaryOpParm (A.ParmCallDeclExpr (A.CallExprDecl "foo" [A.ParmCallBExpr (A.BinaryOpParm (A.ParmCallDeclLiteral (T.IntLiteral 4))) T.Sub (A.BinaryOpParm (A.ParmCallBExpr (A.BinaryOpParm (A.ParmCallDeclLiteral (T.IntLiteral 1))) T.Div (A.BinaryOpParm (A.ParmCallDeclLiteral (T.IntLiteral 2)))))])))))))]) Nothing])
+    (runParse "fn f() {Int a = 1 / 4 + 5 * foo(4 - 1 / 2);}"))
+testH4 = TestCase (assertEqual "parser \"(in func) \""
+    (Right [A.RecordDecl (A.RecordDeclExpr "Bar" [A.ParmVarDeclExpr A.Integer "j"]),A.RecordDecl (A.RecordDeclExpr "Foo" [A.ParmVarDeclExpr (A.Struct "Bar") "a",A.ParmVarDeclExpr A.Integer "b"]),A.FunctionDecl "f" [] (A.CompoundStmt [A.DeclVarExpr (A.VarDeclStmt (A.Struct "Foo") "a" T.Equal (A.ParmCallDeclList [A.ParmCallDeclList [A.ParmCallDeclLiteral (T.IntLiteral 1)],A.ParmCallDeclLiteral (T.IntLiteral 0)]))]) Nothing])
+    (runParse "struct Bar {Int: j}  struct Foo {Bar: a, Int: b}  fn f() {Foo a = {{1}, 0};}"))
+testH5 = TestCase (assertEqual "parser \"(in func) double def of A\""
+    (Left "1:23 variable already exists \"a\"")
+    (runParse "fn f(Int: a) {for (Int a = 0;;) {} }"))
+testH6 = TestCase (assertEqual "parser \"(in func) assignation to function def;\""
+    (Left "1:21 Cannot assign value to function definition")
+    (runParse "fn foo () {} fn f() {foo = 0;}"))
+testH7 = TestCase (assertEqual "parser \"(in func) Int a = foo(b);\""
+    (Left "1:28 Cannot assign value to struct definition")
+    (runParse "struct Bar {Int: i} fn f() {Bar = 0;}"))
