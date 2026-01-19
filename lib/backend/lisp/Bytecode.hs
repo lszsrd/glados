@@ -127,17 +127,12 @@ compileCond _ OpEq = "EQ\n"
 
 compileCall :: FuncEnv -> Identifier -> [Expr] -> String
 compileCall env fname args =
-    let argsCode = concatMap (compileExpr env) args
-    in case Map.lookup fname env of
-        Nothing ->
-            argsCode ++ "CALL " ++ fname ++ " " ++ show (length args) ++ "\n"
-
-        Just params ->
-            let storeCode =
-                    concatMap (\p -> "STORE " ++ p ++ "\n") (reverse params)
-            in argsCode
-            ++ storeCode
-            ++ "CALL " ++ fname ++ " " ++ show (length args) ++ "\n"
+  let argsCode = concatMap (compileExpr env) args
+      call = "CALL " ++ fname ++ " " ++ show (length args) ++ "\n"
+  in case Map.lookup fname env of
+       Nothing -> argsCode ++ call
+       Just ps -> argsCode ++ concatMap (\p -> "STORE " ++ p ++ "\n")
+                              (reverse ps) ++ call
 
 
 arithOpToInstr :: ArithOperator -> String
