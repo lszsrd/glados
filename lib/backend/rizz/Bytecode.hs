@@ -31,7 +31,7 @@ import Ast
 import Tokens
 import Data.Map (Map)
 import qualified Data.Map as Map
-import Data.List (isInfixOf, isPrefixOf, tails)
+import Data.List (isPrefixOf, tails)
 
 -- | Function environment: maps function name -> parameter names (in order)
 type FuncEnv   = Map Identifier [Identifier]
@@ -285,7 +285,6 @@ unaryAssignStmt env (UnaryOperatorExpr iden op) =
                           ++ iden ++ "\n", env)
         IdentDecrement -> ("LOAD " ++ iden ++ "\nPUSH_INT 1\nSUB\nSTORE "
                           ++ iden ++ "\n", env)
-        _ -> ("NOP\n", env)
 
 retStmt :: Env -> Maybe BinaryOpExpr -> (String, Env)
 retStmt env Nothing = ("RET\n", env)
@@ -437,6 +436,7 @@ opAssignToInstr SubEqual = "SUB"
 opAssignToInstr MulEqual = "MUL"
 opAssignToInstr DivEqual = "DIV"
 opAssignToInstr ModEqual = "MOD"
+opAssignToInstr Equal = ""
 
 -- | Label generator using numeric id
 mkLabel :: String -> Int -> String
